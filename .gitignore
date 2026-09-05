@@ -1,0 +1,23 @@
+# محیط و رازها
+.venv/
+.env
+
+# داده‌ی خام: حجیم (~۱۵ مگابایت) و بازتولیدشدنی — در ../data/raw/ می‌ماند
+data/
+*.csv
+
+# پایتون
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# خروجی‌های تولیدشده
+exports/
+chroma/
+*.log
+
+# ویرایشگر و سیستم‌عامل
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
