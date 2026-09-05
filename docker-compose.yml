@@ -1,0 +1,24 @@
+# مونگوی محلی توسعه.
+#
+# چرا احراز هویت روشن است: قاعده‌ی امنیتی ۲ می‌گوید اتصال برنامه باید با کاربر
+# فقط-خواندنی باشد. مونگو بدون `--auth` نقش‌ها را اصلاً اعمال نمی‌کند، پس
+# «فقط-خواندنی» تبدیل به ادعایی می‌شود که هیچ تستی نمی‌تواند امتحانش کند.
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: rasam-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      # از همان فایل `.env` خوانده می‌شوند (بدون پیشوند RASAM_، چون مصرف‌کننده‌شان
+      # docker است نه پایتون). باید با RASAM_MONGO_ADMIN_URI بخوانند.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?in .env tarif nashode}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?in .env tarif nashode}
+    volumes:
+      # داده روی volume نام‌دار می‌ماند تا هر restart دوباره seed لازم نداشته باشد.
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

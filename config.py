@@ -83,6 +83,9 @@ def _hide_password(uri: str) -> str:
 class Settings:
     mongo_uri: str
     mongo_db: str
+    # فقط اسکریپت seed این را می‌خواهد. اجباری‌کردنش یعنی مسیر عادیِ پاسخ به
+    # سوال هم بدون یک اتصالِ نویسنده بالا نیاید — برعکس قاعده‌ی امنیتی ۲.
+    mongo_admin_uri: str | None
     csv_dir: Path
     llm_api_key: str
     llm_base_url: str
@@ -103,7 +106,7 @@ class Settings:
             value = getattr(self, field.name)
             if field.name == "llm_api_key":
                 value = "***"
-            elif field.name == "mongo_uri":
+            elif field.name in ("mongo_uri", "mongo_admin_uri") and value:
                 value = _hide_password(value)
             lines.append(f"  {field.name} = {value!r}")
         return "Settings(\n" + "\n".join(lines) + "\n)"
@@ -122,6 +125,7 @@ def _load() -> Settings:
     return Settings(
         mongo_uri=_env("MONGO_URI"),
         mongo_db=_env("MONGO_DB"),
+        mongo_admin_uri=_env("MONGO_ADMIN_URI"),
         # مسیر نسبی نسبت به ریشه‌ی پروژه معنا می‌شود، نه دایرکتوری جاری.
         csv_dir=csv_dir if csv_dir.is_absolute() else (PROJECT_ROOT / csv_dir).resolve(),
         llm_api_key=_env("LLM_API_KEY"),
