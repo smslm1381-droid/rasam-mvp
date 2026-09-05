@@ -8,6 +8,18 @@
 
 ## راه‌اندازی
 
+مک و لینوکس:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+cp .env.example .env   # سپس مقادیرش را پر کنید
+```
+
+ویندوز (پاورشل):
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -18,7 +30,7 @@ Copy-Item .env.example .env   # سپس مقادیرش را پر کنید
 
 بررسی اینکه تنظیمات درست خوانده می‌شود:
 
-```powershell
+```bash
 python -c "import config; print(config.settings)"
 ```
 

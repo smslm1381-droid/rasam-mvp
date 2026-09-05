@@ -49,8 +49,19 @@
 
 ## دستورهای پروژه
 
+فعال‌کردن محیط مجازی — تنها دستوری که بین دو پلتفرم فرق دارد:
+
+```bash
+source .venv/bin/activate        # مک و لینوکس
+```
+
 ```powershell
-.\.venv\Scripts\Activate.ps1   # فعال‌کردن محیط مجازی
+.\.venv\Scripts\Activate.ps1    # ویندوز
+```
+
+بقیه روی هر دو یکی است:
+
+```bash
 docker compose up -d            # مونگوی محلی توسعه
 python scripts/seed_mongo.py    # پرکردن دیتابیس از CSVها
 python ask.py "سوال شما"        # پرسیدن سوال (از قدم ۶ به بعد)
