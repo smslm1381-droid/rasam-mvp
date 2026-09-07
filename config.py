@@ -86,6 +86,27 @@ def _optional_number(name: str) -> int | None:
         ) from None
 
 
+# کلمه‌ی مخصوصی که یعنی «اصلاً این پارامتر را نفرست». راه فرار برای سرویسی
+# که `reasoning_effort` را نمی‌شناسد و با دیدنش خطا می‌دهد.
+REASONING_UNSET = "unset"
+
+
+def _reasoning_effort() -> str | None:
+    """چقدر مدل پیش از جواب‌دادن «فکر» کند.
+
+    پیش‌فرض `none` یعنی خاموش. برای تولید کوئری، فکرکردن فقط کند و گران است:
+    روی Gemini 3 Flash اندازه‌گیری شد، ۳٫۴ ثانیه در برابر ۱٫۲ ثانیه با همان
+    جواب. روشن‌کردنش در آینده یک کلمه است — `low`، `medium` یا `high`.
+
+    مقدار عمداً اعتبارسنجی نمی‌شود: هر سرویسی ممکن است سطح تازه‌ای اضافه کند
+    و فهرست بسته یعنی همان مشکلی که این تنظیم قرار بود حلش کند.
+    """
+    raw = _env("LLM_REASONING_EFFORT")
+    if raw is None:
+        return "none"
+    return None if raw.lower() == REASONING_UNSET else raw
+
+
 def _flag(name: str, default: bool) -> bool:
     raw = _env(name)
     return default if raw is None else raw.lower() in _TRUE_VALUES
@@ -110,9 +131,10 @@ class Settings:
     # سقف‌های اجرای کوئری. گارد (قدم ۴) اعمالشان می‌کند.
     query_timeout_ms: int
     max_rows: int | None
+    llm_timeout_ms: int
     llm_max_tokens: int
     llm_temperature: float
-    llm_disable_reasoning: bool
+    llm_reasoning_effort: str | None
     verbose: bool
 
     def __repr__(self) -> str:
@@ -156,9 +178,13 @@ def _load() -> Settings:
         query_timeout_ms=_number("QUERY_TIMEOUT_MS", 60_000, int, "عدد صحیح"),
         max_rows=_optional_number("MAX_ROWS"),
         # پیش‌فرض‌ها حاصل تجربه‌ی نسخه‌ی ۱‌اند (docs/v1-reference.md بخش ۵).
+        # جواب‌های واقعی ۱ تا ۳ ثانیه طول می‌کشند. سقف برای حالتی است که
+        # سرویس یا شبکه گیر کند و درخواست معلق بماند — از قدم ۱۳ که API
+        # می‌آید، هر درخواست معلق یک اتصال سرور را اشغال نگه می‌دارد.
+        llm_timeout_ms=_number("LLM_TIMEOUT_MS", 90_000, int, "عدد صحیح"),
         llm_max_tokens=_number("LLM_MAX_TOKENS", 1024, int, "عدد صحیح"),
         llm_temperature=_number("LLM_TEMPERATURE", 0.1, float, "عدد اعشاری"),
-        llm_disable_reasoning=_flag("LLM_DISABLE_REASONING", True),
+        llm_reasoning_effort=_reasoning_effort(),
         verbose=_flag("VERBOSE", False),
     )
 
