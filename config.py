@@ -69,6 +69,23 @@ def _number(name: str, default, convert, kind: str):
         ) from None
 
 
+def _optional_number(name: str) -> int | None:
+    """عددی که «نبودن» هم برایش یک مقدار معنادار است.
+
+    `None` یعنی سقفی در کار نیست. این با «صفر» فرق دارد و عمداً جدا نگه داشته
+    شده: صفر یعنی هیچ ردیفی برنگردد، که هیچ‌وقت خواسته‌ی کسی نیست.
+    """
+    raw = _env(name)
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        raise ConfigError(
+            f"مقدار {ENV_PREFIX}{name} باید عدد صحیح باشد یا خالی، ولی «{raw}» است."
+        ) from None
+
+
 def _flag(name: str, default: bool) -> bool:
     raw = _env(name)
     return default if raw is None else raw.lower() in _TRUE_VALUES
@@ -90,6 +107,9 @@ class Settings:
     llm_api_key: str
     llm_base_url: str
     llm_model: str
+    # سقف‌های اجرای کوئری. گارد (قدم ۴) اعمالشان می‌کند.
+    query_timeout_ms: int
+    max_rows: int | None
     llm_max_tokens: int
     llm_temperature: float
     llm_disable_reasoning: bool
@@ -131,6 +151,10 @@ def _load() -> Settings:
         llm_api_key=_env("LLM_API_KEY"),
         llm_base_url=_env("LLM_BASE_URL"),
         llm_model=_env("LLM_MODEL"),
+        # کندترین کوئری واقعیِ اندازه‌گیری‌شده ۰٫۰۶ ثانیه بود؛ ۶۰ ثانیه یعنی هیچ
+        # سوال سالمی به سقف نمی‌خورد، ولی یک کوئری معیوب سرور را گروگان نمی‌گیرد.
+        query_timeout_ms=_number("QUERY_TIMEOUT_MS", 60_000, int, "عدد صحیح"),
+        max_rows=_optional_number("MAX_ROWS"),
         # پیش‌فرض‌ها حاصل تجربه‌ی نسخه‌ی ۱‌اند (docs/v1-reference.md بخش ۵).
         llm_max_tokens=_number("LLM_MAX_TOKENS", 1024, int, "عدد صحیح"),
         llm_temperature=_number("LLM_TEMPERATURE", 0.1, float, "عدد اعشاری"),
