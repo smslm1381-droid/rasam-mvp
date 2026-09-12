@@ -9,6 +9,17 @@
 
 from __future__ import annotations
 
+import json
+from functools import lru_cache
+
+import yaml
+
+import config
+
+# دانش دامنه بیرون از کد نگه داشته می‌شود تا بدون تغییر کد قابل ویرایش باشد.
+# در قدم ۱۵ این پوشه به‌ازای هر مشتری جدا می‌شود.
+KNOWLEDGE_DIR = config.PROJECT_ROOT / "knowledge"
+
 # سقف آزموده‌شده در نسخه‌ی ۱ (docs/v1-reference.md بخش ۲).
 MAX_QUESTION_CHARS = 2000
 
@@ -41,6 +52,12 @@ _TEMPLATE = """You turn Persian questions about a MongoDB database into aggregat
 
 ===Database schema
 {schema}
+
+===Domain knowledge
+{documentation}
+
+===Worked examples
+{examples}
 
 {rules}
 
@@ -75,6 +92,31 @@ def wrap_untrusted(text: str, tag: str, limit: int) -> str:
     return f"<{tag}>\n{clean}\n</{tag}>"
 
 
+@lru_cache(maxsize=1)
+def _documentation() -> str:
+    """واژگان فارسی، توضیح کالکشن‌ها و تله‌های داده."""
+    return (KNOWLEDGE_DIR / "documentation.md").read_text(encoding="utf-8").strip()
+
+
+@lru_cache(maxsize=1)
+def _examples() -> str:
+    """نمونه‌های «سوال ← کوئری»، به‌صورت متنی آماده‌ی پرامپت.
+
+    `why` هر نمونه هم وارد پرامپت می‌شود: مدل از دیدن *دلیل*، الگو را بهتر به
+    سوال تازه تعمیم می‌دهد تا از دیدن کوئریِ تنها.
+    """
+    loaded = yaml.safe_load((KNOWLEDGE_DIR / "examples.yaml").read_text(encoding="utf-8"))
+    blocks = []
+    for item in loaded:
+        why = f"\n# {item['why'].strip()}" if item.get("why") else ""
+        blocks.append(
+            f"Q: {item['question']}{why}\n"
+            f'A: {{"collection": "{item["collection"]}", '
+            f'"pipeline": {json.dumps(item["pipeline"], ensure_ascii=False)}}}'
+        )
+    return "\n\n".join(blocks)
+
+
 def build_query_prompt(schema: str, question: str, collections: set[str]) -> str:
     """پرامپت تولید کوئری: ساختار دیتابیس + قواعد امنیتی + سوال محصورشده.
 
@@ -84,6 +126,8 @@ def build_query_prompt(schema: str, question: str, collections: set[str]) -> str
     """
     return _TEMPLATE.format(
         schema=schema,
+        documentation=_documentation(),
+        examples=_examples(),
         rules=SECURITY_RULES,
         collections=", ".join(sorted(collections)),
         question=wrap_untrusted(question, QUESTION_TAG, MAX_QUESTION_CHARS),

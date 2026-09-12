@@ -1,0 +1,98 @@
+# نمونه‌های «سوال ← کوئری درست».
+#
+# اینها نیت را به مدل یاد می‌دهند، نه دستور را. هر نمونه یک الگوی تکرارشونده
+# دارد که در `why` نوشته شده — آن `why` وارد پرامپت هم می‌شود چون مدل از دیدن
+# دلیل، الگو را بهتر تعمیم می‌دهد تا از دیدن کوئریِ تنها.
+#
+# افزودن نمونه‌ی تازه با تغییر همین فایل انجام می‌شود، بدون دست‌زدن به کد.
+
+- question: میانگین دمای داخلی اینورترها چقدر است؟
+  collection: inverter_data
+  why: ساده‌ترین حالت — یک تجمیع روی کل کالکشن.
+  pipeline:
+    - $group:
+        _id: null
+        avg_temp: {$avg: $int_temp}
+
+- question: میانگین توان راکتیو اینورتر چقدر است؟
+  collection: inverter_data
+  why: >-
+    tot_reactive_pow عدد بدون‌علامت ۳۲بیتی است و مقدار منفی را wrap می‌کند.
+    بدون این تبدیل، جواب حدود ۲٫۵ میلیارد می‌شود به‌جای حدود منفی ۲۷.
+  pipeline:
+    - $group:
+        _id: null
+        avg_reactive_pow:
+          $avg:
+            $cond:
+              - {$gte: [$tot_reactive_pow, 2147483648]}
+              - {$subtract: [$tot_reactive_pow, 4294967296]}
+              - $tot_reactive_pow
+
+- question: بیشترین توان راکتیو اینورتر چقدر بوده؟
+  collection: inverter_data
+  why: همان تبدیل علامت، این بار با بیشینه. بدون آن جواب همیشه ۴۲۹۴۹۶۷۲۹۵ است.
+  pipeline:
+    - $group:
+        _id: null
+        max_reactive_pow:
+          $max:
+            $cond:
+              - {$gte: [$tot_reactive_pow, 2147483648]}
+              - {$subtract: [$tot_reactive_pow, 4294967296]}
+              - $tot_reactive_pow
+
+- question: مصرف پنل فشار ضعیف چقدر است؟
+  collection: lvpanel_data
+  why: «مصرف» یعنی توان اکتیو لحظه‌ای، نه کنتورهای انرژی مثل act_eng_receiv.
+  pipeline:
+    - $group:
+        _id: null
+        avg_active_pow: {$avg: $tot_active_pow}
+
+- question: تولید انرژی روز آخر اینورتر چقدر بوده؟
+  collection: inverter_data
+  why: >-
+    daily_pow_yield کنتور است نه اندازه‌گیری. «امروز» یعنی بیشینه‌ی کنتور در
+    آخرین روزِ موجود. جمع‌زدن کنتور جواب را چند برابر می‌کند.
+  pipeline:
+    - $sort: {timestamp: -1}
+    - $limit: 3000
+    - $group:
+        _id: $device_code
+        produced: {$max: $daily_pow_yield}
+
+- question: آخرین توان اکتیو پنل فشار متوسط چقدر است؟
+  collection: mvpanel_data
+  why: «آخرین» و «الان» یعنی مرتب‌سازی نزولی روی timestamp و یک نتیجه.
+  pipeline:
+    - $sort: {timestamp: -1}
+    - $limit: 1
+    - $project: {_id: 0, timestamp: 1, tot_active_pow: 1}
+
+- question: اینورتر در هر حالت کاری چند رکورد دارد؟
+  collection: inverter_data
+  why: work_state متنی است و چهار مقدار دارد؛ گروه‌بندی مستقیم روی خودش.
+  pipeline:
+    - $group:
+        _id: $work_state
+        count: {$sum: 1}
+    - $sort: {count: -1}
+
+- question: کمترین ولتاژ استرینگ‌ها که صفر نباشد چقدر است؟
+  collection: string_data
+  why: شب‌ها ولتاژ صفر ثبت می‌شود، پس صفرها باید کنار گذاشته شوند.
+  pipeline:
+    - $match: {voltage: {$gt: 0}}
+    - $group:
+        _id: null
+        min_voltage: {$min: $voltage}
+
+- question: لیست خطاهای رخ داده در اینورترها را نشان بده
+  collection: inverter_data
+  why: >-
+    fa_al_code در تمام داکیومنت‌ها صفر است، پس این کوئری درست است و نتیجه‌ی
+    خالی می‌دهد. نتیجه‌ی خالی همان جواب است؛ فیلتر را شل نکن تا چیزی پیدا شود.
+  pipeline:
+    - $match: {fa_al_code: {$ne: 0}}
+    - $project: {_id: 0, timestamp: 1, device_code: 1, fa_al_code: 1}
