@@ -33,6 +33,7 @@ ENV_PREFIX = "RASAM_"
 REQUIRED = (
     "MONGO_URI",
     "MONGO_DB",
+    "ALLOWED_COLLECTIONS",
     "CSV_DIR",
     "LLM_API_KEY",
     "LLM_BASE_URL",
@@ -124,6 +125,10 @@ class Settings:
     # فقط اسکریپت seed این را می‌خواهد. اجباری‌کردنش یعنی مسیر عادیِ پاسخ به
     # سوال هم بدون یک اتصالِ نویسنده بالا نیاید — برعکس قاعده‌ی امنیتی ۲.
     mongo_admin_uri: str | None
+    # نام کالکشن مخصوص هر مشتری است، پس در کد نمی‌نشیند. گارد این فهرست را
+    # می‌گیرد و هر کوئری بیرون از آن را رد می‌کند — دفاع در برابر کالکشن‌های
+    # حساسِ خودِ همان مشتری، مثل `users` یا `billing`.
+    allowed_collections: frozenset[str]
     csv_dir: Path
     llm_api_key: str
     llm_base_url: str
@@ -168,6 +173,9 @@ def _load() -> Settings:
         mongo_uri=_env("MONGO_URI"),
         mongo_db=_env("MONGO_DB"),
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),
+        allowed_collections=frozenset(
+            name.strip() for name in _env("ALLOWED_COLLECTIONS").split(",") if name.strip()
+        ),
         # مسیر نسبی نسبت به ریشه‌ی پروژه معنا می‌شود، نه دایرکتوری جاری.
         csv_dir=csv_dir if csv_dir.is_absolute() else (PROJECT_ROOT / csv_dir).resolve(),
         llm_api_key=_env("LLM_API_KEY"),
