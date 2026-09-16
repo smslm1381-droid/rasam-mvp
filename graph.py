@@ -1,4 +1,4 @@
-"""گراف پاسخ‌دادن به یک سوال: ساختن کوئری ← اعتبارسنجی ← اجرا.
+"""گراف پاسخ‌دادن به یک سوال: ساختن کوئری ← اعتبارسنجی ← اجرا ← خلاصه.
 
 چرا گراف و نه یک تابع تودرتو: گره‌های بعدی (خلاصه، نمودار، خودترمیمی) بدون
 بازنویسی اضافه می‌شوند. مسیر خطا از هر گره مستقیم به خروجی می‌رود، پس هیچ
@@ -37,6 +37,7 @@ class Answer:
     collection: str | None = None
     pipeline: list[dict] | None = None
     rows: list[dict] = field(default_factory=list)
+    summary: str | None = None
     message: str | None = None
     error: str | None = None
 
@@ -48,6 +49,7 @@ class State(TypedDict, total=False):
     collection: str | None
     pipeline: list[dict] | None
     rows: list[dict]
+    summary: str | None
     message: str | None
     error: str | None
     max_time_ms: int
@@ -111,6 +113,16 @@ def execute(state: State) -> State:
     return {"rows": rows}
 
 
+def summarize(state: State) -> State:
+    """گره ۴ — یک یا دو جمله‌ی فارسی که بگوید نتیجه چه می‌گوید.
+
+    شکست این گره کل پاسخ را از بین نمی‌برد: جدول نتیجه هنوز ارزش دارد
+    (docs/v1-reference.md بخش ۴). پس به‌جای `error`، فقط خلاصه خالی می‌ماند.
+    """
+    reply = llm.ask(prompts.build_summary_prompt(state["question"], state.get("rows") or []))
+    return {"summary": reply.text if reply.ok else None}
+
+
 def _next_after(state: State) -> str:
     """هر گره می‌تواند مسیر را همین‌جا تمام کند."""
     return END if state.get("error") or state.get("message") else "continue"
@@ -121,10 +133,12 @@ def _build():
     graph.add_node("generate", generate)
     graph.add_node("validate", validate)
     graph.add_node("execute", execute)
+    graph.add_node("summarize", summarize)
     graph.add_edge(START, "generate")
     graph.add_conditional_edges("generate", _next_after, {"continue": "validate", END: END})
     graph.add_conditional_edges("validate", _next_after, {"continue": "execute", END: END})
-    graph.add_edge("execute", END)
+    graph.add_conditional_edges("execute", _next_after, {"continue": "summarize", END: END})
+    graph.add_edge("summarize", END)
     return graph.compile()
 
 
@@ -149,6 +163,7 @@ def answer(question: str) -> Answer:
         collection=final.get("collection"),
         pipeline=final.get("pipeline"),
         rows=final.get("rows") or [],
+        summary=final.get("summary"),
         message=final.get("message"),
         error=final.get("error"),
     )

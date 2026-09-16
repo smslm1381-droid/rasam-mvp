@@ -145,3 +145,50 @@ def test_json_means_a_query_attempt_anything_else_is_a_sentence(text, is_query):
     parsed, message = graph._parse(text)
     assert (parsed is not None) is is_query
     assert (message is None) is is_query
+
+
+# --- خلاصه (قدم ۹) ----------------------------------------------------------
+
+def two_step_model(summary_reply: llm.Result):
+    """اولین تماس کوئری می‌سازد، تماس خلاصه جواب دیگری می‌گیرد."""
+    def ask(prompt: str) -> llm.Result:
+        if prompt.startswith("You summarize"):
+            return summary_reply
+        return llm.Result(ok=True, text=json.dumps(GOOD), reason="")
+    return ask
+
+
+def test_a_good_answer_carries_a_summary(wired, monkeypatch):
+    monkeypatch.setattr(graph.llm, "ask", two_step_model(
+        llm.Result(ok=True, text="میانگین دما ۲۸٫۶ درجه است.", reason="")))
+    result = graph.answer("میانگین دما؟")
+    assert result.summary == "میانگین دما ۲۸٫۶ درجه است."
+    assert result.rows == [{"avg": 28.61}]
+
+
+def test_a_failed_summary_keeps_the_table_and_is_not_an_error(wired, monkeypatch):
+    """جدول هنوز ارزش دارد؛ شکست خلاصه نباید کل پاسخ را بگیرد."""
+    monkeypatch.setattr(graph.llm, "ask", two_step_model(
+        llm.Result(ok=False, text=None, reason="سرویس در دسترس نیست.")))
+    result = graph.answer("میانگین دما؟")
+    assert result.summary is None
+    assert result.error is None
+    assert result.rows == [{"avg": 28.61}]
+
+
+def test_no_summary_is_attempted_when_the_guard_rejects(wired, monkeypatch):
+    calls = []
+
+    def ask(prompt):
+        calls.append(prompt[:20])
+        return llm.Result(ok=True, text=json.dumps(
+            {"collection": "inverter_data", "pipeline": [{"$out": "x"}]}), reason="")
+
+    monkeypatch.setattr(graph.llm, "ask", ask)
+    graph.answer("سوال")
+    assert not any(c.startswith("You summarize") for c in calls)
+
+
+def test_no_summary_is_attempted_for_a_plain_message(wired, monkeypatch):
+    reply("این داده موجود نیست.", monkeypatch)
+    assert graph.answer("آب و هوا؟").summary is None

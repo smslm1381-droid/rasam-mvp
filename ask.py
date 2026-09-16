@@ -36,10 +36,13 @@ def render(result: Answer, show_query: bool) -> str:
     if result.message:
         return result.message
 
-    body = _render_rows(result.rows)
-    if not show_query:
-        return body
-    return f"کالکشن: {result.collection}\nکوئری: {result.pipeline}\n\n{body}"
+    parts = []
+    if result.summary:
+        parts.append(result.summary)
+    if show_query:
+        parts.append(f"کالکشن: {result.collection}\nکوئری: {result.pipeline}")
+    parts.append(_render_rows(result.rows))
+    return "\n\n".join(parts)
 
 
 def main(argv: list[str]) -> int:

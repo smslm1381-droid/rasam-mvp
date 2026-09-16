@@ -44,3 +44,14 @@ def test_the_query_is_hidden_unless_asked_for():
                     pipeline=[{"$match": {}}], rows=[{"n": 1}])
     assert "inverter_data" not in ask.render(answer, show_query=False)
     assert "inverter_data" in ask.render(answer, show_query=True)
+
+
+def test_the_summary_is_shown_above_the_table():
+    answer = Answer(question="q", rows=[{"avg": 28.6}], summary="میانگین ۲۸٫۶ است.")
+    out = ask.render(answer, show_query=False)
+    assert out.index("میانگین ۲۸٫۶ است.") < out.index("avg")
+
+
+def test_without_a_summary_the_table_still_shows():
+    out = ask.render(Answer(question="q", rows=[{"avg": 28.6}]), show_query=False)
+    assert "avg" in out
