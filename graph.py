@@ -1,5 +1,8 @@
 """گراف پاسخ‌دادن به یک سوال: ساختن کوئری ← اعتبارسنجی ← اجرا ← خلاصه.
 
+اگر کوئری رد یا اجرایش ناموفق شود، خطا به مدل برمی‌گردد تا خودش اصلاحش کند
+(گره `repair`)، حداکثر تا سقف `MAX_ATTEMPTS` تلاش.
+
 چرا گراف و نه یک تابع تودرتو: گره‌های بعدی (خلاصه، نمودار، خودترمیمی) بدون
 بازنویسی اضافه می‌شوند. مسیر خطا از هر گره مستقیم به خروجی می‌رود، پس هیچ
 کوئری اعتبارسنجی‌نشده‌ای به گره اجرا نمی‌رسد.
@@ -23,6 +26,10 @@ import guard
 import llm
 import prompts
 
+# تلاش اول + یک ترمیم. سقف داشتن اجباری است: بدون آن یک کوئری که مدل مدام
+# اشتباه می‌سازد، بی‌نهایت بار به سرویس می‌رود.
+MAX_ATTEMPTS = 2
+
 
 @dataclass
 class Answer:
@@ -38,6 +45,9 @@ class Answer:
     pipeline: list[dict] | None = None
     rows: list[dict] = field(default_factory=list)
     summary: str | None = None
+    # آیا جواب بعد از یک بار اصلاح به دست آمد. برای کاربر یعنی «این جواب
+    # ارزان به دست نیامد»، و برای ما نشانه‌ای که پرامپت جای بهترشدن دارد.
+    repaired: bool = False
     message: str | None = None
     error: str | None = None
 
@@ -50,6 +60,8 @@ class State(TypedDict, total=False):
     pipeline: list[dict] | None
     rows: list[dict]
     summary: str | None
+    attempts: int
+    repaired: bool
     message: str | None
     error: str | None
     max_time_ms: int
@@ -87,7 +99,8 @@ def generate(state: State) -> State:
     parsed, message = _parse(reply.text)
     if parsed is None:
         return {"message": message}
-    return {"collection": parsed.get("collection"), "pipeline": parsed.get("pipeline")}
+    return {"collection": parsed.get("collection"), "pipeline": parsed.get("pipeline"),
+            "attempts": 1}
 
 
 def validate(state: State) -> State:
@@ -113,6 +126,33 @@ def execute(state: State) -> State:
     return {"rows": rows}
 
 
+def repair(state: State) -> State:
+    """گره ترمیم — کوئری ردشده و دلیلش را به مدل برمی‌گرداند تا اصلاح کند.
+
+    شمارنده‌ی تلاش‌ها **همیشه** بالا می‌رود، حتی وقتی خودِ ترمیم شکست بخورد؛
+    وگرنه گراف بین اعتبارسنجی و ترمیم گیر می‌کند.
+    """
+    attempts = state.get("attempts", 1) + 1
+    try:
+        schema = db.describe_schema(db.connect())
+    except PyMongoError:
+        return {"attempts": attempts}
+
+    reply = llm.ask(prompts.build_query_prompt(
+        schema, state["question"], config.settings.allowed_collections,
+        failure=(state.get("pipeline"), state.get("error") or ""),
+    ))
+    if not reply.ok:
+        return {"attempts": attempts}
+
+    parsed, message = _parse(reply.text)
+    if parsed is None:
+        # مدل به این نتیجه رسیده که سوال از این داده قابل جواب نیست.
+        return {"attempts": attempts, "message": message, "error": None}
+    return {"attempts": attempts, "repaired": True, "error": None,
+            "collection": parsed.get("collection"), "pipeline": parsed.get("pipeline")}
+
+
 def summarize(state: State) -> State:
     """گره ۴ — یک یا دو جمله‌ی فارسی که بگوید نتیجه چه می‌گوید.
 
@@ -124,8 +164,17 @@ def summarize(state: State) -> State:
 
 
 def _next_after(state: State) -> str:
-    """هر گره می‌تواند مسیر را همین‌جا تمام کند."""
+    """بعد از گره تولید: یا ادامه، یا پایان."""
     return END if state.get("error") or state.get("message") else "continue"
+
+
+def _next_or_repair(state: State) -> str:
+    """بعد از اعتبارسنجی و اجرا: خطا یعنی یک شانس دیگر، تا سقف تلاش‌ها."""
+    if state.get("message"):
+        return END
+    if not state.get("error"):
+        return "continue"
+    return "repair" if state.get("attempts", 1) < MAX_ATTEMPTS else END
 
 
 def _build():
@@ -134,10 +183,16 @@ def _build():
     graph.add_node("validate", validate)
     graph.add_node("execute", execute)
     graph.add_node("summarize", summarize)
+    graph.add_node("repair", repair)
     graph.add_edge(START, "generate")
     graph.add_conditional_edges("generate", _next_after, {"continue": "validate", END: END})
-    graph.add_conditional_edges("validate", _next_after, {"continue": "execute", END: END})
-    graph.add_conditional_edges("execute", _next_after, {"continue": "summarize", END: END})
+    graph.add_conditional_edges("validate", _next_or_repair,
+                                {"continue": "execute", "repair": "repair", END: END})
+    graph.add_conditional_edges("execute", _next_or_repair,
+                                {"continue": "summarize", "repair": "repair", END: END})
+    # ترمیم همیشه به اعتبارسنجی برمی‌گردد: هیچ کوئری اصلاح‌شده‌ای بدون گذشتن
+    # از گارد اجرا نمی‌شود.
+    graph.add_conditional_edges("repair", _next_after, {"continue": "validate", END: END})
     graph.add_edge("summarize", END)
     return graph.compile()
 
@@ -149,6 +204,14 @@ def answer(question: str) -> Answer:
     """سوال فارسی می‌گیرد و `Answer` برمی‌گرداند. هرگز استثنا پرتاب نمی‌کند."""
     if not question or not question.strip():
         return Answer(question=question, error="سوالی وارد نشده است.")
+
+    # سوال بلند بریده نمی‌شود، رد می‌شود. سوالِ نصفه جوابِ نصفه می‌دهد و کاربر
+    # هیچ‌وقت نمی‌فهمد چرا؛ بهتر است همین‌جا صریح بگوییم.
+    if len(question) > prompts.MAX_QUESTION_CHARS:
+        return Answer(question=question, error=(
+            f"سوال شما {len(question)} کاراکتر است و از سقف "
+            f"{prompts.MAX_QUESTION_CHARS} کاراکتر بیشتر است. "
+            "لطفاً کوتاه‌ترش کنید و دوباره بپرسید."))
 
     try:
         final: dict[str, Any] = _GRAPH.invoke({"question": question})
@@ -164,6 +227,7 @@ def answer(question: str) -> Answer:
         pipeline=final.get("pipeline"),
         rows=final.get("rows") or [],
         summary=final.get("summary"),
+        repaired=bool(final.get("repaired")),
         message=final.get("message"),
         error=final.get("error"),
     )

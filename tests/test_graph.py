@@ -192,3 +192,113 @@ def test_no_summary_is_attempted_when_the_guard_rejects(wired, monkeypatch):
 def test_no_summary_is_attempted_for_a_plain_message(wired, monkeypatch):
     reply("این داده موجود نیست.", monkeypatch)
     assert graph.answer("آب و هوا؟").summary is None
+
+
+# --- خودترمیمی (قدم ۱۰) ----------------------------------------------------
+
+BAD_STAGE = {"collection": "inverter_data", "pipeline": [{"$facet": {"a": []}}]}
+STILL_BAD = {"collection": "inverter_data", "pipeline": [{"$out": "stolen"}]}
+
+
+def scripted(monkeypatch, *replies: str):
+    """مدلی که هر بار جواب بعدی فهرست را می‌دهد؛ خلاصه همیشه ثابت است."""
+    queue = list(replies)
+    seen: list[str] = []
+
+    def ask(prompt: str) -> llm.Result:
+        seen.append(prompt)
+        if prompt.startswith("You summarize"):
+            return llm.Result(ok=True, text="خلاصه.", reason="")
+        text = queue.pop(0) if queue else queue_last
+        return llm.Result(ok=True, text=text, reason="")
+
+    queue_last = replies[-1] if replies else "{}"
+    monkeypatch.setattr(graph.llm, "ask", ask)
+    return seen
+
+
+def test_a_rejected_query_is_repaired_and_then_succeeds(wired, monkeypatch):
+    """معیار پذیرش قدم ۱۰."""
+    scripted(monkeypatch, json.dumps(BAD_STAGE), json.dumps(GOOD))
+    result = graph.answer("سوال")
+    assert result.repaired is True
+    assert result.error is None
+    assert result.rows == [{"avg": 28.61}]
+
+
+def test_the_repaired_query_is_the_one_that_runs(wired, monkeypatch):
+    scripted(monkeypatch, json.dumps(BAD_STAGE), json.dumps(GOOD))
+    graph.answer("سوال")
+    assert wired.ran == [GOOD["pipeline"]]
+
+
+def test_the_repair_prompt_carries_the_failure_and_the_reason(wired, monkeypatch):
+    seen = scripted(monkeypatch, json.dumps(BAD_STAGE), json.dumps(GOOD))
+    graph.answer("سوال")
+    repair_prompt = next(p for p in seen if "===Your previous attempt failed" in p)
+    assert "$facet" in repair_prompt
+    assert "مرحله" in repair_prompt  # دلیل ردشدن، از خودِ گارد
+
+
+def test_a_repaired_query_still_has_to_pass_the_guard(wired, monkeypatch):
+    """مهم‌ترین تست این بخش: ترمیم نباید راه دور زدن گارد باشد."""
+    scripted(monkeypatch, json.dumps(BAD_STAGE), json.dumps(STILL_BAD))
+    result = graph.answer("سوال")
+    assert result.error is not None
+    assert wired.ran == []
+
+
+def test_repair_is_attempted_only_once(wired, monkeypatch):
+    seen = scripted(monkeypatch, json.dumps(BAD_STAGE), json.dumps(STILL_BAD))
+    graph.answer("سوال")
+    assert sum("===Your previous attempt failed" in p for p in seen) == 1
+
+
+def test_a_good_query_is_never_repaired(wired, monkeypatch):
+    seen = scripted(monkeypatch, json.dumps(GOOD))
+    result = graph.answer("سوال")
+    assert result.repaired is False
+    assert not any("===Your previous attempt failed" in p for p in seen)
+
+
+def test_a_failed_execution_is_also_repaired(monkeypatch, wired):
+    """نه فقط ردشدن در گارد — خطای خودِ دیتابیس هم شانس دوم دارد."""
+    broken = FakeCollection([], error=PyMongoError("unknown operator"))
+    monkeypatch.setattr(graph.db, "connect", lambda: FakeDatabase(inverter_data=broken))
+    seen = scripted(monkeypatch, json.dumps(GOOD), json.dumps(GOOD))
+    graph.answer("سوال")
+    assert any("===Your previous attempt failed" in p for p in seen)
+
+
+def test_a_repair_that_decides_the_data_is_missing_becomes_a_message(wired, monkeypatch):
+    scripted(monkeypatch, json.dumps(BAD_STAGE), "این داده در دیتابیس نیست.")
+    result = graph.answer("سوال")
+    assert result.message == "این داده در دیتابیس نیست."
+    assert result.error is None
+
+
+def test_a_message_is_never_repaired(wired, monkeypatch):
+    seen = scripted(monkeypatch, "این داده موجود نیست.")
+    graph.answer("سوال")
+    assert not any("===Your previous attempt failed" in p for p in seen)
+
+
+# --- سوال بیش از حد بلند -----------------------------------------------------
+
+def test_an_over_long_question_is_refused_not_truncated(wired, monkeypatch):
+    """کاربر باید بفهمد چرا جواب نگرفت، نه اینکه جوابِ نصف سوالش را بگیرد."""
+    seen = scripted(monkeypatch, json.dumps(GOOD))
+    result = graph.answer("ا" * (prompts_max() + 1))
+    assert result.error is not None
+    assert "کوتاه" in result.error
+    assert seen == []  # اصلاً به مدل نرفت
+
+
+def test_a_question_at_the_limit_still_works(wired, monkeypatch):
+    scripted(monkeypatch, json.dumps(GOOD))
+    assert graph.answer("ا" * prompts_max()).error is None
+
+
+def prompts_max() -> int:
+    import prompts
+    return prompts.MAX_QUESTION_CHARS
