@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import graph  # noqa: E402
 import llm  # noqa: E402
+import config  # noqa: E402
 
 GOOD = {"collection": "inverter_data",
         "pipeline": [{"$group": {"_id": None, "avg": {"$avg": "$int_temp"}}}]}
@@ -300,5 +301,4 @@ def test_a_question_at_the_limit_still_works(wired, monkeypatch):
 
 
 def prompts_max() -> int:
-    import prompts
-    return prompts.MAX_QUESTION_CHARS
+    return config.settings.max_question_chars

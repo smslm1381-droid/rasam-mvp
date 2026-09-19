@@ -24,21 +24,12 @@ import guard
 # در قدم ۱۵ این پوشه به‌ازای هر مشتری جدا می‌شود.
 KNOWLEDGE_DIR = config.PROJECT_ROOT / "knowledge"
 
-# سقف سوال کاربر. از این بیشتر، سوال **رد می‌شود** نه اینکه بریده شود: سوالِ
-# نصفه یعنی جوابِ نصفه، و کاربر هیچ‌وقت نمی‌فهمد چرا. بررسی‌اش در `graph.py`
-# انجام می‌شود، جایی که می‌تواند به‌صورت خطا برگردد (قاعده‌ی امنیتی ۷).
-MAX_QUESTION_CHARS = 2000
-
 QUESTION_TAG = "USER_QUESTION"
 
 # پیام خطای دیتابیس گاهی مقدار داکیومنت را بازتاب می‌دهد، پس کاملاً قابل اعتماد
 # نیست و کوتاه می‌شود. برای فهماندن اشتباه به مدل، چند صد کاراکتر کافی است.
 MAX_ERROR_CHARS = 300
 RESULT_TAG = "QUERY_RESULT"
-
-# سقف‌های آزموده‌شده برای نتیجه‌ای که به مدل داده می‌شود (همان بخش ۲).
-MAX_RESULT_ROWS = 30
-MAX_RESULT_CHARS = 4000
 
 # شش قاعده‌ی آزموده‌شده‌ی نسخه‌ی ۱. قاعده‌ی ۲ برای مونگو بازنویسی شده است.
 # قاعده‌ی ۵ مهم‌تر از چیزی است که به نظر می‌رسد: بدون آن، مدل برای سوال بی‌ربط
@@ -206,7 +197,7 @@ def build_query_prompt(schema: str, question: str, collections: set[str],
         return built
     pipeline, reason = failure
     return built + _FAILURE_TEMPLATE.format(
-        pipeline=json.dumps(pipeline, ensure_ascii=False)[:MAX_RESULT_CHARS],
+        pipeline=json.dumps(pipeline, ensure_ascii=False)[:config.settings.max_result_chars],
         reason=reason[:MAX_ERROR_CHARS],
     )
 
@@ -237,14 +228,14 @@ def build_summary_prompt(question: str, rows: list[dict]) -> str:
     ترتیب چهار بخش از نسخه‌ی ۱ آمده: سوال، تعداد کل، تعداد نشان‌داده‌شده، نتیجه.
     تعداد کل جدا گفته می‌شود تا مدل از روی ۳۰ ردیفِ بریده‌شده نتیجه‌ی غلط نگیرد.
     """
-    shown = rows[:MAX_RESULT_ROWS]
+    shown = rows[:config.settings.max_result_rows]
     # برخلاف سوال، نتیجه‌ی دیتابیس *بریده* می‌شود: کاربر نمی‌تواند خروجی
     # دیتابیس را کوتاه کند، و یک داکیومنت با فیلد چندهزارکاراکتری نباید
     # پرامپت را منفجر کند. تعداد کل ردیف‌ها جدا گفته می‌شود تا مدل بداند
     # چیزی را ندیده.
     csv_text = rows_to_csv(shown)
-    if len(csv_text) > MAX_RESULT_CHARS:
-        csv_text = csv_text[:MAX_RESULT_CHARS] + " …[بریده شد]"
+    if len(csv_text) > config.settings.max_result_chars:
+        csv_text = csv_text[:config.settings.max_result_chars] + " …[بریده شد]"
     return SUMMARY_TEMPLATE.format(
         question=wrap_untrusted(question, QUESTION_TAG),
         row_count=len(rows),

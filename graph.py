@@ -1,7 +1,7 @@
 """گراف پاسخ‌دادن به یک سوال: ساختن کوئری ← اعتبارسنجی ← اجرا ← خلاصه.
 
 اگر کوئری رد یا اجرایش ناموفق شود، خطا به مدل برمی‌گردد تا خودش اصلاحش کند
-(گره `repair`)، حداکثر تا سقف `MAX_ATTEMPTS` تلاش.
+(گره `repair`)، حداکثر تا سقف تنظیم‌شده‌ی تلاش‌ها.
 
 چرا گراف و نه یک تابع تودرتو: گره‌های بعدی (خلاصه، نمودار، خودترمیمی) بدون
 بازنویسی اضافه می‌شوند. مسیر خطا از هر گره مستقیم به خروجی می‌رود، پس هیچ
@@ -25,11 +25,6 @@ import db
 import guard
 import llm
 import prompts
-
-# تلاش اول + یک ترمیم. سقف داشتن اجباری است: بدون آن یک کوئری که مدل مدام
-# اشتباه می‌سازد، بی‌نهایت بار به سرویس می‌رود.
-MAX_ATTEMPTS = 2
-
 
 @dataclass
 class Answer:
@@ -174,7 +169,7 @@ def _next_or_repair(state: State) -> str:
         return END
     if not state.get("error"):
         return "continue"
-    return "repair" if state.get("attempts", 1) < MAX_ATTEMPTS else END
+    return "repair" if state.get("attempts", 1) < config.settings.max_attempts else END
 
 
 def _build():
@@ -207,10 +202,10 @@ def answer(question: str) -> Answer:
 
     # سوال بلند بریده نمی‌شود، رد می‌شود. سوالِ نصفه جوابِ نصفه می‌دهد و کاربر
     # هیچ‌وقت نمی‌فهمد چرا؛ بهتر است همین‌جا صریح بگوییم.
-    if len(question) > prompts.MAX_QUESTION_CHARS:
+    if len(question) > config.settings.max_question_chars:
         return Answer(question=question, error=(
             f"سوال شما {len(question)} کاراکتر است و از سقف "
-            f"{prompts.MAX_QUESTION_CHARS} کاراکتر بیشتر است. "
+            f"{config.settings.max_question_chars} کاراکتر بیشتر است. "
             "لطفاً کوتاه‌ترش کنید و دوباره بپرسید."))
 
     try:

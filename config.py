@@ -140,6 +140,10 @@ class Settings:
     llm_max_tokens: int
     llm_temperature: float
     llm_reasoning_effort: str | None
+    max_question_chars: int
+    max_result_rows: int
+    max_result_chars: int
+    max_attempts: int
     verbose: bool
 
     def __repr__(self) -> str:
@@ -193,6 +197,10 @@ def _load() -> Settings:
         llm_max_tokens=_number("LLM_MAX_TOKENS", 1024, int, "عدد صحیح"),
         llm_temperature=_number("LLM_TEMPERATURE", 0.1, float, "عدد اعشاری"),
         llm_reasoning_effort=_reasoning_effort(),
+        max_question_chars=_number("MAX_QUESTION_CHARS", 2000, int, "عدد صحیح"),
+        max_result_rows=_number("MAX_RESULT_ROWS", 30, int, "عدد صحیح"),
+        max_result_chars=_number("MAX_RESULT_CHARS", 4000, int, "عدد صحیح"),
+        max_attempts=_number("MAX_ATTEMPTS", 2, int, "عدد صحیح"),
         verbose=_flag("VERBOSE", False),
     )
 
