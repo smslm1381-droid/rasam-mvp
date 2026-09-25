@@ -8,7 +8,8 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter
+from functools import lru_cache
 
 from pymongo import MongoClient
 from pymongo.database import Database
@@ -30,14 +31,24 @@ FIELD_NOTES = {
 
 
 
+@lru_cache(maxsize=1)
+def _client() -> MongoClient:
+    """کلاینت مونگو یک‌بار ساخته می‌شود و تا پایان فرایند می‌ماند.
+
+    هر `MongoClient` یک استخر اتصال و چند thread دیده‌بان می‌سازد. ساختن آن
+    به‌ازای هر تماس، روی خط فرمان فقط کندی است ولی زیر API نشت است: هر درخواست
+    چند اتصال باز می‌کند که هیچ‌وقت بسته نمی‌شوند.
+    """
+    return MongoClient(config.settings.mongo_uri, serverSelectionTimeoutMS=5000)
+
+
 def connect() -> Database:
     """اتصال فقط-خواندنی به دیتابیس مشتری.
 
     تنها راه رسیدن بقیه‌ی کد به مونگو. رشته‌ی اتصال از کانفیگ می‌آید و کاربرش
     فقط نقش `read` دارد (قاعده‌ی امنیتی ۲).
     """
-    client = MongoClient(config.settings.mongo_uri, serverSelectionTimeoutMS=5000)
-    return client[config.settings.mongo_db]
+    return _client()[config.settings.mongo_db]
 
 
 def _type_name(value) -> str:
@@ -103,10 +114,47 @@ def describe_collection(db: Database, name: str) -> str:
 
 
 def describe_schema(db: Database) -> str:
-    """متن ساختار همه‌ی کالکشن‌ها — همان چیزی که در قدم ۶ وارد پرامپت می‌شود."""
-    return "\n\n".join(
-        describe_collection(db, name) for name in sorted(db.list_collection_names())
-    )
+    """متن ساختار کالکشن‌های **مجاز** — همان چیزی که وارد پرامپت می‌شود.
+
+    فقط فهرست سفید توصیف می‌شود، نه هرچه در دیتابیس هست. دو دلیل، و دومی
+    مهم‌تر است:
+
+    ۱. مدل نباید کالکشنی را پیشنهاد کند که گارد بعداً ردش می‌کند.
+    ۲. این متن **از سرور ما بیرون می‌رود** و به سرویس مدل می‌رسد، همراه نام
+       فیلدها و یک مقدار نمونه از هرکدام. دیتابیس مشتری ممکن است `users` یا
+       `billing` هم داشته باشد؛ کاربر فقط-خواندنی جلوی خواندنشان را نمی‌گیرد
+       (تصمیم ۳۰ نقشه). توصیف‌نکردنشان یعنی حتی یک نام فیلد هم بیرون نمی‌رود.
+    """
+    present = set(db.list_collection_names()) & set(config.settings.allowed_collections)
+    return "\n\n".join(describe_collection(db, name) for name in sorted(present))
+
+
+@lru_cache(maxsize=1)
+def schema_text() -> str:
+    """ساختار دیتابیس، یک‌بار در هر فرایند.
+
+    استخراجش کل کالکشن‌ها را می‌خواند (روی داده‌ی دمو ~۳٫۵ ثانیه). بدون این
+    حافظه، هر سوال یک اسکن کامل بود و زیر API هر درخواست یکی — گران برای ما و
+    فشار بی‌دلیل روی دیتابیس مشتری.
+
+    در عوض، ساختار تازه‌ی دیتابیس با راه‌اندازی دوباره‌ی برنامه دیده می‌شود.
+    برای داده‌ی تلمتری که قالبش ثابت است معامله‌ی درستی است؛ اگر روزی مشتری
+    ساختار عوض‌شونده داشت، اینجا جای گذاشتن یک زمان انقضاست.
+    """
+    return describe_schema(connect())
+
+
+def reset_cache() -> None:
+    """پاک‌کردن هر دو حافظه. برای تست و برای جایی که ساختار عوض شده باشد.
+
+    کلاینت پیش از رهاکردن بسته می‌شود؛ وگرنه threadهای دیده‌بانش تا زمان
+    جمع‌آوری حافظه زنده می‌مانند — در یک اجرای تست با صدها بار پاک‌کردن، همین
+    یعنی صدها thread بی‌صاحب.
+    """
+    if _client.cache_info().currsize:
+        _client().close()
+    _client.cache_clear()
+    schema_text.cache_clear()
 
 
 if __name__ == "__main__":

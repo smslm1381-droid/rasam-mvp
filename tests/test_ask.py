@@ -55,3 +55,29 @@ def test_the_summary_is_shown_above_the_table():
 def test_without_a_summary_the_table_still_shows():
     out = ask.render(Answer(question="q", rows=[{"avg": 28.6}]), show_query=False)
     assert "avg" in out
+
+
+def test_the_null_group_key_column_is_not_shown():
+    """`$group: {_id: null}` همیشه یک ستون `_id` خالی می‌سازد.
+
+    جواب نیست، کلید گروه است. در جدول فقط شلوغی می‌کند — ولی حذفش *فقط* در
+    نمایش است؛ `Answer.rows` و خروجی CSV و API دست‌نخورده می‌مانند.
+    """
+    answer = Answer(question="q", rows=[{"_id": None, "avg": 28.6}])
+    out = ask.render(answer, show_query=False)
+    assert "_id" not in out
+    assert "28.6" in out
+    assert answer.rows == [{"_id": None, "avg": 28.6}]
+
+
+def test_a_missing_cell_is_left_blank_not_printed_as_none():
+    answer = Answer(question="q", rows=[{"device": "in1", "avg": 28.6},
+                                        {"device": "in2", "avg": None}])
+    assert "None" not in ask.render(answer, show_query=False)
+
+
+def test_columns_come_from_every_row_not_just_the_first():
+    """در مونگو داکیومنت‌ها لزوماً فیلد یکسان ندارند."""
+    answer = Answer(question="q", rows=[{"a": 1}, {"b": 2}])
+    header = ask.render(answer, show_query=False).splitlines()[0]
+    assert "a" in header and "b" in header

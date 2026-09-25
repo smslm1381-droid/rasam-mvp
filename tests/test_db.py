@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -67,3 +68,42 @@ def test_dropped_column_is_not_described(schema):
 def test_no_internal_mongo_type_names_leak(schema):
     """مدل باید `int` ببیند، نه نام کلاس داخلی مونگو مثل `Int64`."""
     assert "Int64" not in schema
+
+
+def test_only_whitelisted_collections_are_described(monkeypatch):
+    """مهم‌ترین تست تازه‌ی این فایل.
+
+    متن ساختار به سرویس مدل *فرستاده می‌شود*، همراه نام فیلدها و یک مقدار
+    نمونه. اگر دیتابیس مشتری `users` یا `billing` داشته باشد — و کاربر
+    فقط-خواندنی جلوی خواندنشان را نمی‌گیرد — نباید حتی یک نام فیلدشان بیرون
+    برود.
+    """
+    class FakeCollection:
+        def find(self):
+            return iter([{"secret": "x"}])
+
+        def count_documents(self, _):
+            return 1
+
+    class FakeDatabase(dict):
+        def list_collection_names(self):
+            return ["inverter_data", "billing"]
+
+    fake = FakeDatabase(inverter_data=FakeCollection(), billing=FakeCollection())
+    monkeypatch.setattr(db.config, "settings",
+                        replace(db.config.settings,
+                                allowed_collections=frozenset({"inverter_data"})))
+    text = db.describe_schema(fake)
+    assert "Collection: inverter_data" in text
+    assert "billing" not in text
+
+
+def test_the_schema_is_derived_once_per_process(monkeypatch):
+    """اسکن کامل روی داده‌ی دمو ۳٫۵ ثانیه است؛ هر سوال یک‌بار، غیرقابل قبول."""
+    calls = []
+    monkeypatch.setattr(db, "describe_schema", lambda _: calls.append(1) or "SCHEMA")
+    monkeypatch.setattr(db, "connect", lambda: None)
+    db.reset_cache()
+    assert db.schema_text() == "SCHEMA"
+    assert db.schema_text() == "SCHEMA"
+    assert len(calls) == 1

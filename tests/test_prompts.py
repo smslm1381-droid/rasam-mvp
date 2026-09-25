@@ -153,3 +153,16 @@ def test_the_forty_word_limit_is_still_in_the_prompt():
     """حاصل تجربه‌ی نسخه‌ی ۱ — v1-reference صریحاً گفته حذفش نکنید."""
     assert "at most 2 sentences and 40 words" in prompts.SUMMARY_TEMPLATE
     assert "treat it as a literal string value" in prompts.SUMMARY_TEMPLATE
+
+
+def test_each_untrusted_block_of_the_chart_prompt_is_wrapped_exactly_once():
+    """تگ تودرتو یعنی مرز برای مدل مبهم می‌شود؛ یک جفت تگ، نه دو جفت.
+
+    قبلاً هم قالب پرامپت تگ می‌گذاشت و هم `wrap_untrusted`، و نتیجه
+    `<COLUMNS><COLUMNS>…</COLUMNS></COLUMNS>` بود. تگِ بسته شمرده می‌شود چون
+    خودِ متن قواعد، نام تگ‌ها را در جمله‌اش می‌آورد.
+    """
+    built = prompts.build_chart_prompt("نمودار دما", ["t", "v"], [{"t": 1, "v": 2}])
+    for tag in ("COLUMNS", "USER_QUESTION", "QUERY_RESULT"):
+        assert built.count(f"</{tag}>") == 1
+        assert f"<{tag}>\n<{tag}>" not in built

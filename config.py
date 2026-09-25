@@ -147,6 +147,7 @@ class Settings:
     max_question_chars: int
     max_result_rows: int
     max_result_chars: int
+    max_knowledge_chars: int
     max_attempts: int
     verbose: bool
 
@@ -212,6 +213,10 @@ def _load() -> Settings:
         max_question_chars=_number("MAX_QUESTION_CHARS", 2000, int, "عدد صحیح"),
         max_result_rows=_number("MAX_RESULT_ROWS", 30, int, "عدد صحیح"),
         max_result_chars=_number("MAX_RESULT_CHARS", 4000, int, "عدد صحیح"),
+        # بودجه‌ی دانش پرامپت (ساختار + مستندات + نمونه‌ها). زیر این عدد همه‌ی
+        # دانش کامل فرستاده می‌شود؛ بالای آن، بازیابی معنایی کوتاهش می‌کند.
+        # دانش مشتری دمو ۱۲٫۴ هزار کاراکتر است، پس این سقف دو برابر آن است.
+        max_knowledge_chars=_number("MAX_KNOWLEDGE_CHARS", 24_000, int, "عدد صحیح"),
         max_attempts=profile.limits.get("max_attempts", _number("MAX_ATTEMPTS", 2, int, "عدد صحیح")),
         verbose=_flag("VERBOSE", False),
     )

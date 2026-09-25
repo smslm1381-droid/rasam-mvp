@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import charting  # noqa: E402
+import db  # noqa: E402
 import graph  # noqa: E402
 import llm  # noqa: E402
 
@@ -55,10 +56,10 @@ def test_single_value_result_never_calls_the_chart_model(monkeypatch):
         return original(prompt)
 
     monkeypatch.setattr(graph.llm, "ask", ask)
-    monkeypatch.setattr(graph.db, "connect", lambda: {
+    monkeypatch.setattr(db, "connect", lambda: {
         "inverter_data": _Collection([{"avg": 28.6}]),
     })
-    monkeypatch.setattr(graph.db, "describe_schema", lambda _: "SCHEMA")
+    monkeypatch.setattr(db, "describe_schema", lambda _: "SCHEMA")
     monkeypatch.setattr(graph.llm, "ask", lambda prompt: _reply_for(prompt, calls))
     result = graph.answer("نمودار میانگین دما")
     assert result.chart is None
@@ -67,10 +68,10 @@ def test_single_value_result_never_calls_the_chart_model(monkeypatch):
 
 def test_a_question_without_chart_request_never_reaches_chart(monkeypatch):
     calls = []
-    monkeypatch.setattr(graph.db, "connect", lambda: {
+    monkeypatch.setattr(db, "connect", lambda: {
         "inverter_data": _Collection(ROWS),
     })
-    monkeypatch.setattr(graph.db, "describe_schema", lambda _: "SCHEMA")
+    monkeypatch.setattr(db, "describe_schema", lambda _: "SCHEMA")
 
     def ask(prompt):
         calls.append(prompt)

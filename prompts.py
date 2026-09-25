@@ -149,13 +149,13 @@ def wrap_untrusted(text: str, tag: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def _documentation() -> str:
+def documentation_text() -> str:
     """واژگان فارسی، توضیح کالکشن‌ها و تله‌های داده."""
     return (KNOWLEDGE_DIR / "documentation.md").read_text(encoding="utf-8").strip()
 
 
 @lru_cache(maxsize=1)
-def _examples() -> str:
+def examples_text() -> str:
     """نمونه‌های «سوال ← کوئری»، به‌صورت متنی آماده‌ی پرامپت.
 
     `why` هر نمونه هم وارد پرامپت می‌شود: مدل از دیدن *دلیل*، الگو را بهتر به
@@ -190,8 +190,8 @@ def build_query_prompt(schema: str, question: str, collections: set[str],
     """
     built = _TEMPLATE.format(
         schema=schema,
-        documentation=documentation if documentation is not None else _documentation(),
-        examples=examples if examples is not None else _examples(),
+        documentation=documentation if documentation is not None else documentation_text(),
+        examples=examples if examples is not None else examples_text(),
         rules=SECURITY_RULES,
         collections=", ".join(sorted(collections)),
         question=wrap_untrusted(question, QUESTION_TAG),
@@ -264,9 +264,9 @@ Use line for time trends, bar for comparisons, and scatter for correlations.
 If a chart adds no value, especially for one aggregate value, return
 {{"feasible": false, "reason": "<short Persian>"}}.
 
-<COLUMNS>{columns}</COLUMNS>
-<USER_QUESTION>{question}</USER_QUESTION>
-<QUERY_RESULT>{result}</QUERY_RESULT>"""
+{columns}
+{question}
+{result}"""
 
 
 def build_chart_prompt(question: str, columns: list[str], rows: list[dict]) -> str:

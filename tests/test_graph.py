@@ -16,6 +16,7 @@ from pymongo.errors import PyMongoError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import db  # noqa: E402
 import graph  # noqa: E402
 import llm  # noqa: E402
 import config  # noqa: E402
@@ -43,8 +44,8 @@ class FakeDatabase(dict):
 def wired(monkeypatch):
     """مدل و دیتابیس جعلی. تست‌ها فقط چیزی را که لازم دارند عوض می‌کنند."""
     collection = FakeCollection([{"avg": 28.61}])
-    monkeypatch.setattr(graph.db, "connect", lambda: FakeDatabase(inverter_data=collection))
-    monkeypatch.setattr(graph.db, "describe_schema", lambda _: "SCHEMA")
+    monkeypatch.setattr(db, "connect", lambda: FakeDatabase(inverter_data=collection))
+    monkeypatch.setattr(db, "describe_schema", lambda _: "SCHEMA")
     monkeypatch.setattr(graph.llm, "ask",
                         lambda _: llm.Result(ok=True, text=json.dumps(GOOD), reason=""))
     return collection
@@ -115,7 +116,7 @@ def test_a_model_failure_becomes_an_error(wired, monkeypatch):
 
 def test_a_database_failure_becomes_an_error(monkeypatch, wired):
     broken = FakeCollection([], error=PyMongoError("قطع شد"))
-    monkeypatch.setattr(graph.db, "connect", lambda: FakeDatabase(inverter_data=broken))
+    monkeypatch.setattr(db, "connect", lambda: FakeDatabase(inverter_data=broken))
     assert graph.answer("سوال").error is not None
 
 
@@ -136,16 +137,27 @@ def test_an_unexpected_crash_becomes_an_error_value(wired, monkeypatch):
 
 # --- تفکیک JSON از جمله -----------------------------------------------------
 
-@pytest.mark.parametrize("text, is_query", [
-    ('{"collection": "a", "pipeline": []}', True),
-    ("این داده موجود نیست.", False),
-    ("[1, 2, 3]", False),
-    ("", False),
+@pytest.mark.parametrize("text, kind", [
+    ('{"collection": "a", "pipeline": []}', "query"),
+    ("این داده موجود نیست.", "message"),
+    ("[1, 2, 3]", "error"),          # JSON هست ولی شیء نیست
+    ('{"collection": "a"}}', "query"),  # آکولاد اضافه، قابل نجات
+    ("", "message"),
 ])
-def test_json_means_a_query_attempt_anything_else_is_a_sentence(text, is_query):
-    parsed, message = graph._parse(text)
-    assert (parsed is not None) is is_query
-    assert (message is None) is is_query
+def test_a_broken_query_is_never_mistaken_for_a_persian_sentence(text, kind):
+    """تا دیروز JSON نصفه‌نیمه به‌عنوان «جواب» به کاربر نشان داده می‌شد."""
+    parsed, message, error = graph._parse(text)
+    assert (parsed is not None) is (kind == "query")
+    assert (message is not None) is (kind == "message")
+    assert (error is not None) is (kind == "error")
+
+
+def test_a_malformed_query_reaches_the_user_as_an_error_not_as_an_answer(wired, monkeypatch):
+    reply('{"collection": "inverter_data", "pipeline": [{"$match": ', monkeypatch)
+    result = graph.answer("میانگین دما؟")
+    assert result.error is not None
+    assert result.message is None
+    assert wired.ran == []
 
 
 # --- خلاصه (قدم ۹) ----------------------------------------------------------
@@ -265,7 +277,7 @@ def test_a_good_query_is_never_repaired(wired, monkeypatch):
 def test_a_failed_execution_is_also_repaired(monkeypatch, wired):
     """نه فقط ردشدن در گارد — خطای خودِ دیتابیس هم شانس دوم دارد."""
     broken = FakeCollection([], error=PyMongoError("unknown operator"))
-    monkeypatch.setattr(graph.db, "connect", lambda: FakeDatabase(inverter_data=broken))
+    monkeypatch.setattr(db, "connect", lambda: FakeDatabase(inverter_data=broken))
     seen = scripted(monkeypatch, json.dumps(GOOD), json.dumps(GOOD))
     graph.answer("سوال")
     assert any("===Your previous attempt failed" in p for p in seen)
@@ -302,3 +314,32 @@ def test_a_question_at_the_limit_still_works(wired, monkeypatch):
 
 def prompts_max() -> int:
     return config.settings.max_question_chars
+
+
+# --- متن اضافه دور کوئری ---------------------------------------------------
+
+@pytest.mark.parametrize("text", [
+    '{"collection": "inverter_data", "pipeline": [{"$match": {}}]}}',   # آکولاد اضافه
+    'بله:\n{"collection": "inverter_data", "pipeline": [{"$match": {}}]}\nتمام.',
+    '{"collection": "inverter_data", "pipeline": [{"$match": {}}]} thinking done',
+])
+def test_a_valid_query_is_not_thrown_away_because_of_extra_text(text):
+    """مدل‌های واقعی گاهی بعد از JSON چیز اضافه می‌گذارند.
+
+    دور ریختن یک کوئریِ درست به‌خاطر یک `}` زیادی، هزینه‌ی بی‌دلیل است — و آنچه
+    بیرون کشیده می‌شود باز هم از گارد رد می‌شود.
+    """
+    parsed, message, error = graph._parse(text)
+    assert parsed == {"collection": "inverter_data", "pipeline": [{"$match": {}}]}
+    assert message is None and error is None
+
+
+def test_a_brace_inside_a_string_does_not_confuse_the_extraction():
+    parsed, _, _ = graph._parse('{"collection": "a", "note": "}{", "pipeline": []}}')
+    assert parsed["note"] == "}{"
+
+
+def test_text_without_any_object_is_still_an_error(wired, monkeypatch):
+    reply('{"collection": "inverter_data", "pipeline": [', monkeypatch)
+    result = graph.answer("سوال")
+    assert result.error is not None and result.message is None

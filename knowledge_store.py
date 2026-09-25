@@ -66,6 +66,24 @@ class KnowledgeStore:
         self._replace("documentation", _documentation_documents(knowledge_dir))
         self._replace("examples", _example_documents(knowledge_dir))
 
+    def select(self, question: str, full: dict[str, str], budget: int) -> dict[str, str]:
+        """دانشی که به پرامپت می‌رود: کامل تا وقتی جا می‌شود، وگرنه مرتبط‌ترین.
+
+        بازیابی معنایی برای مشتری‌ای ساخته شد که ۵۰ کالکشن دارد و schemaاش در
+        پرامپت جا نمی‌شود. برای مشتری فعلی با چهار کالکشن، *باختن* است نه بردن:
+        روی داده‌ی واقعی سنجیده شد که برای سوال «میانگین توان راکتیو اینورترها»
+        هم schema کالکشن `inverter_data` از پرامپت می‌افتاد و هم تله‌ی
+        `tot_reactive_pow` — یعنی دقیقاً همان دو چیزی که بدون آن‌ها جواب این
+        سوال غلط است.
+
+        پس قاعده این است: تا وقتی همه‌ی دانش در بودجه جا می‌شود، هیچ‌چیز حذف
+        نمی‌شود. بازیابی وقتی وارد می‌شود که چاره‌ای نباشد — و آن‌وقت هم
+        کم‌کردن دانش یک انتخاب آگاهانه است، نه اتفاقی که کسی متوجهش نشود.
+        """
+        if sum(len(text) for text in full.values()) <= budget:
+            return full
+        return self.retrieve(question)
+
     def retrieve(self, question: str, limit: int = 3) -> dict[str, str]:
         """مرتبط‌ترین قطعه از هر نوع دانش را به متن آماده‌ی پرامپت تبدیل می‌کند."""
         results = {}

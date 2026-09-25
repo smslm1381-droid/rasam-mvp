@@ -22,7 +22,8 @@ Every collection has `timestamp`, `ingested_at` and `device_code`.
 | «تولید»، «تولیدی»، «بازده» | energy counters — `daily_pow_yield`, `monthly_pow_yield`, `tot_pow_yield` |
 | «دما»، «حرارت» | `int_temp` |
 | «خطا»، «خرابی»، «مشکل»، «آلارم» | `fa_al_code` — read the trap below first |
-| «ولتاژ» | `voltage_*` |
+| «ولتاژ»، «ولتاژ متوسط» | `voltage_avg` — the phase voltage (~227 V), NOT `voltage_ll_avg` |
+| «ولتاژ خط به خط»، «ولتاژ خطی» | `voltage_ll_avg` (~393 V), only when the user says so |
 | «جریان» | `current_*` |
 | «توان» | the `*_pow` fields (instantaneous) |
 | «انرژی» | the `*_eng_*` / `*_yield` fields (cumulative) |

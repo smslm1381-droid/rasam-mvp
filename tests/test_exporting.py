@@ -34,3 +34,26 @@ def test_cli_writes_requested_csv(monkeypatch, tmp_path):
     monkeypatch.setattr(ask, "answer", lambda _: Answer(question="q", rows=ROWS))
     assert ask.main(["--csv", str(path), "q"]) == 0
     assert path.read_text(encoding="utf-8") == exporting.to_csv(ROWS)
+
+def test_a_cell_that_excel_would_run_as_a_formula_is_neutralized():
+    """محتوای دیتابیس غیرقابل‌اعتماد است.
+
+    سلولی که با `=` شروع شود، Excel موقع باز کردن فایل *اجرایش* می‌کند — یعنی
+    متنی که کسی در یک فیلد دیتابیس نوشته، روی کامپیوتر گیرنده‌ی فایل فرمان
+    می‌شود.
+    """
+    rows = [{"note": "=HYPERLINK(\"http://evil\",\"click\")", "other": "@SUM(A1)"}]
+    text = exporting.to_csv(rows)
+    assert "'=HYPERLINK" in text
+    assert "'@SUM" in text
+
+    sheet = load_workbook(io.BytesIO(exporting.to_excel(rows))).active
+    assert sheet.cell(row=2, column=1).value.startswith("'=")
+
+
+def test_a_negative_number_is_still_a_number_not_text():
+    """`-27.31` عدد منفی است نه فرمول؛ متن‌کردنش یعنی خراب‌کردن جواب."""
+    rows = [{"avg": -27.31}]
+    assert exporting.to_csv(rows) == "avg\n-27.31\n"
+    sheet = load_workbook(io.BytesIO(exporting.to_excel(rows))).active
+    assert sheet.cell(row=2, column=1).value == -27.31

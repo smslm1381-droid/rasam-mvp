@@ -6,12 +6,14 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
+from bson import ObjectId
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import config  # noqa: E402
 import graph  # noqa: E402
+from agents.mongo.agent import _plain  # noqa: E402
 from api import main  # noqa: E402
 
 
@@ -68,3 +70,57 @@ def test_invalid_export_format_is_rejected(monkeypatch):
         "/ask", headers={"X-API-Key": "secret"},
         json={"question": "دما؟", "export": "pdf"})
     assert response.status_code == 422
+
+
+def test_a_mongo_id_does_not_break_the_json_response(monkeypatch):
+    """این پاسخ قبلاً ۵۰۰ می‌داد: `ObjectId` به JSON تبدیل نمی‌شود.
+
+    ایجنت مونگو حالا ردیف‌ها را ساده می‌کند، پس هر کوئری‌ای که `_id` واقعی
+    برمی‌گرداند — یعنی هر کوئری بدون `$group` — از API هم عبور می‌کند.
+    """
+    identifier = ObjectId()
+    rows = [_plain({"_id": identifier, "int_temp": 28.6})]
+    monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
+    monkeypatch.setattr(main, "answer", lambda question: graph.Answer(
+        question=question, rows=rows))
+    response = client.post(
+        "/ask", headers={"X-API-Key": "secret"}, json={"question": "دما؟"})
+    assert response.status_code == 200
+    assert response.json()["rows"] == [{"_id": str(identifier), "int_temp": 28.6}]
+
+
+def test_a_failed_answer_is_not_turned_into_an_empty_file(monkeypatch):
+    """قبلاً سوالِ ردشده یک CSV خالی با کد ۲۰۰ می‌گرفت و خطا گم می‌شد."""
+    monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
+    monkeypatch.setattr(main, "answer", lambda question: graph.Answer(
+        question=question, error="کوئری ساخته‌شده پذیرفته نشد."))
+    response = client.post(
+        "/ask", headers={"X-API-Key": "secret"},
+        json={"question": "دما؟", "export": "csv"})
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json()["error"] == "کوئری ساخته‌شده پذیرفته نشد."
+
+
+def test_export_is_refused_when_the_profile_does_not_have_it(monkeypatch):
+    """قابلیت‌های پروفایل باید اثر داشته باشند، نه اینکه تزئینی بمانند."""
+    profile = replace(config.settings.customer, capabilities=frozenset({"chart"}))
+    monkeypatch.setattr(config, "settings",
+                        replace(config.settings, api_key="secret", customer=profile))
+    monkeypatch.setattr(main, "answer", lambda question: graph.Answer(
+        question=question, rows=[{"avg": 1}]))
+    response = client.post(
+        "/ask", headers={"X-API-Key": "secret"},
+        json={"question": "دما؟", "export": "csv"})
+    assert response.status_code == 403
+
+
+def test_a_non_ascii_configured_key_refuses_instead_of_crashing(monkeypatch):
+    """اگر کلید سرور فارسی باشد، `compare_digest` استثنا می‌داد و پاسخ ۵۰۰ می‌شد.
+
+    هدر HTTP خودش نمی‌تواند حرف فارسی حمل کند، پس چنین کلیدی هرگز تطبیق
+    نمی‌شود — ولی جوابش باید «کلید غلط» باشد، نه خطای سرور.
+    """
+    monkeypatch.setattr(config, "settings", replace(config.settings, api_key="کلید-قوی"))
+    assert client.post("/ask", headers={"X-API-Key": "wrong"},
+                       json={"question": "دما؟"}).status_code == 401

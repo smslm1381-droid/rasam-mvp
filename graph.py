@@ -19,14 +19,11 @@ from functools import lru_cache
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
-from pymongo.errors import PyMongoError
 
 import config
 import charting
-import db
-import guard
-import llm
 import knowledge_store
+import llm
 import prompts
 from agents import registry
 
@@ -69,11 +66,62 @@ class State(TypedDict, total=False):
     max_time_ms: int
 
 
-def _parse(text: str) -> tuple[dict | None, str | None]:
-    """خروجی مدل را به «کوئری» یا «جمله‌ی فارسی» تفکیک می‌کند.
+# نشانه‌ی اینکه مدل *قصد* کوئری داشته، حتی اگر نتیجه JSON معتبری نباشد.
+_JSON_START = ("{", "[")
+
+_BROKEN_JSON = (
+    "مدل چیزی شبیه کوئری برگرداند که JSON معتبری نبود. "
+    "دوباره بپرسید؛ اگر تکرار شد، مدل تنظیم‌شده در RASAM_LLM_MODEL را عوض کنید."
+)
+
+
+def _balanced_object(text: str) -> str | None:
+    """از اولین `{`، تا آکولادِ متناظرش را برمی‌گرداند.
+
+    چرا لازم شد: بعضی مدل‌ها بعد از شیء JSON چیز اضافه می‌گذارند — یک `}`
+    زیادی، یک جمله‌ی توضیح، یا متن فکرکردنشان. `json.loads` روی کل متن شکست
+    می‌خورد و یک کوئریِ کاملاً درست دور ریخته می‌شود.
+
+    این *حدس زدن* نیست: فقط آکولادها شمرده می‌شوند و رشته‌های داخل JSON (که
+    ممکن است خودشان آکولاد داشته باشند) رد می‌شوند. چیزی که برمی‌گردد باز هم
+    باید از `json.loads` و بعد از گارد رد شود.
+    """
+    start = text.find("{")
+    if start < 0:
+        return None
+
+    depth, in_string, escaped = 0, False, False
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+    return None
+
+
+def _parse(text: str) -> tuple[dict | None, str | None, str | None]:
+    """خروجی مدل را سه‌راهی تفکیک می‌کند: کوئری، جمله‌ی فارسی، یا خطا.
 
     قاعده‌ی تشخیص از v1-reference بخش ۴: اگر JSON معتبر بود، تلاش برای کوئری
     بوده؛ وگرنه جمله‌ای است که طبق قاعده‌ی ۵ پرامپت داده شده.
+
+    حالت سوم از یک شکست واقعی آمد: مدلی یک `}` اضافه در جواب گذاشت، JSON از هم
+    پاشید، و آن متن به‌عنوان «جمله‌ی فارسی» پذیرفته شد — کاربر به‌جای جواب، یک
+    خط JSON خام دید و برنامه آن را موفقیت شمرد. پس متنی که با `{` یا `[` شروع
+    می‌شود هرگز جمله نیست: یا کوئری است یا خطا.
 
     بلوک markdown با اینکه قاعده‌ی ۶ منعش کرده پاک می‌شود، چون مدل‌ها گاهی
     اضافه‌اش می‌کنند و ردکردن یک کوئری سالم به‌خاطر سه بک‌تیک بی‌دلیل است.
@@ -82,8 +130,27 @@ def _parse(text: str) -> tuple[dict | None, str | None]:
     try:
         parsed = json.loads(stripped)
     except json.JSONDecodeError:
-        return None, text
-    return (parsed, None) if isinstance(parsed, dict) else (None, text)
+        parsed = _retry_as_object(stripped)
+        if parsed is None:
+            if stripped.startswith(_JSON_START):
+                return None, None, _BROKEN_JSON
+            return None, text, None
+    if isinstance(parsed, dict):
+        return parsed, None, None
+    # JSON معتبر ولی نه یک شیء: مثلاً فقط pipeline بدون نام کالکشن.
+    return None, None, _BROKEN_JSON
+
+
+def _retry_as_object(text: str) -> dict | None:
+    """تلاش دوم: فقط شیء JSON را از دل متن بیرون بکش و همان را بخوان."""
+    candidate = _balanced_object(text)
+    if candidate is None:
+        return None
+    try:
+        parsed = json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
 
 
 def generate(state: State) -> State:
@@ -93,8 +160,7 @@ def generate(state: State) -> State:
     except Exception as error:  # noqa: BLE001 — backend خطا را به مقدار تبدیل می‌کند
         return {"error": f"اتصال به دیتابیس برقرار نشد: {error}"}
 
-    store = _knowledge_store(schema)
-    knowledge = store.retrieve(state["question"])
+    knowledge = _knowledge(state["question"], schema)
     allowed = config.settings.allowed_collections
     reply = llm.ask(prompts.build_query_prompt(
         knowledge["schema"], state["question"], allowed,
@@ -103,7 +169,9 @@ def generate(state: State) -> State:
     if not reply.ok:
         return {"error": reply.reason}
 
-    parsed, message = _parse(reply.text)
+    parsed, message, error = _parse(reply.text)
+    if error:
+        return {"error": error}
     if parsed is None:
         return {"message": message}
     return {"collection": parsed.get("collection"), "pipeline": parsed.get("pipeline"),
@@ -115,6 +183,21 @@ def prepare(state: State) -> State:
     return {"want_chart": (
         "chart" in config.settings.customer.capabilities
         and charting.wants_chart(state["question"]))}
+
+
+def _knowledge(question: str, schema: str) -> dict[str, str]:
+    """سه بخش دانشِ ورودی پرامپت: ساختار، مستندات، نمونه‌ها.
+
+    تا وقتی در بودجه جا می‌شوند کامل می‌روند؛ از آن به بعد شاخص معنایی
+    مرتبط‌ترین‌ها را انتخاب می‌کند (`KnowledgeStore.select`).
+    """
+    return _knowledge_store(schema).select(
+        question,
+        {"schema": schema,
+         "documentation": prompts.documentation_text(),
+         "examples": prompts.examples_text()},
+        config.settings.max_knowledge_chars,
+    )
 
 
 @lru_cache(maxsize=8)
@@ -158,7 +241,7 @@ def repair(state: State) -> State:
     except Exception:  # noqa: BLE001 — ترمیم در تلاش بعدی دوباره امتحان می‌شود
         return {"attempts": attempts}
 
-    knowledge = _knowledge_store(schema).retrieve(state["question"])
+    knowledge = _knowledge(state["question"], schema)
     reply = llm.ask(prompts.build_query_prompt(
         knowledge["schema"], state["question"], config.settings.allowed_collections,
         want_chart=state.get("want_chart", False),
@@ -168,7 +251,9 @@ def repair(state: State) -> State:
     if not reply.ok:
         return {"attempts": attempts}
 
-    parsed, message = _parse(reply.text)
+    parsed, message, error = _parse(reply.text)
+    if error:
+        return {"attempts": attempts, "error": error}
     if parsed is None:
         # مدل به این نتیجه رسیده که سوال از این داده قابل جواب نیست.
         return {"attempts": attempts, "message": message, "error": None}
