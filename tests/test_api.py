@@ -48,3 +48,23 @@ def test_ask_serializes_answer_without_adding_logic(monkeypatch):
         "message": None,
         "error": None,
     }
+
+
+def test_ask_can_return_csv(monkeypatch):
+    monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
+    monkeypatch.setattr(main, "answer", lambda question: graph.Answer(
+        question=question, rows=[{"avg": 28.6}]))
+    response = client.post(
+        "/ask", headers={"X-API-Key": "secret"},
+        json={"question": "دما؟", "export": "csv"})
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert response.text == "avg\n28.6\n"
+
+
+def test_invalid_export_format_is_rejected(monkeypatch):
+    monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
+    response = client.post(
+        "/ask", headers={"X-API-Key": "secret"},
+        json={"question": "دما؟", "export": "pdf"})
+    assert response.status_code == 422

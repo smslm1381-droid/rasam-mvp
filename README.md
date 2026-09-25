@@ -45,6 +45,8 @@ python -c "import config; print(config.settings)"
 | `docker compose up -d` | مونگوی محلی توسعه | ۲ |
 | `python scripts/seed_mongo.py` | پرکردن دیتابیس از CSVها | ۲ |
 | `python ask.py "سوال شما"` | پرسیدن سوال | ۶ |
+| `python ask.py --csv result.csv "سوال شما"` | ذخیره‌ی نتیجه به CSV | ۱۴ |
+| `python ask.py --excel result.xlsx "سوال شما"` | ذخیره‌ی نتیجه به Excel | ۱۴ |
 | `uvicorn api.main:app --reload` | اجرای API | ۱۳ |
 | `pytest` | تست‌ها | ۲ |
 
@@ -83,6 +85,16 @@ curl -X POST http://127.0.0.1:8000/ask \
 	-d '{"question":"میانگین دمای داخلی اینورترها چقدر است؟"}'
 ```
 
+برای دریافت فایل از API، مقدار `export` را `csv` یا `excel` بفرستید:
+
+```bash
+curl -X POST http://127.0.0.1:8000/ask \
+	-H 'X-API-Key: CHANGE_ME_API_KEY' \
+	-H 'Content-Type: application/json' \
+	-d '{"question":"میانگین دما؟","export":"csv"}' \
+	-o result.csv
+```
+
 ## وضعیت
 
-فاز ۳ — API آماده است؛ قدم بعدی صادرات نتیجه است.
+فاز ۳ — API و صادرات نتیجه آماده‌اند؛ قدم بعدی پروفایل مشتری و قابلیت‌ها است.

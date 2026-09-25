@@ -7,8 +7,11 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
+from pathlib import Path
 
+import exporting
 from graph import Answer, answer
 
 
@@ -45,12 +48,33 @@ def render(result: Answer, show_query: bool) -> str:
     return "\n\n".join(parts)
 
 
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="پرسیدن سوال از رصام")
+    parser.add_argument("question", nargs="*", help="سوال فارسی")
+    parser.add_argument("--query", action="store_true", help="نمایش کوئری")
+    output = parser.add_mutually_exclusive_group()
+    output.add_argument("--csv", type=Path, metavar="PATH", help="ذخیره‌ی نتیجه به CSV")
+    output.add_argument("--excel", type=Path, metavar="PATH", help="ذخیره‌ی نتیجه به Excel")
+    return parser
+
+
+def _export(result: Answer, csv_path: Path | None, excel_path: Path | None) -> None:
+    if csv_path:
+        exporting.write_csv(result.rows, csv_path)
+        print(f"نتیجه در {csv_path} ذخیره شد.")
+    if excel_path:
+        exporting.write_excel(result.rows, excel_path)
+        print(f"نتیجه در {excel_path} ذخیره شد.")
+
+
 def main(argv: list[str]) -> int:
-    flags = {a for a in argv if a.startswith("--")}
-    question = " ".join(a for a in argv if not a.startswith("--"))
+    args = _parser().parse_args(argv)
+    question = " ".join(args.question)
 
     result = answer(question)
-    print(render(result, show_query="--query" in flags))
+    print(render(result, show_query=args.query))
+    if not result.error and not result.message:
+        _export(result, args.csv, args.excel)
     return 1 if result.error else 0
 
 
