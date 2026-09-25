@@ -21,6 +21,7 @@ from langgraph.graph import END, START, StateGraph
 from pymongo.errors import PyMongoError
 
 import config
+import charting
 import db
 import guard
 import llm
@@ -40,6 +41,7 @@ class Answer:
     pipeline: list[dict] | None = None
     rows: list[dict] = field(default_factory=list)
     summary: str | None = None
+    chart: dict[str, Any] | None = None
     # آیا جواب بعد از یک بار اصلاح به دست آمد. برای کاربر یعنی «این جواب
     # ارزان به دست نیامد»، و برای ما نشانه‌ای که پرامپت جای بهترشدن دارد.
     repaired: bool = False
@@ -55,6 +57,8 @@ class State(TypedDict, total=False):
     pipeline: list[dict] | None
     rows: list[dict]
     summary: str | None
+    chart: dict[str, Any] | None
+    want_chart: bool
     attempts: int
     repaired: bool
     message: str | None
@@ -87,7 +91,8 @@ def generate(state: State) -> State:
         return {"error": f"اتصال به دیتابیس برقرار نشد: {error}"}
 
     allowed = config.settings.allowed_collections
-    reply = llm.ask(prompts.build_query_prompt(schema, state["question"], allowed))
+    reply = llm.ask(prompts.build_query_prompt(
+        schema, state["question"], allowed, want_chart=state.get("want_chart", False)))
     if not reply.ok:
         return {"error": reply.reason}
 
@@ -96,6 +101,11 @@ def generate(state: State) -> State:
         return {"message": message}
     return {"collection": parsed.get("collection"), "pipeline": parsed.get("pipeline"),
             "attempts": 1}
+
+
+def prepare(state: State) -> State:
+    """پیش از تماس با مدل، خواست صریح نمودار را ثبت می‌کند."""
+    return {"want_chart": charting.wants_chart(state["question"])}
 
 
 def validate(state: State) -> State:
@@ -135,6 +145,7 @@ def repair(state: State) -> State:
 
     reply = llm.ask(prompts.build_query_prompt(
         schema, state["question"], config.settings.allowed_collections,
+        want_chart=state.get("want_chart", False),
         failure=(state.get("pipeline"), state.get("error") or ""),
     ))
     if not reply.ok:
@@ -158,6 +169,18 @@ def summarize(state: State) -> State:
     return {"summary": reply.text if reply.ok else None}
 
 
+def chart(state: State) -> State:
+    """گره نمودار: ابتدا بررسی محلی، سپس دریافت و پاک‌سازی مشخصات مدل."""
+    rows = state.get("rows") or []
+    possible, _ = charting.local_check(rows)
+    if not possible:
+        return {"chart": None}
+    reply = llm.ask(charting.build_prompt(state["question"], rows))
+    if not reply.ok:
+        return {"chart": None}
+    return {"chart": charting.parse_and_validate(reply.text or "", rows)}
+
+
 def _next_after(state: State) -> str:
     """بعد از گره تولید: یا ادامه، یا پایان."""
     return END if state.get("error") or state.get("message") else "continue"
@@ -172,14 +195,22 @@ def _next_or_repair(state: State) -> str:
     return "repair" if state.get("attempts", 1) < config.settings.max_attempts else END
 
 
+def _next_after_summary(state: State) -> str:
+    """فقط سوالی که نمودار خواسته باشد به گره نمودار می‌رسد."""
+    return "chart" if state.get("want_chart") else END
+
+
 def _build():
     graph = StateGraph(State)
+    graph.add_node("prepare", prepare)
     graph.add_node("generate", generate)
     graph.add_node("validate", validate)
     graph.add_node("execute", execute)
     graph.add_node("summarize", summarize)
     graph.add_node("repair", repair)
-    graph.add_edge(START, "generate")
+    graph.add_node("chart", chart)
+    graph.add_edge(START, "prepare")
+    graph.add_edge("prepare", "generate")
     graph.add_conditional_edges("generate", _next_after, {"continue": "validate", END: END})
     graph.add_conditional_edges("validate", _next_or_repair,
                                 {"continue": "execute", "repair": "repair", END: END})
@@ -188,7 +219,8 @@ def _build():
     # ترمیم همیشه به اعتبارسنجی برمی‌گردد: هیچ کوئری اصلاح‌شده‌ای بدون گذشتن
     # از گارد اجرا نمی‌شود.
     graph.add_conditional_edges("repair", _next_after, {"continue": "validate", END: END})
-    graph.add_edge("summarize", END)
+    graph.add_conditional_edges("summarize", _next_after_summary, {"chart": "chart", END: END})
+    graph.add_edge("chart", END)
     return graph.compile()
 
 
@@ -222,6 +254,7 @@ def answer(question: str) -> Answer:
         pipeline=final.get("pipeline"),
         rows=final.get("rows") or [],
         summary=final.get("summary"),
+        chart=final.get("chart"),
         repaired=bool(final.get("repaired")),
         message=final.get("message"),
         error=final.get("error"),
