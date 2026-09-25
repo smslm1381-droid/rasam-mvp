@@ -122,6 +122,7 @@ def _hide_password(uri: str) -> str:
 @dataclass(frozen=True, repr=False)
 class Settings:
     customer: CustomerProfile
+    connection_uri: str
     mongo_uri: str
     mongo_db: str
     # فقط اسکریپت seed این را می‌خواهد. اجباری‌کردنش یعنی مسیر عادیِ پاسخ به
@@ -185,6 +186,7 @@ def _load() -> Settings:
         )
     return Settings(
         customer=profile,
+        connection_uri=mongo_uri,
         mongo_uri=mongo_uri,
         mongo_db=_env("MONGO_DB"),
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),

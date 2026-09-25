@@ -28,6 +28,7 @@ import guard
 import llm
 import knowledge_store
 import prompts
+from agents import registry
 
 @dataclass
 class Answer:
@@ -88,8 +89,8 @@ def _parse(text: str) -> tuple[dict | None, str | None]:
 def generate(state: State) -> State:
     """گره ۱ — از سوال، کوئری می‌سازد."""
     try:
-        schema = db.describe_schema(db.connect())
-    except PyMongoError as error:
+        schema = registry.get_agent().describe_schema()
+    except Exception as error:  # noqa: BLE001 — backend خطا را به مقدار تبدیل می‌کند
         return {"error": f"اتصال به دیتابیس برقرار نشد: {error}"}
 
     store = _knowledge_store(schema)
@@ -128,11 +129,8 @@ def _knowledge_store(schema: str) -> knowledge_store.KnowledgeStore:
 
 def validate(state: State) -> State:
     """گره ۲ — گارد. تنها راه رسیدن کوئری به دیتابیس."""
-    checked = guard.check(
-        state.get("pipeline"),
-        state.get("collection") or "",
-        set(config.settings.allowed_collections),
-    )
+    agent = registry.get_agent()
+    checked = agent.validate_query(state.get("collection") or "", state.get("pipeline"))
     if not checked.ok:
         return {"error": f"کوئری ساخته‌شده پذیرفته نشد: {checked.reason}"}
     return {"pipeline": checked.pipeline, "max_time_ms": checked.max_time_ms}
@@ -141,10 +139,9 @@ def validate(state: State) -> State:
 def execute(state: State) -> State:
     """گره ۳ — اجرای کوئریِ تاییدشده."""
     try:
-        database = db.connect()
-        rows = list(database[state["collection"]].aggregate(
-            state["pipeline"], maxTimeMS=state["max_time_ms"]))
-    except PyMongoError as error:
+        rows = registry.get_agent().execute(
+            state["collection"], state["pipeline"], state["max_time_ms"])
+    except Exception as error:  # noqa: BLE001 — backend خطا را به مقدار تبدیل می‌کند
         return {"error": f"اجرای کوئری روی دیتابیس شکست خورد: {error}"}
     return {"rows": rows}
 
@@ -157,8 +154,8 @@ def repair(state: State) -> State:
     """
     attempts = state.get("attempts", 1) + 1
     try:
-        schema = db.describe_schema(db.connect())
-    except PyMongoError:
+        schema = registry.get_agent().describe_schema()
+    except Exception:  # noqa: BLE001 — ترمیم در تلاش بعدی دوباره امتحان می‌شود
         return {"attempts": attempts}
 
     knowledge = _knowledge_store(schema).retrieve(state["question"])

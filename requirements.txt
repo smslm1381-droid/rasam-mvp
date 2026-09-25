@@ -30,5 +30,8 @@ openpyxl>=3.1
 # قدم ۱۶ — بازیابی معنایی دانش
 chromadb>=0.5
 
+# قدم ۱۷ — اتصال PostgreSQL
+psycopg[binary]>=3.2
+
 # تست
 pytest>=8.2
