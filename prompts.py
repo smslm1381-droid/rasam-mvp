@@ -175,7 +175,9 @@ def _examples() -> str:
 
 def build_query_prompt(schema: str, question: str, collections: set[str],
                        failure: tuple[Any, str] | None = None,
-                       want_chart: bool = False) -> str:
+                       want_chart: bool = False,
+                       documentation: str | None = None,
+                       examples: str | None = None) -> str:
     """پرامپت تولید کوئری: ساختار دیتابیس + قواعد امنیتی + سوال محصورشده.
 
     نام کالکشن‌های مجاز صریحاً در پرامپت می‌آید تا مدل از فهرست بیرون نزند.
@@ -188,8 +190,8 @@ def build_query_prompt(schema: str, question: str, collections: set[str],
     """
     built = _TEMPLATE.format(
         schema=schema,
-        documentation=_documentation(),
-        examples=_examples(),
+        documentation=documentation if documentation is not None else _documentation(),
+        examples=examples if examples is not None else _examples(),
         rules=SECURITY_RULES,
         collections=", ".join(sorted(collections)),
         question=wrap_untrusted(question, QUESTION_TAG),

@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -25,6 +26,7 @@ import charting
 import db
 import guard
 import llm
+import knowledge_store
 import prompts
 
 @dataclass
@@ -90,9 +92,13 @@ def generate(state: State) -> State:
     except PyMongoError as error:
         return {"error": f"اتصال به دیتابیس برقرار نشد: {error}"}
 
+    store = _knowledge_store(schema)
+    knowledge = store.retrieve(state["question"])
     allowed = config.settings.allowed_collections
     reply = llm.ask(prompts.build_query_prompt(
-        schema, state["question"], allowed, want_chart=state.get("want_chart", False)))
+        knowledge["schema"], state["question"], allowed,
+        want_chart=state.get("want_chart", False),
+        documentation=knowledge["documentation"], examples=knowledge["examples"]))
     if not reply.ok:
         return {"error": reply.reason}
 
@@ -108,6 +114,16 @@ def prepare(state: State) -> State:
     return {"want_chart": (
         "chart" in config.settings.customer.capabilities
         and charting.wants_chart(state["question"]))}
+
+
+@lru_cache(maxsize=8)
+def _knowledge_store(schema: str) -> knowledge_store.KnowledgeStore:
+    store = knowledge_store.KnowledgeStore(
+        config.settings.customer.name,
+        config.PROJECT_ROOT / "chroma",
+    )
+    store.rebuild(schema, config.PROJECT_ROOT / "knowledge")
+    return store
 
 
 def validate(state: State) -> State:
@@ -145,9 +161,11 @@ def repair(state: State) -> State:
     except PyMongoError:
         return {"attempts": attempts}
 
+    knowledge = _knowledge_store(schema).retrieve(state["question"])
     reply = llm.ask(prompts.build_query_prompt(
-        schema, state["question"], config.settings.allowed_collections,
+        knowledge["schema"], state["question"], config.settings.allowed_collections,
         want_chart=state.get("want_chart", False),
+        documentation=knowledge["documentation"], examples=knowledge["examples"],
         failure=(state.get("pipeline"), state.get("error") or ""),
     ))
     if not reply.ok:
