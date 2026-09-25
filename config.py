@@ -18,6 +18,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from customer import CustomerProfile, load_profile
+
 # ریشه‌ی پروژه از محل همین فایل استنتاج می‌شود، نه از دایرکتوری جاری، تا
 # اجرای دستورها از هر جایی یک نتیجه بدهد.
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -31,13 +33,12 @@ ENV_PREFIX = "RASAM_"
 # اینها پیش‌فرض ندارند: یا رازند یا مخصوص همین ماشین. نبودشان باید سر و صدا
 # کند، نه اینکه با یک مقدار حدسی جای اشتباهی وصل شویم.
 REQUIRED = (
-    "MONGO_URI",
     "MONGO_DB",
-    "ALLOWED_COLLECTIONS",
     "CSV_DIR",
     "LLM_API_KEY",
     "LLM_BASE_URL",
     "LLM_MODEL",
+    "CUSTOMER",
 )
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
@@ -120,6 +121,7 @@ def _hide_password(uri: str) -> str:
 
 @dataclass(frozen=True, repr=False)
 class Settings:
+    customer: CustomerProfile
     mongo_uri: str
     mongo_db: str
     # فقط اسکریپت seed این را می‌خواهد. اجباری‌کردنش یعنی مسیر عادیِ پاسخ به
@@ -174,13 +176,19 @@ def _load() -> Settings:
         )
 
     csv_dir = Path(_env("CSV_DIR"))
+    profile = load_profile(_env("CUSTOMER"), PROJECT_ROOT / "customers")
+    mongo_uri = _env(profile.connection_env)
+    if mongo_uri is None:
+        raise ConfigError(
+            f"تنظیمات ناقص است. متغیر {ENV_PREFIX}{profile.connection_env} "
+            f"از پروفایل مشتری «{profile.name}» پیدا نشد."
+        )
     return Settings(
-        mongo_uri=_env("MONGO_URI"),
+        customer=profile,
+        mongo_uri=mongo_uri,
         mongo_db=_env("MONGO_DB"),
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),
-        allowed_collections=frozenset(
-            name.strip() for name in _env("ALLOWED_COLLECTIONS").split(",") if name.strip()
-        ),
+        allowed_collections=profile.allowed_collections,
         # مسیر نسبی نسبت به ریشه‌ی پروژه معنا می‌شود، نه دایرکتوری جاری.
         csv_dir=csv_dir if csv_dir.is_absolute() else (PROJECT_ROOT / csv_dir).resolve(),
         llm_api_key=_env("LLM_API_KEY"),
@@ -190,7 +198,7 @@ def _load() -> Settings:
         # کندترین کوئری واقعیِ اندازه‌گیری‌شده ۰٫۰۶ ثانیه بود؛ ۶۰ ثانیه یعنی هیچ
         # سوال سالمی به سقف نمی‌خورد، ولی یک کوئری معیوب سرور را گروگان نمی‌گیرد.
         query_timeout_ms=_number("QUERY_TIMEOUT_MS", 60_000, int, "عدد صحیح"),
-        max_rows=_optional_number("MAX_ROWS"),
+        max_rows=profile.limits.get("max_rows", _optional_number("MAX_ROWS")),
         # پیش‌فرض‌ها حاصل تجربه‌ی نسخه‌ی ۱‌اند (docs/v1-reference.md بخش ۵).
         # جواب‌های واقعی ۱ تا ۳ ثانیه طول می‌کشند. سقف برای حالتی است که
         # سرویس یا شبکه گیر کند و درخواست معلق بماند — از قدم ۱۳ که API
@@ -202,7 +210,7 @@ def _load() -> Settings:
         max_question_chars=_number("MAX_QUESTION_CHARS", 2000, int, "عدد صحیح"),
         max_result_rows=_number("MAX_RESULT_ROWS", 30, int, "عدد صحیح"),
         max_result_chars=_number("MAX_RESULT_CHARS", 4000, int, "عدد صحیح"),
-        max_attempts=_number("MAX_ATTEMPTS", 2, int, "عدد صحیح"),
+        max_attempts=profile.limits.get("max_attempts", _number("MAX_ATTEMPTS", 2, int, "عدد صحیح")),
         verbose=_flag("VERBOSE", False),
     )
 

@@ -1,0 +1,13 @@
+db_type: mongodb
+connection_env: MONGO_URI
+allowed_collections:
+  - inverter_data
+  - lvpanel_data
+  - mvpanel_data
+  - string_data
+capabilities:
+  - export_csv
+  - export_excel
+limits:
+  max_rows: 1000
+  max_attempts: 2

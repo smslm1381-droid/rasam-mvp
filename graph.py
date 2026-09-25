@@ -105,7 +105,9 @@ def generate(state: State) -> State:
 
 def prepare(state: State) -> State:
     """پیش از تماس با مدل، خواست صریح نمودار را ثبت می‌کند."""
-    return {"want_chart": charting.wants_chart(state["question"])}
+    return {"want_chart": (
+        "chart" in config.settings.customer.capabilities
+        and charting.wants_chart(state["question"]))}
 
 
 def validate(state: State) -> State:
@@ -200,7 +202,7 @@ def _next_after_summary(state: State) -> str:
     return "chart" if state.get("want_chart") else END
 
 
-def _build():
+def build_graph(capabilities: set[str] | frozenset[str]):
     graph = StateGraph(State)
     graph.add_node("prepare", prepare)
     graph.add_node("generate", generate)
@@ -208,7 +210,8 @@ def _build():
     graph.add_node("execute", execute)
     graph.add_node("summarize", summarize)
     graph.add_node("repair", repair)
-    graph.add_node("chart", chart)
+    if "chart" in capabilities:
+        graph.add_node("chart", chart)
     graph.add_edge(START, "prepare")
     graph.add_edge("prepare", "generate")
     graph.add_conditional_edges("generate", _next_after, {"continue": "validate", END: END})
@@ -219,12 +222,16 @@ def _build():
     # ترمیم همیشه به اعتبارسنجی برمی‌گردد: هیچ کوئری اصلاح‌شده‌ای بدون گذشتن
     # از گارد اجرا نمی‌شود.
     graph.add_conditional_edges("repair", _next_after, {"continue": "validate", END: END})
-    graph.add_conditional_edges("summarize", _next_after_summary, {"chart": "chart", END: END})
-    graph.add_edge("chart", END)
+    if "chart" in capabilities:
+        graph.add_conditional_edges("summarize", _next_after_summary,
+                                    {"chart": "chart", END: END})
+        graph.add_edge("chart", END)
+    else:
+        graph.add_edge("summarize", END)
     return graph.compile()
 
 
-_GRAPH = _build()
+_GRAPH = build_graph(config.settings.customer.capabilities)
 
 
 def answer(question: str) -> Answer:
