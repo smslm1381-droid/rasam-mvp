@@ -169,8 +169,9 @@ def test_row_limit_sits_after_everything_the_model_wrote(monkeypatch):
     assert result.pipeline[-1] == {"$limit": 10}
 
 
-def test_no_row_limit_is_added_when_switched_off():
-    """وضعیت فعلی پروژه: سقف رکورد عمداً خاموش است (بدهی ثبت‌شده در PLAN.md)."""
+def test_no_row_limit_is_added_when_switched_off(monkeypatch):
+    """اگر تنظیم خاموش شود، گارد نباید سقف حدسی اضافه کند."""
+    monkeypatch.setattr(config, "settings", replace(config.settings, max_rows=None))
     assert config.settings.max_rows is None
     result = run([{"$match": {"status": "ON"}}])
     assert result.pipeline == [{"$match": {"status": "ON"}}]

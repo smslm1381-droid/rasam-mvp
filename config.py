@@ -133,6 +133,7 @@ class Settings:
     llm_api_key: str
     llm_base_url: str
     llm_model: str
+    api_key: str | None
     # سقف‌های اجرای کوئری. گارد (قدم ۴) اعمالشان می‌کند.
     query_timeout_ms: int
     max_rows: int | None
@@ -185,6 +186,7 @@ def _load() -> Settings:
         llm_api_key=_env("LLM_API_KEY"),
         llm_base_url=_env("LLM_BASE_URL"),
         llm_model=_env("LLM_MODEL"),
+        api_key=_env("API_KEY"),
         # کندترین کوئری واقعیِ اندازه‌گیری‌شده ۰٫۰۶ ثانیه بود؛ ۶۰ ثانیه یعنی هیچ
         # سوال سالمی به سقف نمی‌خورد، ولی یک کوئری معیوب سرور را گروگان نمی‌گیرد.
         query_timeout_ms=_number("QUERY_TIMEOUT_MS", 60_000, int, "عدد صحیح"),

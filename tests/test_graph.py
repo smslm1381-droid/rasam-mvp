@@ -65,7 +65,7 @@ def test_a_good_question_returns_rows(wired):
 
 def test_the_executed_pipeline_is_the_one_the_guard_returned(wired):
     graph.answer("میانگین دما؟")
-    assert wired.ran == [GOOD["pipeline"]]
+    assert wired.ran == [GOOD["pipeline"] + [{"$limit": 1000}]]
 
 
 def test_markdown_fences_do_not_break_parsing(wired, monkeypatch):
@@ -230,7 +230,7 @@ def test_a_rejected_query_is_repaired_and_then_succeeds(wired, monkeypatch):
 def test_the_repaired_query_is_the_one_that_runs(wired, monkeypatch):
     scripted(monkeypatch, json.dumps(BAD_STAGE), json.dumps(GOOD))
     graph.answer("سوال")
-    assert wired.ran == [GOOD["pipeline"]]
+    assert wired.ran == [GOOD["pipeline"] + [{"$limit": 1000}]]
 
 
 def test_the_repair_prompt_carries_the_failure_and_the_reason(wired, monkeypatch):

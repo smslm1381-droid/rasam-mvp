@@ -45,6 +45,7 @@ python -c "import config; print(config.settings)"
 | `docker compose up -d` | مونگوی محلی توسعه | ۲ |
 | `python scripts/seed_mongo.py` | پرکردن دیتابیس از CSVها | ۲ |
 | `python ask.py "سوال شما"` | پرسیدن سوال | ۶ |
+| `uvicorn api.main:app --reload` | اجرای API | ۱۳ |
 | `pytest` | تست‌ها | ۲ |
 
 ## امنیت — و حدِ آن
@@ -59,7 +60,29 @@ python -c "import config; print(config.settings)"
 داده، نه اجرای کد روی سرور دیتابیس، نه افشای کالکشن‌های دیگر. آن تضمین دوم کار
 گارد است، نه محصورسازی.
 
+## API
+
+پیش از اجرای API، مقدار `RASAM_API_KEY` را در `.env` با یک کلید قوی عوض کنید.
+
+```bash
+uvicorn api.main:app --reload
+```
+
+سلامت سرویس بدون کلید در دسترس است:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+برای پرسیدن سوال، کلید را در header بفرستید:
+
+```bash
+curl -X POST http://127.0.0.1:8000/ask \
+	-H 'Content-Type: application/json' \
+	-H 'X-API-Key: CHANGE_ME_API_KEY' \
+	-d '{"question":"میانگین دمای داخلی اینورترها چقدر است؟"}'
+```
+
 ## وضعیت
 
-فاز ۱ تمام شد — رصام به سوال فارسی جواب می‌دهد. الان فاز ۲: بالا بردن نرخ
-جواب درست.
+فاز ۳ — API آماده است؛ قدم بعدی صادرات نتیجه است.
