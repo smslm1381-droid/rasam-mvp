@@ -18,7 +18,7 @@ from pymongo.errors import PyMongoError
 # مسیر ایمپورت نیست.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import config  # noqa: E402
+from rasam import config  # noqa: E402
 
 
 def collection_name(path: Path) -> str:

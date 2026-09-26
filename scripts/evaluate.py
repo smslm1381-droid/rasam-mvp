@@ -18,9 +18,11 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import graph  # noqa: E402
+from rasam import config  # noqa: E402
+from rasam.core import graph  # noqa: E402
 
-QUESTIONS_FILE = Path(__file__).resolve().parents[1] / "tests" / "golden_questions.yaml"
+# سوالات طلایی مال هر مشتری است — جواب‌هایشان از داده‌ی همان مشتری آمده.
+QUESTIONS_FILE = config.settings.customer.directory / "golden_questions.yaml"
 
 # سهمیه‌ی رایگان سرویس مدل، درخواست‌های پشت‌سرهم را رد می‌کند. این فاصله
 # ارزان‌ترین راه دورزدنش است؛ با حساب پولی می‌شود صفرش کرد.

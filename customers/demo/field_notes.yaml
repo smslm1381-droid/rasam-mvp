@@ -1,0 +1,11 @@
+# یادداشت کوتاه کنار خط هر فیلد در متن schema که به مدل می‌رود.
+#
+# فقط برای فیلدهایی که مدل بدون توضیح درباره‌شان اشتباه می‌کند. این نکته‌ها از
+# تجربه‌ی نسخه‌ی ۱ آمده‌اند (docs/v1-reference.md بخش ۱٫۴): سردرگمی بین دو فیلد
+# زمان، و مقایسه‌ی عدد صحیح با رشته که همیشه نتیجه‌ی خالی می‌دهد.
+#
+# متن انگلیسی است چون مستقیم وارد پرامپت می‌شود.
+
+timestamp: canonical time field — use this one
+ts: secondary clock, within 5s of `timestamp`; prefer `timestamp`
+fa_al_code: integer, not string — compare with 0, not "0"

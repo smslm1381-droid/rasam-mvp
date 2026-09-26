@@ -31,7 +31,7 @@ Copy-Item .env.example .env   # سپس مقادیرش را پر کنید
 بررسی اینکه تنظیمات درست خوانده می‌شود:
 
 ```bash
-python -c "import config; print(config.settings)"
+python -c "from rasam import config; print(config.settings)"
 ```
 
 اگر متغیر ضروری‌ای در `.env` نباشد، پیام فارسی می‌گوید کدام‌ها کم است.
@@ -41,18 +41,52 @@ python -c "import config; print(config.settings)"
 
 | دستور | کار | از قدم |
 |---|---|---|
-| `python -c "import config; print(config.settings)"` | دیدن تنظیمات | ۱ |
+| `python -c "from rasam import config; print(config.settings)"` | دیدن تنظیمات | ۱ |
 | `docker compose up -d` | مونگوی محلی توسعه | ۲ |
 | `python scripts/seed_mongo.py` | پرکردن دیتابیس از CSVها | ۲ |
 | `python ask.py "سوال شما"` | پرسیدن سوال | ۶ |
 | `python ask.py --csv result.csv "سوال شما"` | ذخیره‌ی نتیجه به CSV | ۱۴ |
 | `python ask.py --excel result.xlsx "سوال شما"` | ذخیره‌ی نتیجه به Excel | ۱۴ |
-| `uvicorn api.main:app --reload` | اجرای API | ۱۳ |
+| `uvicorn rasam.api:app --reload` | اجرای API | ۱۳ |
 | `pytest` | تست‌ها | ۲ |
+
+## ساختار پروژه
+
+کد به سه دسته تقسیم شده، بر اساس اینکه با آمدن مشتری تازه چه چیزی عوض می‌شود:
+
+```
+rasam-mvp/
+├── ask.py                      ← نقطه‌ی ورود خط فرمان
+├── rasam/                      ← همه‌ی کد برنامه
+│   ├── config.py               ← تنظیمات از .env
+│   ├── customer.py             ← خواندن پروفایل مشتری
+│   ├── cli.py · api.py         ← دو لایه‌ی نمایش؛ هیچ منطقی ندارند
+│   ├── core/                   ← ① برای همه‌ی مشتری‌ها و همه‌ی دیتابیس‌ها یکی
+│   │   ├── graph.py            ← مسیر پاسخ: ساخت کوئری ← گارد ← اجرا ← خلاصه
+│   │   ├── llm.py              ← تنها دروازه به مدل زبانی
+│   │   ├── prompts.py          ← پرامپت خلاصه و نمودار، و محصورسازی
+│   │   ├── knowledge.py        ← خواندن دانش مشتری و شاخص معنایی
+│   │   ├── charting.py · exporting.py
+│   └── databases/              ← ② برای هر نوع دیتابیس یک پوشه
+│       ├── base.py             ← قراردادی که هر دیتابیس پیاده می‌کند
+│       ├── registry.py         ← db_type پروفایل ← کلاس همان دیتابیس
+│       ├── mongodb/            ← schema · guard · prompts · agent
+│       └── postgresql/         ← اسکلت
+├── customers/                  ← ③ برای هر مشتری یک پوشه، بدون کد
+│   └── demo/                   ← profile.yaml · documentation.md · examples.yaml ·
+│                                  field_notes.yaml · golden_questions.yaml
+├── scripts/                    ← seed_mongo.py · evaluate.py
+└── tests/                      ← هم‌شکل با rasam/ و customers/
+```
+
+- **مشتری تازه با دیتابیس آشنا:** فقط یک پوشه در `customers/` — راهنمایش در
+  [`customers/README.md`](customers/README.md). هیچ کدی عوض نمی‌شود.
+- **مشتری تازه با دیتابیس تازه:** یک پوشه در `rasam/databases/` که قرارداد
+  `base.py` را پیاده کند، و یک خط در `registry.py`.
 
 ## امنیت — و حدِ آن
 
-هر کوئری‌ای که مدل می‌سازد، پیش از اجرا از `guard.py` رد می‌شود: فهرست سفید
+هر کوئری‌ای که مدل می‌سازد، پیش از اجرا از گارد همان دیتابیس رد می‌شود (برای مونگو `rasam/databases/mongodb/guard.py`): فهرست سفید
 مرحله‌ها و عملگرها، ردِ قطعی هر چیزی که کد اجرا می‌کند یا در دیتابیس می‌نویسد،
 فهرست کالکشن‌های مجاز، و سقف زمان. اتصال دیتابیس هم فقط-خواندنی است.
 
@@ -67,7 +101,7 @@ python -c "import config; print(config.settings)"
 پیش از اجرای API، مقدار `RASAM_API_KEY` را در `.env` با یک کلید قوی عوض کنید.
 
 ```bash
-uvicorn api.main:app --reload
+uvicorn rasam.api:app --reload
 ```
 
 سلامت سرویس بدون کلید در دسترس است:
