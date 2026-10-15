@@ -46,6 +46,7 @@ python -c "from rasam import config; print(config.settings)"
 | `python scripts/seed_mongo.py` | پرکردن دیتابیس از CSVها | ۲ |
 | `python ask.py "سوال شما"` | پرسیدن سوال | ۶ |
 | `python onboard.py new` | ساختن پوشه‌ی مشتری تازه | ۲۶ |
+| `python onboard.py check <نام>` | بررسی آمادگی تحویل مشتری | ۲۷ |
 | `python ask.py --csv result.csv "سوال شما"` | ذخیره‌ی نتیجه به CSV | ۱۴ |
 | `python ask.py --excel result.xlsx "سوال شما"` | ذخیره‌ی نتیجه به Excel | ۱۴ |
 | `uvicorn rasam.api:app --reload` | اجرای API | ۱۳ |

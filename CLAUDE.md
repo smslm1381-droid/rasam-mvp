@@ -87,6 +87,7 @@ docker compose up -d            # مونگوی محلی توسعه
 python scripts/seed_mongo.py    # پرکردن دیتابیس از CSVها
 python ask.py "سوال شما"        # پرسیدن سوال (از قدم ۶ به بعد)
 python onboard.py new           # ساختن پوشه‌ی مشتری تازه
+python onboard.py check <نام>   # بررسی آمادگی تحویل (بدون مدل، رایگان)
 uvicorn rasam.api:app --reload  # اجرای API
 pytest                          # تست‌ها
 ```

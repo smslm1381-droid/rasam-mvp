@@ -32,6 +32,9 @@ load_dotenv(PROJECT_ROOT / ".env", override=False)
 
 ENV_PREFIX = "RASAM_"
 
+# تعداد کل تلاش برای ساختن کوئری (اول + ترمیم) وقتی پروفایل چیزی نگفته باشد.
+DEFAULT_MAX_ATTEMPTS = 2
+
 # اینها پیش‌فرض ندارند: یا رازند یا مخصوص همین ماشین. نبودشان باید سر و صدا
 # کند، نه اینکه با یک مقدار حدسی جای اشتباهی وصل شویم.
 REQUIRED = (
@@ -73,23 +76,6 @@ def _number(name: str, default, convert, kind: str):
     except ValueError:
         raise ConfigError(
             f"مقدار {ENV_PREFIX}{name} باید {kind} باشد، ولی «{raw}» است."
-        ) from None
-
-
-def _optional_number(name: str) -> int | None:
-    """عددی که «نبودن» هم برایش یک مقدار معنادار است.
-
-    `None` یعنی سقفی در کار نیست. این با «صفر» فرق دارد و عمداً جدا نگه داشته
-    شده: صفر یعنی هیچ ردیفی برنگردد، که هیچ‌وقت خواسته‌ی کسی نیست.
-    """
-    raw = _env(name)
-    if raw is None:
-        return None
-    try:
-        return int(raw)
-    except ValueError:
-        raise ConfigError(
-            f"مقدار {ENV_PREFIX}{name} باید عدد صحیح باشد یا خالی، ولی «{raw}» است."
         ) from None
 
 
@@ -210,7 +196,9 @@ def _load() -> Settings:
         # کندترین کوئری واقعیِ اندازه‌گیری‌شده ۰٫۰۶ ثانیه بود؛ ۶۰ ثانیه یعنی هیچ
         # سوال سالمی به سقف نمی‌خورد، ولی یک کوئری معیوب سرور را گروگان نمی‌گیرد.
         query_timeout_ms=_number("QUERY_TIMEOUT_MS", 60_000, int, "عدد صحیح"),
-        max_rows=profile.limits.get("max_rows", _optional_number("MAX_ROWS")),
+        # سقف‌های مشتری فقط از پروفایل می‌آیند: اگر `.env` هم یک نسخه داشت، «سقف روشن است؟»
+        # دو جواب می‌داشت و بررسی آمادگی تحویل نمی‌توانست به هیچ‌کدام اعتماد کند.
+        max_rows=profile.limits.get("max_rows"),
         # پیش‌فرض‌ها حاصل تجربه‌ی نسخه‌ی ۱‌اند (docs/v1-reference.md بخش ۵).
         # جواب‌های واقعی ۱ تا ۳ ثانیه طول می‌کشند. سقف برای حالتی است که
         # سرویس یا شبکه گیر کند و درخواست معلق بماند — از قدم ۱۳ که API
@@ -226,7 +214,7 @@ def _load() -> Settings:
         # دانش کامل فرستاده می‌شود؛ بالای آن، بازیابی معنایی کوتاهش می‌کند.
         # دانش مشتری دمو ۱۲٫۴ هزار کاراکتر است، پس این سقف دو برابر آن است.
         max_knowledge_chars=_number("MAX_KNOWLEDGE_CHARS", 24_000, int, "عدد صحیح"),
-        max_attempts=profile.limits.get("max_attempts", _number("MAX_ATTEMPTS", 2, int, "عدد صحیح")),
+        max_attempts=profile.limits.get("max_attempts", DEFAULT_MAX_ATTEMPTS),
         verbose=_flag("VERBOSE", False),
     )
 

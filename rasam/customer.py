@@ -19,6 +19,10 @@ from typing import Any
 
 import yaml
 
+# نشانه‌ای که ابزار تحویل در هر جای خالیِ دانش می‌گذارد. بررسی آمادگی تحویل تا
+# یکی از این‌ها در پوشه‌ی مشتری مانده باشد قرمز می‌ماند.
+TODO_MARKER = "TODO(onboarding)"
+
 # --- آنچه پروفایل اجازه دارد بگوید -------------------------------------------
 
 KNOWN_FIELDS = ("db_type", "connection_env", "database", "allowed_sources", "capabilities", "limits")

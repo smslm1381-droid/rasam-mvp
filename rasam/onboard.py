@@ -26,15 +26,14 @@ from pathlib import Path
 from string import Template
 
 from rasam import config, customer
+from rasam.core import readiness
 from rasam.databases import registry
 
 TEMPLATES_DIR = config.PROJECT_ROOT / "templates" / "customer"
 TEMPLATE_FILES = ("profile.yaml", "documentation.md", "examples.yaml",
                   "field_notes.yaml", "golden_questions.yaml")
 
-# نشانه‌ای که ابزار در هر جای خالیِ دانش می‌گذارد. بررسی آمادگی تحویل (`check`)
-# تا یکی از این‌ها مانده باشد قرمز می‌ماند.
-TODO_MARKER = "TODO(onboarding)"
+TODO_MARKER = customer.TODO_MARKER
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 ENV_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
@@ -183,11 +182,22 @@ def run_new(ask: Ask = input, say: Say = print) -> int:
     return 0
 
 
+def run_check(name: str, say: Say = print) -> int:
+    """زیرفرمان `check`. کد خروج ۰ فقط وقتی همه‌ی بررسی‌ها سبزند."""
+    checks = readiness.run_checks(name)
+    say(readiness.render(checks))
+    failed = [check for check in checks if not check.ok]
+    say("\nآماده‌ی تحویل است." if not failed else f"\nآماده نیست: {len(failed)} مورد قرمز.")
+    return 0 if not failed else 1
+
+
 def main(argv: list[str]) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(description="ابزار تحویل مشتری رصام")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("new", help="ساختن پوشه‌ی مشتری تازه")
+    check = commands.add_parser("check", help="بررسی آمادگی تحویل یک مشتری")
+    check.add_argument("name", help="نام پوشه‌ی مشتری در customers/")
     args = parser.parse_args(argv)
-    return run_new() if args.command == "new" else 1
+    return run_new() if args.command == "new" else run_check(args.name)

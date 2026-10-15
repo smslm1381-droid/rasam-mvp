@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from rasam import config
-from rasam.databases.base import Reply, Result
+from rasam.databases.base import AccessReport, Reply, Result
 
 
 class PostgresAgent:
@@ -41,6 +41,9 @@ class PostgresAgent:
 
     def list_sources(self) -> list[str]:
         raise NotImplementedError("فهرست جدول‌ها در قدم آداپتور PostgreSQL ساخته می‌شود.")
+
+    def check_read_only(self) -> AccessReport:
+        raise NotImplementedError("بررسی دسترسی PostgreSQL در قدم آداپتور ساخته می‌شود.")
 
     def list_fields(self, source: str) -> list[str]:
         raise NotImplementedError("فهرست ستون‌ها در قدم آداپتور PostgreSQL ساخته می‌شود.")

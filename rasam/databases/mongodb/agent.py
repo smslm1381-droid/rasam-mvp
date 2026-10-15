@@ -8,8 +8,15 @@ from typing import Any
 from pymongo import MongoClient
 
 from rasam import config
-from rasam.databases.base import Reply, Result
+from rasam.databases.base import AccessReport, Reply, Result
 from rasam.databases.mongodb import guard, prompts, reply, schema
+
+# اکشن‌هایی که نقش داخلی `read` مونگو دارد. هر اکشن دیگر «غیرخواندنی» حساب
+# می‌شود، حتی اگر ظاهراً بی‌ضرر باشد: فهرست سفید، نه فهرست سیاه (تصمیم ۸).
+READ_ACTIONS = frozenset({
+    "find", "listCollections", "listIndexes", "collStats", "dbStats", "dbHash",
+    "killCursors", "planCacheRead", "changeStream", "listSearchIndexes",
+})
 
 # مقدارهایی که هر سه مقصد خروجی (JSON، CSV، Excel) بدون ترجمه می‌پذیرند.
 _PLAIN_TYPES = (str, int, float, bool, datetime, date, type(None))
@@ -39,7 +46,8 @@ def _plain(value):
 class MongoAgent:
     db_type = "mongodb"
 
-    def __init__(self, connection_uri: str | None = None, database: str | None = None):
+    def __init__(self, connection_uri: str | None = None, database: str | None = None,
+                 allowed_sources: frozenset[str] | None = None):
         """بدون آرگومان، مشتری فعال را سرویس می‌دهد.
 
         آرگومان‌ها فقط برای ابزار تحویل‌اند که باید به دیتابیس یک مشتریِ
@@ -48,6 +56,7 @@ class MongoAgent:
         """
         self._connection_uri = connection_uri
         self._database = database
+        self._allowed_sources = allowed_sources
 
     def _inspect(self, work):
         """یک اتصال کوتاه‌مدت برای ابزار تحویل، که همیشه بسته می‌شود."""
@@ -57,6 +66,21 @@ class MongoAgent:
             return work(client[self._database or config.settings.database])
         finally:
             client.close()
+
+    def check_read_only(self) -> AccessReport:
+        status = self._inspect(
+            lambda database: database.client.admin.command("connectionStatus", showPrivileges=True))
+        info = status["authInfo"]
+        if not info["authenticatedUsers"]:
+            return AccessReport(False, "اتصال بدون احراز هویت است؛ مونگو بدون auth هر دسترسی را می‌دهد.")
+        actions = {action for privilege in info["authenticatedUserPrivileges"]
+                   for action in privilege["actions"]}
+        extra = sorted(actions - READ_ACTIONS)
+        if extra:
+            roles = ", ".join(role["role"] for role in info["authenticatedUserRoles"])
+            return AccessReport(False, f"نقش‌های «{roles}» اجازه‌ی غیرخواندنی دارند: "
+                                       f"{', '.join(extra[:6])}{' …' if len(extra) > 6 else ''}")
+        return AccessReport(True, "فقط خواندن (find و ابزارهای مشاهده).")
 
     def list_sources(self) -> list[str]:
         return sorted(self._inspect(lambda database: database.list_collection_names()))
@@ -84,7 +108,8 @@ class MongoAgent:
 
     def validate_query(self, source: str, query: list[dict],
                        row_filter: dict | None = None) -> Result:
-        return guard.check(query, source, set(config.settings.allowed_sources), row_filter)
+        allowed = self._allowed_sources or config.settings.allowed_sources
+        return guard.check(query, source, set(allowed), row_filter)
 
     def execute(self, source: str, checked: Result) -> list[dict]:
         if not checked.ok:
