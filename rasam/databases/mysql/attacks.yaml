@@ -1,0 +1,158 @@
+# نمونه‌های حمله‌ی MySQL برای آزمون انطباق مشترک (`tests/conformance/`).
+#
+# دسته‌ها برای همه‌ی دیتابیس‌ها یکی است، نمونه‌ها مخصوص هر دیتابیس. هر دسته یا
+# دست‌کم یک نمونه دارد، یا `not_applicable` با **دلیل نوشته‌شده**. ساختار فایل و
+# نشانه‌های جایگزین (`@allowed`، `@forbidden`، `@filter_field`، `@filter_value`) دقیقاً
+# مثل `mongodb/attacks.yaml` است؛ فقط اینجا `query` یک **متن SQL** است. نشانه‌ها
+# داخل متن هم جایگزین می‌شوند.
+#
+# هر کدام از این نمونه‌ها روی MySQL محلی با کاربر `rasam_ro` سنجیده شده است
+# (جدول مدل تهدید در `PLAN.md` بخش ۴): مثلاً `SLEEP` و `BENCHMARK` و `LOCK IN SHARE
+# MODE` و hint `SET_VAR` و خواندن `@@version` برای یک کاربر فقط-SELECT *اجرا می‌شوند*.
+
+safe:
+  - description: شمارش
+    source: "@allowed"
+    query: "SELECT COUNT(*) AS n FROM @allowed"
+  - description: فیلتر، گروه‌بندی، مرتب‌سازی و سقف
+    source: "@allowed"
+    query: "SELECT x, COUNT(*) AS c FROM @allowed WHERE y > 10 AND x IN ('a', 'b') GROUP BY x HAVING COUNT(*) > 1 ORDER BY c DESC LIMIT 5"
+  - description: عبارت شرطی و حساب (تله‌ی عدد بدون‌علامت)
+    source: "@allowed"
+    query: "SELECT AVG(CASE WHEN x >= 2147483648 THEN x - 4294967296 ELSE x END) AS avg_x FROM @allowed"
+  - description: تابع‌های تاریخ
+    source: "@allowed"
+    query: "SELECT YEAR(FROM_UNIXTIME(ts)) AS y, MAX(v) AS m FROM @allowed GROUP BY YEAR(FROM_UNIXTIME(ts))"
+  - description: DISTINCT و BETWEEN
+    source: "@allowed"
+    query: "SELECT DISTINCT x FROM @allowed WHERE ts BETWEEN 1 AND 9 AND z IS NOT NULL"
+
+categories:
+  write:
+    kind: rejected
+    attacks:
+      - description: حذف
+        source: "@allowed"
+        query: "DELETE FROM @allowed"
+      - description: درج
+        source: "@allowed"
+        query: "INSERT INTO @allowed (x) VALUES (1)"
+      - description: به‌روزرسانی
+        source: "@allowed"
+        query: "UPDATE @allowed SET x = 0"
+      - description: حذف جدول
+        source: "@allowed"
+        query: "DROP TABLE @allowed"
+      - description: ساختن جدول
+        source: "@allowed"
+        query: "CREATE TABLE evil (a INT)"
+      - description: نوشتن فایل روی سرور از دل یک SELECT
+        source: "@allowed"
+        query: "SELECT * FROM @allowed INTO OUTFILE '/tmp/stolen'"
+      - description: نوشتن در متغیر کاربر
+        source: "@allowed"
+        query: "SELECT x INTO @stolen FROM @allowed"
+
+  code_execution:
+    kind: rejected
+    attacks:
+      - description: SLEEP داخل WHERE سرور را معطل می‌کند
+        source: "@allowed"
+        query: "SELECT COUNT(*) FROM @allowed WHERE SLEEP(10) = 0"
+      - description: BENCHMARK پردازنده را مصرف می‌کند
+        source: "@allowed"
+        query: "SELECT BENCHMARK(100000000, MD5('x')) FROM @allowed"
+      - description: LOAD_FILE فایل سرور را می‌خواند
+        source: "@allowed"
+        query: "SELECT LOAD_FILE('/etc/passwd') FROM @allowed"
+      - description: GET_LOCK قفل نشست می‌گیرد
+        source: "@allowed"
+        query: "SELECT GET_LOCK('x', 600) FROM @allowed"
+      - description: تابع ممنوع چند لایه عمیق داخل توابع مجاز
+        source: "@allowed"
+        query: "SELECT ROUND(AVG(IF(x > 0, SLEEP(1), 1)), 2) FROM @allowed"
+      - description: متغیر سیستمی افشا می‌کند
+        source: "@allowed"
+        query: "SELECT @@version FROM @allowed"
+      - description: hint بهینه‌ساز متغیر نشست را عوض می‌کند
+        source: "@allowed"
+        query: "SELECT /*+ SET_VAR(sql_select_limit=1) */ x FROM @allowed"
+      - description: قفل خواندنی با LOCK IN SHARE MODE
+        source: "@allowed"
+        query: "SELECT x FROM @allowed LOCK IN SHARE MODE"
+      - description: قفل نوشتنی با FOR UPDATE
+        source: "@allowed"
+        query: "SELECT x FROM @allowed FOR UPDATE"
+
+  unauthorized_source:
+    kind: rejected
+    attacks:
+      - description: جدول بیرون از فهرست سفید
+        source: "@forbidden"
+        query: "SELECT * FROM @forbidden"
+      - description: جدول SQL با جدول اعلام‌شده یکی نیست
+        source: "@allowed"
+        query: "SELECT * FROM @forbidden"
+      - description: کاتالوگ سیستم
+        source: "@allowed"
+        query: "SELECT * FROM information_schema.tables"
+      - description: جدول کاربران خودِ MySQL
+        source: "@allowed"
+        query: "SELECT user FROM mysql.user"
+      - description: نام جدول با نام دیتابیس
+        source: "@allowed"
+        query: "SELECT * FROM other_db.@allowed"
+      - description: JOIN با جدول غیرمجاز
+        source: "@allowed"
+        query: "SELECT a.x FROM @allowed a JOIN @forbidden b ON a.x = b.x"
+      - description: UNION جدول غیرمجاز را به نتیجه می‌چسباند
+        source: "@allowed"
+        query: "SELECT x FROM @allowed UNION SELECT x FROM @forbidden"
+      - description: زیرکوئری روی جدول غیرمجاز
+        source: "@allowed"
+        query: "SELECT x FROM @allowed WHERE x IN (SELECT x FROM @forbidden)"
+
+  multi_statement:
+    kind: rejected
+    attacks:
+      - description: دستور دوم نوشتنی بعد از یک دستور سالم
+        source: "@allowed"
+        query: "SELECT x FROM @allowed; DROP TABLE @allowed"
+      - description: دو SELECT پشت‌سرهم
+        source: "@allowed"
+        query: "SELECT x FROM @allowed; SELECT user FROM mysql.user"
+      - description: دستور نوشتنی بعد از کامنت
+        source: "@allowed"
+        query: "SELECT x FROM @allowed; /* ok */ DELETE FROM @allowed"
+
+  unbounded_query:
+    kind: bounded
+    attacks:
+      - description: کل جدول بدون هیچ سقفی
+        source: "@allowed"
+        query: "SELECT * FROM @allowed"
+      - description: سقف عمداً بزرگ
+        source: "@allowed"
+        query: "SELECT * FROM @allowed LIMIT 1000000000"
+      - description: مرتب‌سازی کل جدول
+        source: "@allowed"
+        query: "SELECT * FROM @allowed ORDER BY timestamp DESC"
+      - description: سقف بزرگ با OFFSET
+        source: "@allowed"
+        query: "SELECT * FROM @allowed LIMIT 1000000000 OFFSET 0"
+
+  row_filter_bypass:
+    kind: bounded
+    attacks:
+      - description: OR 1=1 که از شرط سطری بیرون می‌زند
+        source: "@allowed"
+        query: "SELECT @filter_field FROM @allowed WHERE @filter_field <> 'x' OR 1 = 1"
+      - description: صراحتاً مقدار بیرون از شرط
+        source: "@allowed"
+        query: "SELECT @filter_field FROM @allowed WHERE @filter_field <> '@filter_value'"
+      - description: OR که مقدارهای دیگر فیلد را هم می‌خواهد
+        source: "@allowed"
+        query: "SELECT @filter_field FROM @allowed WHERE 1 = 1 OR @filter_field IS NOT NULL"
+      - description: بدون هیچ شرطی
+        source: "@allowed"
+        query: "SELECT @filter_field FROM @allowed"

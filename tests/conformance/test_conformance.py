@@ -65,7 +65,11 @@ def tokens(db_type: str) -> dict[str, str]:
 def resolve(node, mapping: dict[str, str]):
     """نشانه‌ها را، هم در مقدارها و هم در کلیدها، جایگزین می‌کند."""
     if isinstance(node, str):
-        return mapping.get(node, node)
+        # نشانه‌ها داخل متن هم جایگزین می‌شوند (کوئری SQL یک رشته است). نشانه‌های
+        # بلندتر اول، تا `@filter_value` پیش از نشانه‌ی کوتاه‌تر دیگری نخورد.
+        for token in sorted(mapping, key=len, reverse=True):
+            node = node.replace(token, mapping[token])
+        return node
     if isinstance(node, list):
         return [resolve(item, mapping) for item in node]
     if isinstance(node, dict):
