@@ -135,7 +135,7 @@ def test_malformed_pipelines_are_rejected(pipeline):
 def test_rejected_pipeline_is_none_not_the_original():
     """اگر فراخوان `ok` را چک نکند باید فوراً بشکند، نه اینکه کوئری خام اجرا شود."""
     result = run([{"$match": {"$where": "1"}}])
-    assert result.pipeline is None
+    assert result.query is None
 
 
 # --- فهرست سفید کالکشن‌ها ---------------------------------------------------
@@ -156,14 +156,14 @@ def test_row_limit_is_appended_when_configured(monkeypatch):
     """`Settings` غیرقابل‌تغییر است، پس کل نمونه عوض می‌شود نه یک فیلدش."""
     monkeypatch.setattr(config, "settings", replace(config.settings, max_rows=1000))
     result = run([{"$match": {"status": "ON"}}])
-    assert result.pipeline[-1] == {"$limit": 1000}
+    assert result.query[-1] == {"$limit": 1000}
 
 
 def test_row_limit_sits_after_everything_the_model_wrote(monkeypatch):
     """سقف باید آخر بنشیند، وگرنه stageهای بعدی می‌توانند از آن رد شوند."""
     monkeypatch.setattr(config, "settings", replace(config.settings, max_rows=10))
     result = run([{"$match": {}}, {"$limit": 99999}, {"$sort": {"int_temp": -1}}])
-    assert result.pipeline[-1] == {"$limit": 10}
+    assert result.query[-1] == {"$limit": 10}
 
 
 def test_no_row_limit_is_added_when_switched_off(monkeypatch):
@@ -171,7 +171,7 @@ def test_no_row_limit_is_added_when_switched_off(monkeypatch):
     monkeypatch.setattr(config, "settings", replace(config.settings, max_rows=None))
     assert config.settings.max_rows is None
     result = run([{"$match": {"status": "ON"}}])
-    assert result.pipeline == [{"$match": {"status": "ON"}}]
+    assert result.query == [{"$match": {"status": "ON"}}]
 
 
 def test_time_limit_travels_with_the_result():
@@ -184,9 +184,9 @@ def test_time_limit_travels_with_the_result():
 def test_row_filter_is_injected_at_the_front():
     """شرط سطری باید *اول* بنشیند تا هیچ stage بعدی نتواند دورش بزند."""
     result = run([{"$match": {"status": "ON"}}], row_filter={"plant_id": 3})
-    assert result.pipeline[0] == {"$match": {"plant_id": 3}}
+    assert result.query[0] == {"$match": {"plant_id": 3}}
 
 
 def test_without_a_row_filter_nothing_is_injected():
     result = run([{"$match": {"status": "ON"}}])
-    assert result.pipeline[0] == {"$match": {"status": "ON"}}
+    assert result.query[0] == {"$match": {"status": "ON"}}

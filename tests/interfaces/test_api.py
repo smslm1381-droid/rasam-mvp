@@ -38,8 +38,8 @@ def test_ask_serializes_answer_without_adding_logic(monkeypatch):
     assert response.status_code == 200
     assert response.json() == {
         "question": "دما؟",
-        "collection": None,
-        "pipeline": None,
+        "source": None,
+        "query": None,
         "rows": [{"avg": 28.6}],
         "summary": None,
         "chart": None,

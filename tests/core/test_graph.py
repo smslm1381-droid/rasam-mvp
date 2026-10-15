@@ -57,7 +57,7 @@ def reply(text: str, monkeypatch):
 def test_a_good_question_returns_rows(wired):
     result = graph.answer("میانگین دمای اینورترها؟")
     assert result.rows == [{"avg": 28.61}]
-    assert result.collection == "inverter_data"
+    assert result.source == "inverter_data"
     assert result.error is None and result.message is None
 
 
@@ -130,31 +130,6 @@ def test_an_unexpected_crash_becomes_an_error_value(wired, monkeypatch):
     monkeypatch.setattr(graph.llm, "ask", explode)
     result = graph.answer("سوال")
     assert result.error is not None and result.rows == []
-
-
-# --- تفکیک JSON از جمله -----------------------------------------------------
-
-@pytest.mark.parametrize("text, kind", [
-    ('{"collection": "a", "pipeline": []}', "query"),
-    ("این داده موجود نیست.", "message"),
-    ("[1, 2, 3]", "error"),          # JSON هست ولی شیء نیست
-    ('{"collection": "a"}}', "query"),  # آکولاد اضافه، قابل نجات
-    ("", "message"),
-])
-def test_a_broken_query_is_never_mistaken_for_a_persian_sentence(text, kind):
-    """تا دیروز JSON نصفه‌نیمه به‌عنوان «جواب» به کاربر نشان داده می‌شد."""
-    parsed, message, error = graph._parse(text)
-    assert (parsed is not None) is (kind == "query")
-    assert (message is not None) is (kind == "message")
-    assert (error is not None) is (kind == "error")
-
-
-def test_a_malformed_query_reaches_the_user_as_an_error_not_as_an_answer(wired, monkeypatch):
-    reply('{"collection": "inverter_data", "pipeline": [{"$match": ', monkeypatch)
-    result = graph.answer("میانگین دما؟")
-    assert result.error is not None
-    assert result.message is None
-    assert wired.ran == []
 
 
 # --- خلاصه (قدم ۹) ----------------------------------------------------------
@@ -313,33 +288,14 @@ def prompts_max() -> int:
     return config.settings.max_question_chars
 
 
-# --- متن اضافه دور کوئری ---------------------------------------------------
+# --- پاسخ خراب مدل -----------------------------------------------------------
 
-@pytest.mark.parametrize("text", [
-    '{"collection": "inverter_data", "pipeline": [{"$match": {}}]}}',   # آکولاد اضافه
-    'بله:\n{"collection": "inverter_data", "pipeline": [{"$match": {}}]}\nتمام.',
-    '{"collection": "inverter_data", "pipeline": [{"$match": {}}]} thinking done',
-])
-def test_a_valid_query_is_not_thrown_away_because_of_extra_text(text):
-    """مدل‌های واقعی گاهی بعد از JSON چیز اضافه می‌گذارند.
-
-    دور ریختن یک کوئریِ درست به‌خاطر یک `}` زیادی، هزینه‌ی بی‌دلیل است — و آنچه
-    بیرون کشیده می‌شود باز هم از گارد رد می‌شود.
-    """
-    parsed, message, error = graph._parse(text)
-    assert parsed == {"collection": "inverter_data", "pipeline": [{"$match": {}}]}
-    assert message is None and error is None
-
-
-def test_a_brace_inside_a_string_does_not_confuse_the_extraction():
-    parsed, _, _ = graph._parse('{"collection": "a", "note": "}{", "pipeline": []}}')
-    assert parsed["note"] == "}{"
-
-
-def test_text_without_any_object_is_still_an_error(wired, monkeypatch):
-    reply('{"collection": "inverter_data", "pipeline": [', monkeypatch)
-    result = graph.answer("سوال")
-    assert result.error is not None and result.message is None
+def test_a_malformed_query_reaches_the_user_as_an_error_not_as_an_answer(wired, monkeypatch):
+    reply('{"collection": "inverter_data", "pipeline": [{"$match": ', monkeypatch)
+    result = graph.answer("میانگین دما؟")
+    assert result.error is not None
+    assert result.message is None
+    assert wired.ran == []
 
 
 # --- مشتری بدون قابلیت‌های انتخابی (قدم ۱۸) ---------------------------------

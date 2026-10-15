@@ -84,6 +84,18 @@ Write a corrected query. Do not repeat the same mistake. If the question
 genuinely cannot be answered from the schema, follow rule 5 instead."""
 
 
+def format_example(example: dict) -> str:
+    """یک نمونه‌ی `{question, why, source, query}` به متنی که مدل باید تقلید کند.
+
+    قالب خروجی همان قالب پاسخ مدل است (`collection` و `pipeline`)، چون مدل از
+    روی نمونه یاد می‌گیرد چه بنویسد. `why` هم می‌آید: مدل از دیدن *دلیل*، الگو
+    را بهتر به سوال تازه تعمیم می‌دهد تا از دیدن کوئریِ تنها.
+    """
+    why = f"\n# {example['why'].strip()}" if example.get("why") else ""
+    answer = {"collection": example["source"], "pipeline": example["query"]}
+    return f"Q: {example['question']}{why}\nA: {json.dumps(answer, ensure_ascii=False)}"
+
+
 def build_query_prompt(schema: str, question: str, collections: set[str],
                        failure: tuple[Any, str] | None = None,
                        want_chart: bool = False,
@@ -102,7 +114,7 @@ def build_query_prompt(schema: str, question: str, collections: set[str],
     built = _TEMPLATE.format(
         schema=schema,
         documentation=documentation if documentation is not None else knowledge.documentation_text(),
-        examples=examples if examples is not None else knowledge.examples_text(),
+        examples=examples if examples is not None else knowledge.examples_text(format_example),
         rules=SECURITY_RULES,
         collections=", ".join(sorted(collections)),
         question=wrap_untrusted(question, QUESTION_TAG),

@@ -6,8 +6,8 @@ from datetime import date, datetime
 from typing import Any
 
 from rasam import config
-from rasam.databases.base import Result
-from rasam.databases.mongodb import guard, prompts, schema
+from rasam.databases.base import Reply, Result
+from rasam.databases.mongodb import guard, prompts, reply, schema
 
 # مقدارهایی که هر سه مقصد خروجی (JSON، CSV، Excel) بدون ترجمه می‌پذیرند.
 _PLAIN_TYPES = (str, int, float, bool, datetime, date, type(None))
@@ -40,19 +40,28 @@ class MongoAgent:
     def describe_schema(self) -> str:
         return schema.schema_text()
 
-    def build_query_prompt(self, schema_text: str, question: str, collections: set[str],
+    def build_query_prompt(self, schema_text: str, question: str, sources: set[str],
                            failure: tuple[Any, str] | None = None,
                            want_chart: bool = False,
                            documentation: str | None = None,
                            examples: str | None = None) -> str:
         return prompts.build_query_prompt(
-            schema_text, question, collections, failure=failure, want_chart=want_chart,
+            schema_text, question, sources, failure=failure, want_chart=want_chart,
             documentation=documentation, examples=examples)
 
-    def validate_query(self, collection: str, query: list[dict]) -> Result:
-        return guard.check(query, collection, set(config.settings.allowed_collections))
+    def format_example(self, example: dict) -> str:
+        return prompts.format_example(example)
 
-    def execute(self, collection: str, query: list[dict], max_time_ms: int) -> list[dict]:
+    def parse_reply(self, text: str) -> Reply:
+        return reply.parse_reply(text)
+
+    def validate_query(self, source: str, query: list[dict]) -> Result:
+        return guard.check(query, source, set(config.settings.allowed_sources))
+
+    def execute(self, source: str, checked: Result) -> list[dict]:
+        if not checked.ok:
+            # خطای برنامه‌نویس است نه کاربر: گراف هرگز نباید کوئری ردشده را اینجا بیاورد.
+            raise ValueError("execute فقط نتیجه‌ی پذیرفته‌شده‌ی گارد را اجرا می‌کند.")
         database = schema.connect()
-        rows = database[collection].aggregate(query, maxTimeMS=max_time_ms)
+        rows = database[source].aggregate(checked.query, maxTimeMS=checked.max_time_ms)
         return [_plain(row) for row in rows]

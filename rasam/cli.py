@@ -65,7 +65,7 @@ def render(result: Answer, show_query: bool) -> str:
     if result.summary:
         parts.append(result.summary)
     if show_query:
-        parts.append(f"کالکشن: {result.collection}\nکوئری: {result.pipeline}")
+        parts.append(f"منبع: {result.source}\nکوئری: {result.query}")
     parts.append(_render_rows(result.rows))
     return "\n\n".join(parts)
 

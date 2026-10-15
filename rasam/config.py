@@ -133,7 +133,7 @@ class Settings:
     # نام کالکشن مخصوص هر مشتری است، پس در کد نمی‌نشیند. گارد این فهرست را
     # می‌گیرد و هر کوئری بیرون از آن را رد می‌کند — دفاع در برابر کالکشن‌های
     # حساسِ خودِ همان مشتری، مثل `users` یا `billing`.
-    allowed_collections: frozenset[str]
+    allowed_sources: frozenset[str]
     csv_dir: Path
     llm_api_key: str
     llm_base_url: str
@@ -193,7 +193,7 @@ def _load() -> Settings:
         mongo_uri=mongo_uri,
         mongo_db=_env("MONGO_DB"),
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),
-        allowed_collections=profile.allowed_collections,
+        allowed_sources=profile.allowed_sources,
         # مسیر نسبی نسبت به ریشه‌ی پروژه معنا می‌شود، نه دایرکتوری جاری.
         csv_dir=csv_dir if csv_dir.is_absolute() else (PROJECT_ROOT / csv_dir).resolve(),
         llm_api_key=_env("LLM_API_KEY"),

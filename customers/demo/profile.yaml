@@ -1,6 +1,6 @@
 db_type: mongodb
 connection_env: MONGO_URI
-allowed_collections:
+allowed_sources:
   - inverter_data
   - lvpanel_data
   - mvpanel_data

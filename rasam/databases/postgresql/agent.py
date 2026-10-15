@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from rasam import config
-from rasam.databases.base import Result
+from rasam.databases.base import Reply, Result
 
 
 class PostgresAgent:
@@ -42,10 +42,16 @@ class PostgresAgent:
     def build_query_prompt(self, *args, **kwargs) -> str:
         raise NotImplementedError("پرامپت SQL در قدم تکمیل PostgreSQL ساخته می‌شود.")
 
-    def validate_query(self, collection: str, query: Any) -> Result:
+    def format_example(self, example: dict) -> str:
+        raise NotImplementedError("قالب نمونه‌ی SQL در قدم آداپتور PostgreSQL ساخته می‌شود.")
+
+    def parse_reply(self, text: str) -> Reply:
+        raise NotImplementedError("خواندن پاسخ SQL در قدم آداپتور PostgreSQL ساخته می‌شود.")
+
+    def validate_query(self, source: str, query: Any) -> Result:
         return Result(False, None, "اعتبارسنجی PostgreSQL هنوز به قرارداد SQL منتقل نشده است.")
 
-    def execute(self, collection: str, query: Any, max_time_ms: int) -> list[dict]:
+    def execute(self, source: str, checked: Result) -> list[dict]:
         raise NotImplementedError("اجرای کوئری PostgreSQL در اتصال SQL قدم بعدی تکمیل می‌شود.")
 
     def _connect(self):

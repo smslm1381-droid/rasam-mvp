@@ -79,7 +79,7 @@ def grade(expect: dict, answer: graph.Answer) -> tuple[str, str]:
     ساخته باشد، قضاوت درباره‌اش منصفانه است؛ اگر اصلاً کوئری‌ای نرسیده، چیزی
     برای قضاوت نداریم.
     """
-    if answer.error and answer.pipeline is None:
+    if answer.error and answer.query is None:
         return "skipped", answer.error[:60]
     if answer.error:
         return "wrong", answer.error[:60]

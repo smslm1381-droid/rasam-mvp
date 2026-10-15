@@ -18,7 +18,7 @@ def test_demo_profile_contains_configuration_without_a_secret():
     profile = customer.load_profile("demo", ROOT)
     assert profile.db_type == "mongodb"
     assert profile.connection_env == "MONGO_URI"
-    assert "inverter_data" in profile.allowed_collections
+    assert "inverter_data" in profile.allowed_sources
     assert "chart" in profile.capabilities
     assert profile.limits["max_rows"] == 1000
 
@@ -40,7 +40,7 @@ def test_missing_profile_is_rejected(tmp_path):
 BASE = """\
 db_type: mongodb
 connection_env: MONGO_URI
-allowed_collections: [inverter_data]
+allowed_sources: [inverter_data]
 capabilities: [summary, repair]
 limits: {max_rows: 1000}
 """

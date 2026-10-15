@@ -117,7 +117,7 @@ def describe_schema(db: Database) -> str:
        `billing` هم داشته باشد؛ کاربر فقط-خواندنی جلوی خواندنشان را نمی‌گیرد
        (تصمیم ۳۰ نقشه). توصیف‌نکردنشان یعنی حتی یک نام فیلد هم بیرون نمی‌رود.
     """
-    present = set(db.list_collection_names()) & set(config.settings.allowed_collections)
+    present = set(db.list_collection_names()) & set(config.settings.allowed_sources)
     return "\n\n".join(describe_collection(db, name) for name in sorted(present))
 
 

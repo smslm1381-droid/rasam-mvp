@@ -37,8 +37,8 @@ def test_an_empty_result_is_explained_not_left_blank():
 
 
 def test_the_query_is_hidden_unless_asked_for():
-    answer = Answer(question="q", collection="inverter_data",
-                    pipeline=[{"$match": {}}], rows=[{"n": 1}])
+    answer = Answer(question="q", source="inverter_data",
+                    query=[{"$match": {}}], rows=[{"n": 1}])
     assert "inverter_data" not in cli.render(answer, show_query=False)
     assert "inverter_data" in cli.render(answer, show_query=True)
 

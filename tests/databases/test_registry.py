@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+import pytest
 from bson import ObjectId
 from bson.decimal128 import Decimal128
 
@@ -13,6 +14,7 @@ from rasam.databases.mongodb import MongoAgent
 from rasam.databases.mongodb import agent as agent_module
 from rasam.databases.postgresql import PostgresAgent
 from rasam.databases import registry
+from rasam.databases.base import Result
 
 
 def test_registry_selects_mongodb_from_demo_profile():
@@ -22,7 +24,7 @@ def test_registry_selects_mongodb_from_demo_profile():
 def test_postgres_agent_rejects_queries_until_sql_guard_exists():
     result = PostgresAgent("postgresql://example").validate_query("telemetry", "SELECT 1")
     assert result.ok is False
-    assert result.pipeline is None
+    assert result.query is None
 
 
 def test_registry_has_a_distinct_postgresql_backend():
@@ -52,7 +54,8 @@ def test_mongo_only_types_leave_the_agent_as_plain_values(monkeypatch):
              "nested": {"id": identifier}, "many": [identifier]}]
     monkeypatch.setattr(agent_module.schema, "connect",
                         lambda: {"inverter_data": _Collection(rows)})
-    row = MongoAgent().execute("inverter_data", [{"$match": {}}], 1000)[0]
+    accepted = Result(ok=True, query=[{"$match": {}}], reason="", max_time_ms=1000)
+    row = MongoAgent().execute("inverter_data", accepted)[0]
 
     assert row["_id"] == str(identifier)
     assert row["amount"] == "12.5"
@@ -68,3 +71,19 @@ def test_the_agent_asks_for_the_cached_schema_not_a_fresh_scan(monkeypatch):
                         lambda: calls.append(1) or "SCHEMA")
     assert MongoAgent().describe_schema() == "SCHEMA"
     assert len(calls) == 1
+
+
+def test_execute_refuses_a_query_the_guard_did_not_accept():
+    """قاعده‌ی ۳ در امضای تابع: اجرا فقط از روی نتیجه‌ی پذیرفته‌شده‌ی گارد."""
+    rejected = Result(ok=False, query=None, reason="رد شد")
+    with pytest.raises(ValueError, match="پذیرفته"):
+        MongoAgent().execute("inverter_data", rejected)
+
+
+def test_the_agent_formats_an_example_in_the_shape_the_model_must_answer_in():
+    text = MongoAgent().format_example({
+        "question": "دما؟", "why": "ساده", "source": "inverter_data",
+        "query": [{"$limit": 1}]})
+    assert text.startswith("Q: دما؟")
+    assert '"collection": "inverter_data"' in text and '"pipeline": [{"$limit": 1}]' in text
+    assert "# ساده" in text

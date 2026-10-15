@@ -12,8 +12,6 @@
 
 from __future__ import annotations
 
-import json
-import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any, TypedDict
@@ -23,6 +21,7 @@ from langgraph.graph import END, START, StateGraph
 from rasam import config
 from rasam.core import charting, knowledge, llm, prompts
 from rasam.databases import registry
+from rasam.databases.base import Result
 
 @dataclass
 class Answer:
@@ -34,8 +33,10 @@ class Answer:
     """
 
     question: str
-    collection: str | None = None
-    pipeline: list[dict] | None = None
+    # کالکشن یا جدولی که کوئری رویش اجرا شد، و خودِ کوئری (فهرست stage برای
+    # مونگو، متن برای SQL). نام‌ها عمومی‌اند چون `Answer` مال هسته است.
+    source: str | None = None
+    query: Any = None
     rows: list[dict] = field(default_factory=list)
     summary: str | None = None
     chart: dict[str, Any] | None = None
@@ -50,8 +51,9 @@ class State(TypedDict, total=False):
     """حالت میان گره‌ها. `max_time_ms` از گارد می‌آید و فقط داخلی است."""
 
     question: str
-    collection: str | None
-    pipeline: list[dict] | None
+    source: str | None
+    query: Any
+    checked: Result
     rows: list[dict]
     summary: str | None
     chart: dict[str, Any] | None
@@ -60,94 +62,6 @@ class State(TypedDict, total=False):
     repaired: bool
     message: str | None
     error: str | None
-    max_time_ms: int
-
-
-# نشانه‌ی اینکه مدل *قصد* کوئری داشته، حتی اگر نتیجه JSON معتبری نباشد.
-_JSON_START = ("{", "[")
-
-_BROKEN_JSON = (
-    "مدل چیزی شبیه کوئری برگرداند که JSON معتبری نبود. "
-    "دوباره بپرسید؛ اگر تکرار شد، مدل تنظیم‌شده در RASAM_LLM_MODEL را عوض کنید."
-)
-
-
-def _balanced_object(text: str) -> str | None:
-    """از اولین `{`، تا آکولادِ متناظرش را برمی‌گرداند.
-
-    چرا لازم شد: بعضی مدل‌ها بعد از شیء JSON چیز اضافه می‌گذارند — یک `}`
-    زیادی، یک جمله‌ی توضیح، یا متن فکرکردنشان. `json.loads` روی کل متن شکست
-    می‌خورد و یک کوئریِ کاملاً درست دور ریخته می‌شود.
-
-    این *حدس زدن* نیست: فقط آکولادها شمرده می‌شوند و رشته‌های داخل JSON (که
-    ممکن است خودشان آکولاد داشته باشند) رد می‌شوند. چیزی که برمی‌گردد باز هم
-    باید از `json.loads` و بعد از گارد رد شود.
-    """
-    start = text.find("{")
-    if start < 0:
-        return None
-
-    depth, in_string, escaped = 0, False, False
-    for index in range(start, len(text)):
-        char = text[index]
-        if in_string:
-            if escaped:
-                escaped = False
-            elif char == "\\":
-                escaped = True
-            elif char == '"':
-                in_string = False
-            continue
-        if char == '"':
-            in_string = True
-        elif char == "{":
-            depth += 1
-        elif char == "}":
-            depth -= 1
-            if depth == 0:
-                return text[start:index + 1]
-    return None
-
-
-def _parse(text: str) -> tuple[dict | None, str | None, str | None]:
-    """خروجی مدل را سه‌راهی تفکیک می‌کند: کوئری، جمله‌ی فارسی، یا خطا.
-
-    قاعده‌ی تشخیص از v1-reference بخش ۴: اگر JSON معتبر بود، تلاش برای کوئری
-    بوده؛ وگرنه جمله‌ای است که طبق قاعده‌ی ۵ پرامپت داده شده.
-
-    حالت سوم از یک شکست واقعی آمد: مدلی یک `}` اضافه در جواب گذاشت، JSON از هم
-    پاشید، و آن متن به‌عنوان «جمله‌ی فارسی» پذیرفته شد — کاربر به‌جای جواب، یک
-    خط JSON خام دید و برنامه آن را موفقیت شمرد. پس متنی که با `{` یا `[` شروع
-    می‌شود هرگز جمله نیست: یا کوئری است یا خطا.
-
-    بلوک markdown با اینکه قاعده‌ی ۶ منعش کرده پاک می‌شود، چون مدل‌ها گاهی
-    اضافه‌اش می‌کنند و ردکردن یک کوئری سالم به‌خاطر سه بک‌تیک بی‌دلیل است.
-    """
-    stripped = re.sub(r"^```(?:json)?|```$", "", text.strip(), flags=re.MULTILINE).strip()
-    try:
-        parsed = json.loads(stripped)
-    except json.JSONDecodeError:
-        parsed = _retry_as_object(stripped)
-        if parsed is None:
-            if stripped.startswith(_JSON_START):
-                return None, None, _BROKEN_JSON
-            return None, text, None
-    if isinstance(parsed, dict):
-        return parsed, None, None
-    # JSON معتبر ولی نه یک شیء: مثلاً فقط pipeline بدون نام کالکشن.
-    return None, None, _BROKEN_JSON
-
-
-def _retry_as_object(text: str) -> dict | None:
-    """تلاش دوم: فقط شیء JSON را از دل متن بیرون بکش و همان را بخوان."""
-    candidate = _balanced_object(text)
-    if candidate is None:
-        return None
-    try:
-        parsed = json.loads(candidate)
-    except json.JSONDecodeError:
-        return None
-    return parsed if isinstance(parsed, dict) else None
 
 
 def generate(state: State) -> State:
@@ -158,21 +72,20 @@ def generate(state: State) -> State:
         return {"error": f"اتصال به دیتابیس برقرار نشد: {error}"}
 
     selected = _knowledge(state["question"], schema)
-    allowed = config.settings.allowed_collections
-    reply = llm.ask(registry.get_agent().build_query_prompt(
-        selected["schema"], state["question"], allowed,
+    agent = registry.get_agent()
+    reply = llm.ask(agent.build_query_prompt(
+        selected["schema"], state["question"], config.settings.allowed_sources,
         want_chart=state.get("want_chart", False),
         documentation=selected["documentation"], examples=selected["examples"]))
     if not reply.ok:
         return {"error": reply.reason}
 
-    parsed, message, error = _parse(reply.text)
-    if error:
-        return {"error": error}
-    if parsed is None:
-        return {"message": message}
-    return {"collection": parsed.get("collection"), "pipeline": parsed.get("pipeline"),
-            "attempts": 1}
+    parsed = agent.parse_reply(reply.text)
+    if parsed.error:
+        return {"error": parsed.error}
+    if parsed.message:
+        return {"message": parsed.message}
+    return {"source": parsed.source, "query": parsed.query, "attempts": 1}
 
 
 def prepare(state: State) -> State:
@@ -192,7 +105,7 @@ def _knowledge(question: str, schema: str) -> dict[str, str]:
         question,
         {"schema": schema,
          "documentation": knowledge.documentation_text(),
-         "examples": knowledge.examples_text()},
+         "examples": knowledge.examples_text(registry.get_agent().format_example)},
         config.settings.max_knowledge_chars,
     )
 
@@ -210,17 +123,16 @@ def _knowledge_store(schema: str) -> knowledge.KnowledgeStore:
 def validate(state: State) -> State:
     """گره ۲ — گارد. تنها راه رسیدن کوئری به دیتابیس."""
     agent = registry.get_agent()
-    checked = agent.validate_query(state.get("collection") or "", state.get("pipeline"))
+    checked = agent.validate_query(state.get("source") or "", state.get("query"))
     if not checked.ok:
         return {"error": f"کوئری ساخته‌شده پذیرفته نشد: {checked.reason}"}
-    return {"pipeline": checked.pipeline, "max_time_ms": checked.max_time_ms}
+    return {"query": checked.query, "checked": checked}
 
 
 def execute(state: State) -> State:
     """گره ۳ — اجرای کوئریِ تاییدشده."""
     try:
-        rows = registry.get_agent().execute(
-            state["collection"], state["pipeline"], state["max_time_ms"])
+        rows = registry.get_agent().execute(state["source"], state["checked"])
     except Exception as error:  # noqa: BLE001 — backend خطا را به مقدار تبدیل می‌کند
         return {"error": f"اجرای کوئری روی دیتابیس شکست خورد: {error}"}
     return {"rows": rows}
@@ -239,23 +151,24 @@ def repair(state: State) -> State:
         return {"attempts": attempts}
 
     selected = _knowledge(state["question"], schema)
-    reply = llm.ask(registry.get_agent().build_query_prompt(
-        selected["schema"], state["question"], config.settings.allowed_collections,
+    agent = registry.get_agent()
+    reply = llm.ask(agent.build_query_prompt(
+        selected["schema"], state["question"], config.settings.allowed_sources,
         want_chart=state.get("want_chart", False),
         documentation=selected["documentation"], examples=selected["examples"],
-        failure=(state.get("pipeline"), state.get("error") or ""),
+        failure=(state.get("query"), state.get("error") or ""),
     ))
     if not reply.ok:
         return {"attempts": attempts}
 
-    parsed, message, error = _parse(reply.text)
-    if error:
-        return {"attempts": attempts, "error": error}
-    if parsed is None:
+    parsed = agent.parse_reply(reply.text)
+    if parsed.error:
+        return {"attempts": attempts, "error": parsed.error}
+    if parsed.message:
         # مدل به این نتیجه رسیده که سوال از این داده قابل جواب نیست.
-        return {"attempts": attempts, "message": message, "error": None}
+        return {"attempts": attempts, "message": parsed.message, "error": None}
     return {"attempts": attempts, "repaired": True, "error": None,
-            "collection": parsed.get("collection"), "pipeline": parsed.get("pipeline")}
+            "source": parsed.source, "query": parsed.query}
 
 
 def summarize(state: State) -> State:
@@ -385,8 +298,8 @@ def answer(question: str) -> Answer:
 
     return Answer(
         question=question,
-        collection=final.get("collection"),
-        pipeline=final.get("pipeline"),
+        source=final.get("source"),
+        query=final.get("query"),
         rows=final.get("rows") or [],
         summary=final.get("summary"),
         chart=final.get("chart"),

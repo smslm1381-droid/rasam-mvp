@@ -89,7 +89,7 @@ def test_only_whitelisted_collections_are_described(monkeypatch):
     fake = FakeDatabase(inverter_data=FakeCollection(), billing=FakeCollection())
     monkeypatch.setattr(mongo_schema.config, "settings",
                         replace(mongo_schema.config.settings,
-                                allowed_collections=frozenset({"inverter_data"})))
+                                allowed_sources=frozenset({"inverter_data"})))
     text = mongo_schema.describe_schema(fake)
     assert "Collection: inverter_data" in text
     assert "billing" not in text

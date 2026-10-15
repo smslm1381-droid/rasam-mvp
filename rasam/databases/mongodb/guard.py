@@ -80,7 +80,7 @@ ALLOWED_OPERATORS = frozenset(
 
 
 def _reject(reason: str) -> Result:
-    return Result(ok=False, pipeline=None, reason=reason)
+    return Result(ok=False, query=None, reason=reason)
 
 
 def _forbidden_key(node: Any) -> str | None:
@@ -165,7 +165,7 @@ def check(
 
     return Result(
         ok=True,
-        pipeline=safe,
+        query=safe,
         reason="",
         max_time_ms=config.settings.query_timeout_ms,
     )

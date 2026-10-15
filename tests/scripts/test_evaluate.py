@@ -21,7 +21,7 @@ PIPE = [{"$group": {"_id": None, "v": {"$avg": "$int_temp"}}}]
 
 
 def answered(rows) -> Answer:
-    return Answer(question="q", collection="inverter_data", pipeline=PIPE, rows=rows)
+    return Answer(question="q", source="inverter_data", query=PIPE, rows=rows)
 
 
 # --- جواب عددی --------------------------------------------------------------
@@ -107,7 +107,7 @@ def test_a_service_failure_is_not_counted_as_a_wrong_answer():
 
 def test_a_rejected_query_is_a_wrong_answer_not_a_skip():
     """مدل کوئری ساخته و گارد ردش کرده — این تقصیر مدل است، نه سرویس."""
-    answer = Answer(question="q", pipeline=PIPE,
+    answer = Answer(question="q", query=PIPE,
                     error="کوئری ساخته‌شده پذیرفته نشد: عملگر «$where» ...")
     assert grade({"value": 28.61}, answer)[0] == "wrong"
 

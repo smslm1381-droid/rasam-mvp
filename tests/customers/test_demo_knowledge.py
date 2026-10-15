@@ -33,8 +33,8 @@ def test_there_are_enough_examples():
 @pytest.mark.parametrize("example", EXAMPLES, ids=IDS)
 def test_every_example_passes_the_guard(example):
     """نمونه‌ای که گارد ردش کند، مدل را چیز غلطی یاد می‌دهد."""
-    checked = guard.check(example["pipeline"], example["collection"],
-                          set(config.settings.allowed_collections))
+    checked = guard.check(example["query"], example["source"],
+                          set(config.settings.allowed_sources))
     assert checked.ok, checked.reason
 
 
@@ -42,7 +42,7 @@ def test_every_example_passes_the_guard(example):
 def test_every_example_is_complete(example):
     assert example["question"].strip()
     assert example["why"].strip()
-    assert isinstance(example["pipeline"], list) and example["pipeline"]
+    assert isinstance(example["query"], list) and example["query"]
 
 
 @pytest.mark.parametrize("example", EXAMPLES, ids=IDS)
@@ -60,7 +60,7 @@ def test_the_unsigned_reactive_power_trap_is_documented():
 
 def test_the_sign_conversion_appears_in_a_worked_example():
     """توضیح کافی نیست؛ مدل باید شکل عملی‌اش را هم ببیند."""
-    assert any("2147483648" in str(e["pipeline"]) for e in EXAMPLES)
+    assert any("2147483648" in str(e["query"]) for e in EXAMPLES)
 
 
 @pytest.mark.parametrize("trap", [

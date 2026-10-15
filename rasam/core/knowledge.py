@@ -8,8 +8,8 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -49,22 +49,14 @@ def examples() -> list[dict]:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or []
 
 
-@lru_cache(maxsize=1)
-def examples_text() -> str:
-    """نمونه‌ها به‌صورت متنی آماده‌ی پرامپت.
+def examples_text(format_example: Callable[[dict], str]) -> str:
+    """نمونه‌ها به‌صورت متن آماده‌ی پرامپت.
 
-    `why` هر نمونه هم وارد پرامپت می‌شود: مدل از دیدن *دلیل*، الگو را بهتر به
-    سوال تازه تعمیم می‌دهد تا از دیدن کوئریِ تنها.
+    خواندن فایل در هسته است ولی **تبدیل یک نمونه به متن** مال ایجنت دیتابیس
+    است (`format_example`): شکل کوئری را فقط او می‌شناسد، و قالب نمونه باید
+    همان قالب پاسخی باشد که از مدل می‌خواهیم.
     """
-    blocks = []
-    for item in examples():
-        why = f"\n# {item['why'].strip()}" if item.get("why") else ""
-        blocks.append(
-            f"Q: {item['question']}{why}\n"
-            f'A: {{"collection": "{item["collection"]}", '
-            f'"pipeline": {json.dumps(item["pipeline"], ensure_ascii=False)}}}'
-        )
-    return "\n\n".join(blocks)
+    return "\n\n".join(format_example(item) for item in examples())
 
 
 @lru_cache(maxsize=1)
@@ -195,8 +187,8 @@ def _example_documents(directory: Path) -> list[dict[str, Any]]:
     examples = yaml.safe_load(path.read_text(encoding="utf-8")) or []
     return [_document(
         f"example-{index}",
-        f"Q: {item['question']}\nWhy: {item.get('why', '')}\nA: {item['collection']} {item['pipeline']}",
-        {"kind": "examples", "collection": item["collection"]},
+        f"Q: {item['question']}\nWhy: {item.get('why', '')}\nA: {item['source']} {item['query']}",
+        {"kind": "examples", "source": item["source"]},
     ) for index, item in enumerate(examples)]
 
 
