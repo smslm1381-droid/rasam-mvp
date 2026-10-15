@@ -39,6 +39,12 @@ class PostgresAgent:
             for table, columns in tables.items()
         )
 
+    def list_sources(self) -> list[str]:
+        raise NotImplementedError("فهرست جدول‌ها در قدم آداپتور PostgreSQL ساخته می‌شود.")
+
+    def list_fields(self, source: str) -> list[str]:
+        raise NotImplementedError("فهرست ستون‌ها در قدم آداپتور PostgreSQL ساخته می‌شود.")
+
     def build_query_prompt(self, *args, **kwargs) -> str:
         raise NotImplementedError("پرامپت SQL در قدم تکمیل PostgreSQL ساخته می‌شود.")
 

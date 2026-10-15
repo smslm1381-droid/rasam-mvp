@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
+from pymongo import MongoClient
+
 from rasam import config
 from rasam.databases.base import Reply, Result
 from rasam.databases.mongodb import guard, prompts, reply, schema
@@ -36,6 +38,31 @@ def _plain(value):
 
 class MongoAgent:
     db_type = "mongodb"
+
+    def __init__(self, connection_uri: str | None = None, database: str | None = None):
+        """بدون آرگومان، مشتری فعال را سرویس می‌دهد.
+
+        آرگومان‌ها فقط برای ابزار تحویل‌اند که باید به دیتابیس یک مشتریِ
+        *هنوز فعال‌نشده* وصل شود و `list_sources` و `list_fields` را بپرسد؛ آن
+        دو هرگز به تنظیمات مشتری فعال دست نمی‌زنند.
+        """
+        self._connection_uri = connection_uri
+        self._database = database
+
+    def _inspect(self, work):
+        """یک اتصال کوتاه‌مدت برای ابزار تحویل، که همیشه بسته می‌شود."""
+        client = MongoClient(
+            self._connection_uri or config.settings.connection_uri, serverSelectionTimeoutMS=5000)
+        try:
+            return work(client[self._database or config.settings.database])
+        finally:
+            client.close()
+
+    def list_sources(self) -> list[str]:
+        return sorted(self._inspect(lambda database: database.list_collection_names()))
+
+    def list_fields(self, source: str) -> list[str]:
+        return self._inspect(lambda database: schema.field_names(database, source))
 
     def describe_schema(self) -> str:
         return schema.schema_text()

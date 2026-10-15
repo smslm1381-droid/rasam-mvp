@@ -1,5 +1,6 @@
 db_type: mongodb
 connection_env: MONGO_URI
+database: solar_telemetry
 allowed_sources:
   - inverter_data
   - lvpanel_data

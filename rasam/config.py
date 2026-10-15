@@ -35,8 +35,6 @@ ENV_PREFIX = "RASAM_"
 # اینها پیش‌فرض ندارند: یا رازند یا مخصوص همین ماشین. نبودشان باید سر و صدا
 # کند، نه اینکه با یک مقدار حدسی جای اشتباهی وصل شویم.
 REQUIRED = (
-    "MONGO_DB",
-    "CSV_DIR",
     "LLM_API_KEY",
     "LLM_BASE_URL",
     "LLM_MODEL",
@@ -59,6 +57,11 @@ def _env(name: str) -> str | None:
     """مقدار متغیر با پیشوند پروژه؛ رشته‌ی خالی مثل نبودن حساب می‌شود."""
     value = os.getenv(ENV_PREFIX + name)
     return value.strip() if value and value.strip() else None
+
+
+def env_value(name: str) -> str | None:
+    """مقدار یک متغیر با پیشوند پروژه، برای ابزارهایی که فقط وجودش را می‌پرسند."""
+    return _env(name)
 
 
 def _number(name: str, default, convert, kind: str):
@@ -125,8 +128,10 @@ def _hide_password(uri: str) -> str:
 class Settings:
     customer: CustomerProfile
     connection_uri: str
-    mongo_uri: str
-    mongo_db: str
+    # نام دیتابیس مال پروفایل مشتری است، نه `.env`: با یک پروسه به‌ازای هر
+    # مشتری (تصمیم ۸۰) هر دو کار می‌کرد، ولی نامِ دیتابیس راز نیست و کنار بقیه‌ی
+    # پیکربندی مشتری، در یک فایل قابل‌بازبینی، جایش درست‌تر است.
+    database: str
     # فقط اسکریپت seed این را می‌خواهد. اجباری‌کردنش یعنی مسیر عادیِ پاسخ به
     # سوال هم بدون یک اتصالِ نویسنده بالا نیاید — برعکس قاعده‌ی امنیتی ۲.
     mongo_admin_uri: str | None
@@ -134,7 +139,8 @@ class Settings:
     # می‌گیرد و هر کوئری بیرون از آن را رد می‌کند — دفاع در برابر کالکشن‌های
     # حساسِ خودِ همان مشتری، مثل `users` یا `billing`.
     allowed_sources: frozenset[str]
-    csv_dir: Path
+    # فقط اسکریپت seed دمو آن را می‌خواهد؛ مشتری واقعی CSV ندارد.
+    csv_dir: Path | None
     llm_api_key: str
     llm_base_url: str
     llm_model: str
@@ -164,7 +170,7 @@ class Settings:
             value = getattr(self, field.name)
             if field.name == "llm_api_key":
                 value = "***"
-            elif field.name in ("mongo_uri", "mongo_admin_uri") and value:
+            elif field.name in ("connection_uri", "mongo_admin_uri") and value:
                 value = _hide_password(value)
             lines.append(f"  {field.name} = {value!r}")
         return "Settings(\n" + "\n".join(lines) + "\n)"
@@ -179,23 +185,24 @@ def _load() -> Settings:
             + "\n\nراه‌حل: فایل `.env.example` را به `.env` کپی کنید و مقادیرش را پر کنید."
         )
 
-    csv_dir = Path(_env("CSV_DIR"))
+    raw_csv_dir = _env("CSV_DIR")
+    csv_dir = Path(raw_csv_dir) if raw_csv_dir else None
     profile = load_profile(_env("CUSTOMER"), CUSTOMERS_DIR)
-    mongo_uri = _env(profile.connection_env)
-    if mongo_uri is None:
+    connection_uri = _env(profile.connection_env)
+    if connection_uri is None:
         raise ConfigError(
             f"تنظیمات ناقص است. متغیر {ENV_PREFIX}{profile.connection_env} "
             f"از پروفایل مشتری «{profile.name}» پیدا نشد."
         )
     return Settings(
         customer=profile,
-        connection_uri=mongo_uri,
-        mongo_uri=mongo_uri,
-        mongo_db=_env("MONGO_DB"),
+        connection_uri=connection_uri,
+        database=profile.database,
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),
         allowed_sources=profile.allowed_sources,
         # مسیر نسبی نسبت به ریشه‌ی پروژه معنا می‌شود، نه دایرکتوری جاری.
-        csv_dir=csv_dir if csv_dir.is_absolute() else (PROJECT_ROOT / csv_dir).resolve(),
+        csv_dir=None if csv_dir is None else (
+            csv_dir if csv_dir.is_absolute() else (PROJECT_ROOT / csv_dir).resolve()),
         llm_api_key=_env("LLM_API_KEY"),
         llm_base_url=_env("LLM_BASE_URL"),
         llm_model=_env("LLM_MODEL"),

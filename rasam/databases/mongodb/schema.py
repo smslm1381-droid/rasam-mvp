@@ -30,7 +30,7 @@ def _client() -> MongoClient:
     به‌ازای هر تماس، روی خط فرمان فقط کندی است ولی زیر API نشت است: هر درخواست
     چند اتصال باز می‌کند که هیچ‌وقت بسته نمی‌شوند.
     """
-    return MongoClient(config.settings.mongo_uri, serverSelectionTimeoutMS=5000)
+    return MongoClient(config.settings.connection_uri, serverSelectionTimeoutMS=5000)
 
 
 def connect() -> Database:
@@ -39,7 +39,7 @@ def connect() -> Database:
     تنها راه رسیدن بقیه‌ی کد به مونگو. رشته‌ی اتصال از کانفیگ می‌آید و کاربرش
     فقط نقش `read` دارد (قاعده‌ی امنیتی ۲).
     """
-    return _client()[config.settings.mongo_db]
+    return _client()[config.settings.database]
 
 
 def _type_name(value) -> str:
@@ -91,6 +91,11 @@ def _field_line(name: str, field: dict) -> str:
     # یادداشت فیلد مال مشتری است نه مال مونگو: `customers/<نام>/field_notes.yaml`
     note = knowledge.field_notes().get(name)
     return f"  {name}: {kind}  {detail}" + (f"  <- {note}" if note else "")
+
+
+def field_names(db: Database, name: str) -> list[str]:
+    """نام فیلدهای یک کالکشن، به ترتیب ظاهرشدن (برای پیش‌نویس مستندات مشتری)."""
+    return list(_scan(db[name]))
 
 
 def describe_collection(db: Database, name: str) -> str:

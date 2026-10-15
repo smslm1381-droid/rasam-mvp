@@ -54,6 +54,19 @@ class DatabaseAgent(Protocol):
 
     def describe_schema(self) -> str: ...
 
+    def list_sources(self) -> list[str]:
+        """همه‌ی کالکشن‌ها یا جدول‌های دیتابیس — **نه** فقط مجازها.
+
+        برای ابزار تحویل است: وقتی مشتری تازه می‌آید هنوز فهرست سفیدی نیست و
+        انسان باید از میان این فهرست انتخاب کند. مسیر پاسخ به سوال هرگز آن را
+        صدا نمی‌زند.
+        """
+        ...
+
+    def list_fields(self, source: str) -> list[str]:
+        """نام فیلدها یا ستون‌های یک منبع، برای پیش‌نویس مستندات مشتری."""
+        ...
+
     def build_query_prompt(self, schema: str, question: str, sources: set[str],
                            failure: tuple[Any, str] | None = None,
                            want_chart: bool = False,

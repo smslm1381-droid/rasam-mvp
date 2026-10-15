@@ -92,6 +92,10 @@ def main() -> int:
               " اتصال مدیر نیاز دارد؛ کاربر فقط-خواندنی نمی‌تواند بنویسد.")
         return 1
 
+    if settings.csv_dir is None:
+        print("خطا: RASAM_CSV_DIR در `.env` نیست. این اسکریپت فقط برای دموست و CSVها را از آنجا می‌خواند.")
+        return 1
+
     files = sorted(settings.csv_dir.glob("*.csv"))
     if not files:
         print(f"خطا: هیچ فایل CSVی در «{settings.csv_dir}» پیدا نشد."
@@ -101,8 +105,8 @@ def main() -> int:
     print(f"خواندن {len(files)} فایل از {settings.csv_dir}")
     try:
         with MongoClient(settings.mongo_admin_uri, serverSelectionTimeoutMS=5000) as client:
-            seed(client, settings.mongo_db, files)
-            user = ensure_readonly_user(client, settings.mongo_uri, settings.mongo_db)
+            seed(client, settings.database, files)
+            user = ensure_readonly_user(client, settings.connection_uri, settings.database)
     except PyMongoError as error:
         print(f"خطا در کار با مونگو: {error}\nآیا `docker compose up -d` را زده‌اید؟")
         return 1

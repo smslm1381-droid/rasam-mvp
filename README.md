@@ -45,6 +45,7 @@ python -c "from rasam import config; print(config.settings)"
 | `docker compose up -d` | مونگوی محلی توسعه | ۲ |
 | `python scripts/seed_mongo.py` | پرکردن دیتابیس از CSVها | ۲ |
 | `python ask.py "سوال شما"` | پرسیدن سوال | ۶ |
+| `python onboard.py new` | ساختن پوشه‌ی مشتری تازه | ۲۶ |
 | `python ask.py --csv result.csv "سوال شما"` | ذخیره‌ی نتیجه به CSV | ۱۴ |
 | `python ask.py --excel result.xlsx "سوال شما"` | ذخیره‌ی نتیجه به Excel | ۱۴ |
 | `uvicorn rasam.api:app --reload` | اجرای API | ۱۳ |

@@ -18,18 +18,18 @@ from pymongo.errors import OperationFailure, PyMongoError
 from rasam import config
 from scripts.seed_mongo import collection_name
 
-CSV_FILES = sorted(config.settings.csv_dir.glob("*.csv"))
+CSV_FILES = sorted(config.settings.csv_dir.glob("*.csv")) if config.settings.csv_dir else []
 
 
 @pytest.fixture(scope="module")
 def db():
     """اتصال با همان کاربر فقط-خواندنیِ برنامه — نه با کاربر مدیر."""
-    client = MongoClient(config.settings.mongo_uri, serverSelectionTimeoutMS=2000)
+    client = MongoClient(config.settings.connection_uri, serverSelectionTimeoutMS=2000)
     try:
-        client[config.settings.mongo_db].list_collection_names()
+        client[config.settings.database].list_collection_names()
     except PyMongoError as error:
         pytest.skip(f"مونگوی محلی در دسترس نیست: {error}")
-    yield client[config.settings.mongo_db]
+    yield client[config.settings.database]
     client.close()
 
 

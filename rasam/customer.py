@@ -21,8 +21,8 @@ import yaml
 
 # --- آنچه پروفایل اجازه دارد بگوید -------------------------------------------
 
-KNOWN_FIELDS = ("db_type", "connection_env", "allowed_sources", "capabilities", "limits")
-REQUIRED_FIELDS = ("db_type", "connection_env", "allowed_sources", "capabilities")
+KNOWN_FIELDS = ("db_type", "connection_env", "database", "allowed_sources", "capabilities", "limits")
+REQUIRED_FIELDS = ("db_type", "connection_env", "database", "allowed_sources", "capabilities")
 KNOWN_LIMITS = ("max_rows", "max_attempts")
 
 # قابلیت یعنی چیزی که مشتری می‌تواند نداشته باشد.
@@ -56,6 +56,7 @@ class CustomerProfile:
     directory: Path
     db_type: str
     connection_env: str
+    database: str
     allowed_sources: frozenset[str]
     capabilities: frozenset[str]
     limits: dict[str, int | None]
@@ -87,6 +88,7 @@ def _parse_profile(name: str, directory: Path, data: dict[str, Any]) -> Customer
         directory=directory,
         db_type=_text(data["db_type"], name, "db_type"),
         connection_env=_env_name(data["connection_env"], name),
+        database=_text(data["database"], name, "database"),
         allowed_sources=_names(data["allowed_sources"], name, "allowed_sources"),
         capabilities=_capabilities(data["capabilities"], name),
         limits=_limits(data.get("limits"), name),

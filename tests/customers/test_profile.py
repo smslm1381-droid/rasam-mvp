@@ -40,6 +40,7 @@ def test_missing_profile_is_rejected(tmp_path):
 BASE = """\
 db_type: mongodb
 connection_env: MONGO_URI
+database: solar_telemetry
 allowed_sources: [inverter_data]
 capabilities: [summary, repair]
 limits: {max_rows: 1000}
@@ -149,3 +150,13 @@ def test_demo_has_every_optional_node():
     demo = customer.load_profile("demo", ROOT).capabilities
     assert graph.graph_nodes(demo) == [
         "prepare", "generate", "validate", "execute", "summarize", "chart", "repair"]
+
+
+def test_the_database_name_belongs_to_the_profile_and_is_required(tmp_path):
+    """نام دیتابیس دیگر در `.env` نیست: پروفایل بدون آن معتبر نیست."""
+    message = broken(tmp_path, "database: solar_telemetry\n", "")
+    assert "database" in message
+
+
+def test_the_profile_carries_the_database_name():
+    assert customer.load_profile("demo", ROOT).database == "solar_telemetry"

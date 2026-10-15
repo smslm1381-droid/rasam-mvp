@@ -1,0 +1,16 @@
+# پروفایل مشتری «$name» — ساخته‌شده با `python onboard.py new`.
+# راهنمای فیلدها: customers/README.md. رمز و رشته‌ی اتصال هرگز اینجا نمی‌آید.
+db_type: $db_type
+connection_env: $connection_env
+database: $database
+allowed_sources:
+$sources
+capabilities:
+  - summary
+  - repair
+  - chart
+  - export_csv
+  - export_excel
+limits:
+  max_rows: 1000
+  max_attempts: 2
