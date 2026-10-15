@@ -6,6 +6,8 @@ allowed_collections:
   - mvpanel_data
   - string_data
 capabilities:
+  - summary
+  - repair
   - chart
   - export_csv
   - export_excel

@@ -294,40 +294,71 @@ def _next_or_repair(state: State) -> str:
     return "repair" if state.get("attempts", 1) < config.settings.max_attempts else END
 
 
-def _next_after_summary(state: State) -> str:
-    """فقط سوالی که نمودار خواسته باشد به گره نمودار می‌رسد."""
-    return "chart" if state.get("want_chart") else END
+def graph_nodes(capabilities: set[str] | frozenset[str]) -> list[str]:
+    """گره‌های گرافِ یک مشتری، به ترتیب مسیر.
+
+    هسته (چهار گره‌ی اول) همیشه هست؛ بقیه فقط اگر قابلیتشان در پروفایل آمده
+    باشد. هم `build_graph` از همین فهرست می‌سازد و هم خط فرمان آن را چاپ می‌کند،
+    تا «چه گره‌هایی دارد» یک جواب داشته باشد.
+    """
+    optional = [("summarize", "summary"), ("chart", "chart"), ("repair", "repair")]
+    return ["prepare", "generate", "validate", "execute"] + [
+        node for node, capability in optional if capability in capabilities
+    ]
+
+
+def _chart_if_wanted(state: State, nodes: list[str]) -> str:
+    """فقط سوالی که نمودار خواسته باشد، و مشتری‌ای که نمودار دارد، به آن می‌رسد."""
+    return "chart" if "chart" in nodes and state.get("want_chart") else END
+
+
+def _route(state: State, on_success: str, on_failure: str) -> str:
+    """بعد از اعتبارسنجی یا اجرا: موفقیت، شانس دوم، یا پایان."""
+    outcome = _next_or_repair(state)
+    if outcome == "continue":
+        return on_success
+    return on_failure if outcome == "repair" else END
 
 
 def build_graph(capabilities: set[str] | frozenset[str]):
+    """گراف را از روی قابلیت‌های مشتری می‌سازد.
+
+    گره‌ای که مشتری نخواسته **اصلاً ساخته نمی‌شود**، نه اینکه باشد و رد کند.
+    هسته‌ی `prepare ← generate ← validate ← execute` قابلیت نیست و هرگز خاموش
+    نمی‌شود: گارد یک گزینه نیست. مشتری بدون `repair` شانس دوم ندارد: کوئری
+    ردشده یا ناموفق مستقیم به پایان (و خطا) می‌رود.
+    """
+    nodes = graph_nodes(capabilities)
+    functions = {"prepare": prepare, "generate": generate, "validate": validate,
+                 "execute": execute, "summarize": summarize, "chart": chart,
+                 "repair": repair}
     graph = StateGraph(State)
-    graph.add_node("prepare", prepare)
-    graph.add_node("generate", generate)
-    graph.add_node("validate", validate)
-    graph.add_node("execute", execute)
-    graph.add_node("summarize", summarize)
-    graph.add_node("repair", repair)
-    if "chart" in capabilities:
-        graph.add_node("chart", chart)
+    for node in nodes:
+        graph.add_node(node, functions[node])
+
+    on_failure = "repair" if "repair" in nodes else END
+
+    def after_execute(state: State) -> str:
+        after_rows = "summarize" if "summarize" in nodes else _chart_if_wanted(state, nodes)
+        return _route(state, after_rows, on_failure)
+
     graph.add_edge(START, "prepare")
     graph.add_edge("prepare", "generate")
     graph.add_conditional_edges("generate", _next_after, {"continue": "validate", END: END})
-    graph.add_conditional_edges("validate", _next_or_repair,
-                                {"continue": "execute", "repair": "repair", END: END})
-    graph.add_conditional_edges("execute", _next_or_repair,
-                                {"continue": "summarize", "repair": "repair", END: END})
-    # ترمیم همیشه به اعتبارسنجی برمی‌گردد: هیچ کوئری اصلاح‌شده‌ای بدون گذشتن
-    # از گارد اجرا نمی‌شود.
-    graph.add_conditional_edges("repair", _next_after, {"continue": "validate", END: END})
-    if "chart" in capabilities:
-        graph.add_conditional_edges("summarize", _next_after_summary,
-                                    {"chart": "chart", END: END})
+    graph.add_conditional_edges("validate", lambda state: _route(state, "execute", on_failure))
+    graph.add_conditional_edges("execute", after_execute)
+    if "repair" in nodes:
+        # ترمیم همیشه به اعتبارسنجی برمی‌گردد: هیچ کوئری اصلاح‌شده‌ای بدون
+        # گذشتن از گارد اجرا نمی‌شود.
+        graph.add_conditional_edges("repair", _next_after, {"continue": "validate", END: END})
+    if "summarize" in nodes:
+        graph.add_conditional_edges("summarize", lambda state: _chart_if_wanted(state, nodes))
+    if "chart" in nodes:
         graph.add_edge("chart", END)
-    else:
-        graph.add_edge("summarize", END)
     return graph.compile()
 
 
+registry.check_db_type(config.settings.customer)
 _GRAPH = build_graph(config.settings.customer.capabilities)
 
 

@@ -340,3 +340,32 @@ def test_text_without_any_object_is_still_an_error(wired, monkeypatch):
     reply('{"collection": "inverter_data", "pipeline": [', monkeypatch)
     result = graph.answer("سوال")
     assert result.error is not None and result.message is None
+
+
+# --- مشتری بدون قابلیت‌های انتخابی (قدم ۱۸) ---------------------------------
+
+def run_with(monkeypatch, *capabilities: str, question: str = "سوال"):
+    monkeypatch.setattr(graph, "_GRAPH", graph.build_graph(frozenset(capabilities)))
+    return graph.answer(question)
+
+
+def test_a_customer_without_summary_gets_rows_and_never_a_summary_call(wired, monkeypatch):
+    seen = scripted(monkeypatch, json.dumps(GOOD))
+    result = run_with(monkeypatch, "repair")
+    assert result.rows == [{"avg": 28.61}] and result.summary is None
+    assert not any(p.startswith("You summarize") for p in seen)
+
+
+def test_a_customer_without_repair_fails_on_the_first_rejection(wired, monkeypatch):
+    """بدون `repair` شانس دومی نیست — و گارد هنوز کار می‌کند."""
+    seen = scripted(monkeypatch, json.dumps(BAD_STAGE), json.dumps(GOOD))
+    result = run_with(monkeypatch, "summary")
+    assert result.error is not None and result.repaired is False
+    assert wired.ran == []
+    assert not any("===Your previous attempt failed" in p for p in seen)
+
+
+def test_the_guard_still_runs_for_a_customer_with_no_optional_capabilities(wired, monkeypatch):
+    scripted(monkeypatch, json.dumps(STILL_BAD))
+    assert run_with(monkeypatch).error is not None
+    assert wired.ran == []

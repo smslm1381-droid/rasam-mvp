@@ -13,7 +13,7 @@ from pathlib import Path
 
 from rasam import config
 from rasam.core import exporting
-from rasam.core.graph import Answer, answer
+from rasam.core.graph import Answer, answer, graph_nodes
 
 
 def _cell(value) -> str:
@@ -74,6 +74,8 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="پرسیدن سوال از رصام")
     parser.add_argument("question", nargs="*", help="سوال فارسی")
     parser.add_argument("--query", action="store_true", help="نمایش کوئری")
+    parser.add_argument("--nodes", action="store_true",
+                        help="فهرست گره‌های گرافِ مشتری فعلی (RASAM_CUSTOMER) و خروج")
     output = parser.add_mutually_exclusive_group()
     output.add_argument("--csv", type=Path, metavar="PATH", help="ذخیره‌ی نتیجه به CSV")
     output.add_argument("--excel", type=Path, metavar="PATH", help="ذخیره‌ی نتیجه به Excel")
@@ -100,6 +102,9 @@ def _export(result: Answer, csv_path: Path | None, excel_path: Path | None) -> N
 
 def main(argv: list[str]) -> int:
     args = _parser().parse_args(argv)
+    if args.nodes:
+        print(", ".join(graph_nodes(config.settings.customer.capabilities)))
+        return 0
     question = " ".join(args.question)
 
     result = answer(question)
