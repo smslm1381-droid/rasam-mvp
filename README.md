@@ -58,33 +58,39 @@ python -c "from rasam import config; print(config.settings)"
 
 ```
 rasam-mvp/
-├── ask.py                      ← نقطه‌ی ورود خط فرمان
+├── ask.py · onboard.py         ← نقطه‌ی ورود خط فرمان و ابزار تحویل مشتری
 ├── rasam/                      ← همه‌ی کد برنامه
-│   ├── config.py               ← تنظیمات از .env
-│   ├── customer.py             ← خواندن پروفایل مشتری
+│   ├── config.py · errors.py   ← تنظیمات از .env؛ خطاهایی که پیامشان برای کاربر است
+│   ├── customer.py             ← خواندن و اعتبارسنجی پروفایل مشتری
 │   ├── cli.py · api.py         ← دو لایه‌ی نمایش؛ هیچ منطقی ندارند
+│   ├── onboard.py              ← زیرفرمان‌های `new` و `check`
 │   ├── core/                   ← ① برای همه‌ی مشتری‌ها و همه‌ی دیتابیس‌ها یکی
 │   │   ├── graph.py            ← مسیر پاسخ: ساخت کوئری ← گارد ← اجرا ← خلاصه
 │   │   ├── llm.py              ← تنها دروازه به مدل زبانی
 │   │   ├── prompts.py          ← پرامپت خلاصه و نمودار، و محصورسازی
 │   │   ├── knowledge.py        ← خواندن دانش مشتری و شاخص معنایی
+│   │   ├── answer.py           ← `Answer`، تنها چیزی که لایه‌های نمایش می‌شناسند
+│   │   ├── readiness.py        ← بررسی آمادگی تحویل
 │   │   ├── charting.py · exporting.py
 │   └── databases/              ← ② برای هر نوع دیتابیس یک پوشه
 │       ├── base.py             ← قراردادی که هر دیتابیس پیاده می‌کند
 │       ├── registry.py         ← db_type پروفایل ← کلاس همان دیتابیس
-│       ├── mongodb/            ← schema · guard · prompts · agent
-│       └── postgresql/         ← اسکلت
+│       ├── mongodb/            ← schema · guard · prompts · reply · agent · attacks.yaml
+│       └── postgresql/         ← اسکلت (ثبت‌نشده؛ دیتابیس دوم به‌تعویق، تصمیم ۷۹)
 ├── customers/                  ← ③ برای هر مشتری یک پوشه، بدون کد
 │   └── demo/                   ← profile.yaml · documentation.md · examples.yaml ·
 │                                  field_notes.yaml · golden_questions.yaml
+├── templates/customer/         ← الگوی پوشه‌ی مشتری تازه (ابزار تحویل از آن می‌چیند)
 ├── scripts/                    ← seed_mongo.py · evaluate.py
-└── tests/                      ← هم‌شکل با rasam/ و customers/
+├── docs/                       ← onboarding.md · adding-a-database.md
+└── tests/                      ← هم‌شکل با rasam/ و customers/؛ conformance/ برای آزمون انطباق
 ```
 
-- **مشتری تازه با دیتابیس آشنا:** فقط یک پوشه در `customers/` — راهنمایش در
-  [`customers/README.md`](customers/README.md). هیچ کدی عوض نمی‌شود.
+- **مشتری تازه با دیتابیس آشنا:** `python onboard.py new` و تکمیل دانش با خود مشتری —
+  مسیر کامل در [`docs/onboarding.md`](docs/onboarding.md). هیچ کدی عوض نمی‌شود.
 - **مشتری تازه با دیتابیس تازه:** یک پوشه در `rasam/databases/` که قرارداد
-  `base.py` را پیاده کند، و یک خط در `registry.py`.
+  `base.py` را پیاده کند و آزمون انطباق را سبز کند، و یک خط در `registry.py` —
+  [`docs/adding-a-database.md`](docs/adding-a-database.md).
 
 ## امنیت — و حدِ آن
 

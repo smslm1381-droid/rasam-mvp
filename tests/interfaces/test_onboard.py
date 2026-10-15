@@ -162,3 +162,33 @@ def test_the_real_mongo_agent_lists_sources_and_fields_without_the_active_custom
         pytest.skip(f"مونگوی محلی در دسترس نیست: {type(error).__name__}")
     assert "inverter_data" in sources
     assert "int_temp" in agent.list_fields("inverter_data")
+
+
+# --- منبع حساس (پیدا شده در تمرین تحویل) -------------------------------------
+
+class WithSecretsLog(FakeAgent):
+    def list_sources(self):
+        return ["alpha", "secrets_log", "beta"]
+
+    def list_fields(self, source):
+        return ["f"]
+
+
+def test_a_sensitive_looking_source_needs_an_explicit_yes(workspace, monkeypatch):
+    monkeypatch.setattr(registry, "AGENTS", {"fakedb": WithSecretsLog})
+    script = Script("trial", "1", "", "trial_db", "1,2,3", "بله")
+    assert run(script) == 0
+    assert customer.load_profile("trial", workspace).allowed_sources == {"alpha", "secrets_log", "beta"}
+    assert "حساس" in script.output
+
+
+def test_the_default_answer_to_the_sensitive_question_is_no(workspace, monkeypatch):
+    monkeypatch.setattr(registry, "AGENTS", {"fakedb": WithSecretsLog})
+    assert run(Script("trial", "1", "", "trial_db", "1,2,3", "")) == 0
+    assert customer.load_profile("trial", workspace).allowed_sources == {"alpha", "beta"}
+
+
+def test_if_only_sensitive_sources_were_picked_and_declined_nothing_is_built(workspace, monkeypatch):
+    monkeypatch.setattr(registry, "AGENTS", {"fakedb": WithSecretsLog})
+    assert run(Script("trial", "1", "", "trial_db", "2", "خیر")) == 1
+    assert not (workspace / "trial").exists()

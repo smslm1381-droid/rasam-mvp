@@ -36,6 +36,14 @@ TEMPLATE_FILES = ("profile.yaml", "documentation.md", "examples.yaml",
 TODO_MARKER = customer.TODO_MARKER
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+
+# نام‌هایی که معمولاً داده‌ی حساس نگه می‌دارند. این **حدس** است و فقط برای یک
+# سوال تاییدیه‌ی اضافه به کار می‌رود، نه برای رد یا قبول؛ تصمیم همیشه با انسان است.
+# در تمرین تحویل پیدا شد: انتخاب `1,3` به‌جای `1,2` یک جدول `secrets_log` را بی‌هیچ
+# هشداری مجاز کرد.
+SENSITIVE_NAME = re.compile(
+    r"user|account|billing|invoice|payment|secret|token|password|credential|auth|session|log|audit",
+    re.IGNORECASE)
 ENV_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 Ask = Callable[[str], str]
@@ -103,7 +111,24 @@ def _choose_sources(sources: list[str], ask: Ask, say: Say) -> list[str] | None:
     if not picked or not all(1 <= number <= len(sources) for number in picked):
         say("هیچ منبع معتبری انتخاب نشد؛ چیزی ساخته نشد.")
         return None
-    return [sources[number - 1] for number in picked]
+    return _confirm_sensitive([sources[number - 1] for number in picked], ask, say)
+
+
+def _confirm_sensitive(chosen: list[str], ask: Ask, say: Say) -> list[str] | None:
+    """منبعی که حساس به نظر می‌رسد باید صریحاً دوباره تایید شود."""
+    kept = []
+    for source in chosen:
+        if SENSITIVE_NAME.search(source):
+            say(f"⚠️ «{source}» حساس به نظر می‌رسد: هرچه اینجا مجاز شود نام فیلدهایش به "
+                "سرویس مدل می‌رود و سوال می‌تواند آن را بخواند.")
+            if ask("واقعاً برای پاسخ به سوال‌ها لازم است؟ (بله/خیر) [خیر]: ").strip() != "بله":
+                say(f"«{source}» کنار گذاشته شد.")
+                continue
+        kept.append(source)
+    if not kept:
+        say("هیچ منبعی نماند؛ چیزی ساخته نشد.")
+        return None
+    return kept
 
 
 def _render(template: str, **values: str) -> str:
