@@ -9,7 +9,7 @@ import pytest
 from bson import ObjectId
 from bson.decimal128 import Decimal128
 
-from rasam import config
+from rasam import config, customer
 from rasam.databases.mongodb import MongoAgent
 from rasam.databases.mongodb import agent as agent_module
 from rasam.databases.postgresql import PostgresAgent
@@ -27,10 +27,17 @@ def test_postgres_agent_rejects_queries_until_sql_guard_exists():
     assert result.query is None
 
 
-def test_registry_has_a_distinct_postgresql_backend():
-    assert registry.AGENTS["mongodb"] is MongoAgent
-    assert registry.AGENTS["postgresql"] is PostgresAgent
+def test_only_adapters_that_pass_conformance_are_registered():
+    """پستگرس تا قدم ۲۴ اسکلت است و هر کوئری را رد می‌کند؛ ثبت‌شده نیست."""
+    assert registry.AGENTS == {"mongodb": MongoAgent}
     assert config.settings.customer.db_type == "mongodb"
+
+
+def test_a_profile_asking_for_the_unregistered_postgres_fails_at_startup():
+    postgres_profile = customer.CustomerProfile(
+        **{**config.settings.customer.__dict__, "db_type": "postgresql"})
+    with pytest.raises(config.ConfigError, match="postgresql"):
+        registry.check_db_type(postgres_profile)
 
 
 class _Collection:

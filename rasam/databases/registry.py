@@ -9,11 +9,12 @@ from rasam import config
 from rasam.customer import CustomerProfile
 from rasam.databases.base import DatabaseAgent
 from rasam.databases.mongodb import MongoAgent
-from rasam.databases.postgresql import PostgresAgent
 
+# آداپتوری که آزمون انطباق (`tests/conformance`) را سبز نکند اینجا نمی‌ماند.
+# `postgresql` فعلاً فقط اسکلت است و هر کوئری را رد می‌کند؛ در قدم ۲۴، وقتی
+# آزمون را سبز کرد، یک خط به این فهرست برمی‌گردد.
 AGENTS = {
     "mongodb": MongoAgent,
-    "postgresql": PostgresAgent,
 }
 
 

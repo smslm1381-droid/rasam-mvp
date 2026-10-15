@@ -55,8 +55,9 @@ class MongoAgent:
     def parse_reply(self, text: str) -> Reply:
         return reply.parse_reply(text)
 
-    def validate_query(self, source: str, query: list[dict]) -> Result:
-        return guard.check(query, source, set(config.settings.allowed_sources))
+    def validate_query(self, source: str, query: list[dict],
+                       row_filter: dict | None = None) -> Result:
+        return guard.check(query, source, set(config.settings.allowed_sources), row_filter)
 
     def execute(self, source: str, checked: Result) -> list[dict]:
         if not checked.ok:

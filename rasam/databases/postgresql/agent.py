@@ -48,7 +48,8 @@ class PostgresAgent:
     def parse_reply(self, text: str) -> Reply:
         raise NotImplementedError("خواندن پاسخ SQL در قدم آداپتور PostgreSQL ساخته می‌شود.")
 
-    def validate_query(self, source: str, query: Any) -> Result:
+    def validate_query(self, source: str, query: Any,
+                       row_filter: dict | None = None) -> Result:
         return Result(False, None, "اعتبارسنجی PostgreSQL هنوز به قرارداد SQL منتقل نشده است.")
 
     def execute(self, source: str, checked: Result) -> list[dict]:

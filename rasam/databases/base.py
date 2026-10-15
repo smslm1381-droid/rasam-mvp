@@ -66,7 +66,15 @@ class DatabaseAgent(Protocol):
 
     def parse_reply(self, text: str) -> Reply: ...
 
-    def validate_query(self, source: str, query: Any) -> Result: ...
+    def validate_query(self, source: str, query: Any,
+                       row_filter: dict[str, Any] | None = None) -> Result:
+        """گارد. `row_filter` شرط اجباری سطح-ردیف است (`{فیلد: مقدار}`، برابری).
+
+        ایجنت آن را به زبان خودش به **ابتدای** کوئری تزریق می‌کند تا هیچ بخش
+        بعدی نتواند دورش بزند. گراف فعلاً همیشه `None` می‌دهد؛ مصرف‌کننده‌ی
+        واقعی‌اش کنترل دسترسی سطری است و آزمون انطباق آن را پر می‌کند.
+        """
+        ...
 
     def execute(self, source: str, checked: Result) -> list[dict]:
         """فقط نتیجه‌ی **پذیرفته‌شده‌ی** گارد را می‌پذیرد، نه کوئری خام (قاعده‌ی ۳)."""

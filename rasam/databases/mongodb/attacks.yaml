@@ -1,0 +1,119 @@
+# نمونه‌های حمله‌ی MongoDB برای آزمون انطباق مشترک (`tests/conformance/`).
+#
+# دسته‌ها برای همه‌ی دیتابیس‌ها یکی است، نمونه‌ها مخصوص هر دیتابیس. هر دسته یا
+# دست‌کم یک نمونه دارد، یا `not_applicable` با **دلیل نوشته‌شده**. خالی‌گذاشتن یک
+# دسته آزمون را قرمز می‌کند، تا «فراموش کردم» با «بی‌معنی است» اشتباه گرفته نشود.
+#
+# نشانه‌های جایگزین (آزمون جایگزینشان می‌کند، پس فایل مال هیچ مشتری‌ای نیست):
+#   "@allowed"       یک منبع مجازِ مشتری فعال
+#   "@forbidden"     منبعی که در هیچ فهرست سفیدی نیست
+#   "@filter_field"  فیلد شرط سطری آزمایشی
+#   "@filter_value"  مقداری که آن شرط می‌گذارد
+#
+# دسته‌های `rejected` باید رد شوند. دسته‌های `bounded` (بی‌سقف و دورزدن شرط
+# سطری) ممکن است قبول شوند، ولی نتیجه‌شان باید محدود بماند؛ آزمون این را روی
+# دیتابیس محلی می‌سنجد، نه فقط روی متن کوئری.
+
+safe:
+  - description: تجمیع ساده
+    source: "@allowed"
+    query: [{$group: {_id: null, n: {$sum: 1}}}]
+  - description: فیلتر، مرتب‌سازی و سقف
+    source: "@allowed"
+    query: [{$match: {timestamp: {$gt: 0}}}, {$sort: {timestamp: -1}}, {$limit: 5}]
+  - description: عبارت شرطی و حساب (تله‌ی عدد بدون‌علامت)
+    source: "@allowed"
+    query:
+      - $group:
+          _id: null
+          avg: {$avg: {$cond: [{$gte: ["$x", 2147483648]}, {$subtract: ["$x", 4294967296]}, "$x"]}}
+  - description: پروژکشن و فیلد محاسباتی
+    source: "@allowed"
+    query: [{$addFields: {double: {$multiply: ["$x", 2]}}}, {$project: {double: 1}}]
+  - description: شمارش
+    source: "@allowed"
+    query: [{$match: {}}, {$count: total}]
+
+categories:
+  write:
+    kind: rejected
+    attacks:
+      - description: $out یک کوئری خواندنی را به نوشتن تبدیل می‌کند
+        source: "@allowed"
+        query: [{$out: stolen}]
+      - description: $merge بعد از یک تجمیع سالم
+        source: "@allowed"
+        query: [{$group: {_id: null, n: {$sum: 1}}}, {$merge: {into: stolen}}]
+
+  code_execution:
+    kind: rejected
+    attacks:
+      - description: $where جاوااسکریپت را روی سرور اجرا می‌کند
+        source: "@allowed"
+        query: [{$match: {$where: "sleep(5000)"}}]
+      - description: $accumulator داخل $group
+        source: "@allowed"
+        query:
+          - $group:
+              _id: null
+              x: {$accumulator: {init: "function(){return 0}", accumulate: "function(){return 0}", accumulateArgs: [], merge: "function(){return 0}", lang: js}}
+      - description: $function داخل $addFields
+        source: "@allowed"
+        query: [{$addFields: {x: {$function: {body: "function(){return 1}", args: [], lang: js}}}}]
+      - description: $where چند لایه عمیق داخل $and و $or
+        source: "@allowed"
+        query: [{$match: {$and: [{$or: [{$and: [{$where: "1"}]}]}]}}]
+
+  unauthorized_source:
+    kind: rejected
+    attacks:
+      - description: کالکشن بیرون از فهرست سفید
+        source: "@forbidden"
+        query: [{$match: {}}]
+      - description: کالکشن سیستمی
+        source: system.users
+        query: [{$match: {}}]
+      - description: $lookup به کالکشن غیرمجاز
+        source: "@allowed"
+        query: [{$lookup: {from: "@forbidden", localField: a, foreignField: a, as: stolen}}]
+      - description: $unionWith کالکشن غیرمجاز را به نتیجه می‌چسباند
+        source: "@allowed"
+        query: [{$unionWith: "@forbidden"}]
+
+  multi_statement:
+    kind: rejected
+    attacks:
+      - description: یک stage با دو کلید، که دومی نوشتن است
+        source: "@allowed"
+        query: [{$match: {}, $out: stolen}]
+      - description: دو عملگر در یک stage بعد از یک مرحله‌ی سالم
+        source: "@allowed"
+        query: [{$match: {}}, {$project: {a: 1}, $merge: {into: stolen}}]
+
+  unbounded_query:
+    kind: bounded
+    attacks:
+      - description: کل کالکشن بدون هیچ سقفی
+        source: "@allowed"
+        query: [{$match: {}}]
+      - description: سقف عمداً بزرگ
+        source: "@allowed"
+        query: [{$limit: 1000000000}]
+      - description: مرتب‌سازی کل کالکشن
+        source: "@allowed"
+        query: [{$sort: {timestamp: -1}}]
+
+  row_filter_bypass:
+    kind: bounded
+    attacks:
+      - description: $or که مقدارهای دیگر فیلد را هم می‌خواهد
+        source: "@allowed"
+        query:
+          - $match: {$or: [{"@filter_field": {$ne: "@filter_value"}}, {"@filter_field": {$exists: true}}]}
+          - $project: {"@filter_field": 1}
+      - description: صراحتاً مقدار بیرون از شرط
+        source: "@allowed"
+        query: [{$match: {"@filter_field": {$ne: "@filter_value"}}}, {$project: {"@filter_field": 1}}]
+      - description: پروژکشن ساده، بدون هیچ شرطی
+        source: "@allowed"
+        query: [{$project: {"@filter_field": 1}}]

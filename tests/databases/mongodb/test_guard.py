@@ -190,3 +190,13 @@ def test_row_filter_is_injected_at_the_front():
 def test_without_a_row_filter_nothing_is_injected():
     result = run([{"$match": {"status": "ON"}}])
     assert result.query[0] == {"$match": {"status": "ON"}}
+
+
+@pytest.mark.parametrize("collection", [["inverter_data"], {"a": 1}, 5, None, b"x"])
+def test_a_collection_that_is_not_a_string_is_rejected_not_a_crash(collection):
+    """نام کالکشن را مدل می‌نویسد؛ فهرست بودنش قبلاً `TypeError: unhashable` می‌داد.
+
+    آزمون انطباق پیدایش کرد. گارد هرگز استثنا نمی‌دهد (قاعده‌ی ۷).
+    """
+    result = guard.check([{"$match": {}}], collection, {"inverter_data"})
+    assert result.ok is False and result.query is None

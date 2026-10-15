@@ -134,8 +134,12 @@ def check(
     **ابتدای** pipeline تزریق می‌شود تا هیچ stage بعدی نتواند دورش بزند.
     فعلاً همیشه `None` است؛ در قدم ۱۳ که هویت کاربر آمد پر می‌شود.
     """
-    if collection not in allowed_collections:
-        return _reject(f"کالکشن «{collection}» جزو کالکشن‌های مجاز نیست.")
+    # `collection` را مدل می‌نویسد، پس هر چیزی می‌تواند باشد (فهرست، دیکشنری، عدد).
+    # بدون این بررسی، `in` روی یک فهرست استثنای unhashable می‌داد — و گارد
+    # هرگز نباید استثنا بدهد (قاعده‌ی ۷). این را آزمون انطباق پیدا کرد.
+    if not isinstance(collection, str) or collection not in allowed_collections:
+        shown = collection if isinstance(collection, str) else type(collection).__name__
+        return _reject(f"کالکشن «{shown}» جزو کالکشن‌های مجاز نیست.")
 
     if not isinstance(pipeline, list) or not pipeline:
         return _reject("کوئری باید یک فهرست ناخالی از مرحله‌ها باشد.")
