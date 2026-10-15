@@ -26,11 +26,6 @@ BATCH = 1000
 TEXT_LIMIT = 255
 
 
-def quote(name: str) -> str:
-    """نام جدول یا ستون داخل backtick (`power` و `current` و `timestamp` کلمه‌ی رزرو یا حساس‌اند)."""
-    return "`" + name.replace("`", "``") + "`"
-
-
 def column_type(series: pd.Series) -> str:
     """نوع ستون MySQL از روی نوع pandas. رشته‌ی بلند `TEXT` می‌شود، کوتاه `VARCHAR`."""
     if pd.api.types.is_bool_dtype(series):
@@ -44,8 +39,8 @@ def column_type(series: pd.Series) -> str:
 
 
 def create_table_sql(name: str, frame: pd.DataFrame) -> str:
-    columns = ",\n  ".join(f"{quote(c)} {column_type(frame[c])} NULL" for c in frame.columns)
-    return (f"CREATE TABLE {quote(name)} (\n  {columns}\n) "
+    columns = ",\n  ".join(f"{connection.quote_identifier(c)} {column_type(frame[c])} NULL" for c in frame.columns)
+    return (f"CREATE TABLE {connection.quote_identifier(name)} (\n  {columns}\n) "
             "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
 
 
@@ -57,9 +52,9 @@ def to_python(value):
 
 
 def insert_rows(cursor, name: str, frame: pd.DataFrame) -> None:
-    columns = ", ".join(quote(c) for c in frame.columns)
+    columns = ", ".join(connection.quote_identifier(c) for c in frame.columns)
     placeholders = ", ".join(["%s"] * len(frame.columns))
-    sql = f"INSERT INTO {quote(name)} ({columns}) VALUES ({placeholders})"
+    sql = f"INSERT INTO {connection.quote_identifier(name)} ({columns}) VALUES ({placeholders})"
     rows = [[to_python(v) for v in row] for row in frame.itertuples(index=False, name=None)]
     for start in range(0, len(rows), BATCH):
         cursor.executemany(sql, rows[start:start + BATCH])
@@ -71,7 +66,7 @@ def seed(conn, files: list[Path]) -> list[str]:
         for path in files:
             name = csv_loader.table_name(path)
             frame = csv_loader.read_frame(path)
-            cursor.execute(f"DROP TABLE IF EXISTS {quote(name)}")
+            cursor.execute(f"DROP TABLE IF EXISTS {connection.quote_identifier(name)}")
             cursor.execute(create_table_sql(name, frame))
             insert_rows(cursor, name, frame)
             print(f"  {name:<16} {len(frame):>6} ردیف  {len(frame.columns):>4} ستون")
@@ -96,7 +91,7 @@ def ensure_readonly_user(conn, app_uri: str, database: str, tables: list[str]) -
         cursor.execute("ALTER USER %s@'%%' IDENTIFIED BY %s", (user, password))
         cursor.execute("REVOKE ALL PRIVILEGES, GRANT OPTION FROM %s@'%%'", (user,))
         for table in tables:
-            cursor.execute(f"GRANT SELECT ON {quote(database)}.{quote(table)} TO %s@'%%'", (user,))
+            cursor.execute(f"GRANT SELECT ON {connection.quote_identifier(database)}.{connection.quote_identifier(table)} TO %s@'%%'", (user,))
         cursor.execute("FLUSH PRIVILEGES")
     return user
 
@@ -121,7 +116,7 @@ def main() -> int:
     try:
         with connection.connect(admin_uri, database="") as conn:
             with conn.cursor() as cursor:
-                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {quote(database)} "
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {connection.quote_identifier(database)} "
                                "DEFAULT CHARACTER SET utf8mb4")
             conn.select_db(database)
             tables = seed(conn, files)

@@ -42,5 +42,13 @@ def connect(uri: str, database: str | None = None, timeout_s: int = 5, **extra) 
         connect_timeout=timeout_s,
         cursorclass=pymysql.cursors.DictCursor,
         client_flag=0,  # بدون CLIENT.MULTI_STATEMENTS
+        # بدون این، هر اتصال در یک تراکنش بازِ همیشگی می‌ماند و اتصال طولانی‌مدت
+        # جدول یا دسترسی تازه را نمی‌بیند (snapshot قدیمی). seed خودش commit می‌کند.
+        autocommit=True,
         **extra,
     )
+
+
+def quote_identifier(name: str) -> str:
+    """نام جدول یا ستون داخل backtick (`power` و `current` و `timestamp` کلمه‌ی رزرو یا حساس‌اند)."""
+    return "`" + name.replace("`", "``") + "`"
