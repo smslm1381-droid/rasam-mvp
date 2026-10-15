@@ -138,6 +138,21 @@ def _check_stages(pipeline: list) -> Result | None:
     return None
 
 
+def _inject_limits(pipeline: list, row_filter: dict | None) -> list:
+    """شرط سطری را به ابتدا و سقف رکورد را به انتهای pipeline می‌افزاید."""
+    safe = list(pipeline)
+    if row_filter:
+        safe.insert(0, {"$match": row_filter})
+
+    # سقف در **انتها** می‌نشیند تا هر چه stageهای قبلی تولید کرده‌اند را ببرد.
+    # اگر `max_rows` تنظیم نشده باشد سقفی اعمال نمی‌شود — بررسی آمادگی تحویل
+    # (`onboard.py check`) تحویل با سقف خاموش را قرمز می‌کند (تصمیم ۶۹).
+    max_rows = config.settings.max_rows
+    if max_rows is not None:
+        safe.append({"$limit": max_rows})
+    return safe
+
+
 def check(
     pipeline: Any,
     collection: str,
@@ -164,16 +179,7 @@ def check(
     if rejection:
         return rejection
 
-    safe = list(pipeline)
-    if row_filter:
-        safe.insert(0, {"$match": row_filter})
-
-    # سقف در **انتها** می‌نشیند تا هر چه stageهای قبلی تولید کرده‌اند را ببرد.
-    # اگر `max_rows` تنظیم نشده باشد سقفی اعمال نمی‌شود — یک بدهی امنیتی
-    # آگاهانه که در جدول وضعیت `PLAN.md` ثبت شده.
-    max_rows = config.settings.max_rows
-    if max_rows is not None:
-        safe.append({"$limit": max_rows})
+    safe = _inject_limits(pipeline, row_filter)
 
     return Result(
         ok=True,

@@ -44,6 +44,7 @@ python -c "from rasam import config; print(config.settings)"
 | `python -c "from rasam import config; print(config.settings)"` | دیدن تنظیمات | ۱ |
 | `docker compose up -d` | مونگوی محلی توسعه | ۲ |
 | `python scripts/seed_mongo.py` | پرکردن دیتابیس از CSVها | ۲ |
+| `python scripts/seed_mysql.py` | پرکردن MySQL محلی با همان CSVها (برای مشتری `demo-mysql`) | ۲۱ |
 | `python ask.py "سوال شما"` | پرسیدن سوال | ۶ |
 | `python onboard.py new` | ساختن پوشه‌ی مشتری تازه | ۲۶ |
 | `python onboard.py check <نام>` | بررسی آمادگی تحویل مشتری | ۲۷ |
@@ -76,10 +77,11 @@ rasam-mvp/
 │       ├── base.py             ← قراردادی که هر دیتابیس پیاده می‌کند
 │       ├── registry.py         ← db_type پروفایل ← کلاس همان دیتابیس
 │       ├── mongodb/            ← schema · guard · prompts · reply · agent · attacks.yaml
-│       └── postgresql/         ← اسکلت (ثبت‌نشده؛ دیتابیس دوم به‌تعویق، تصمیم ۷۹)
+│       └── mysql/              ← schema · guard · prompts · reply · agent · attacks.yaml
 ├── customers/                  ← ③ برای هر مشتری یک پوشه، بدون کد
-│   └── demo/                   ← profile.yaml · documentation.md · examples.yaml ·
-│                                  field_notes.yaml · golden_questions.yaml
+│   ├── demo/                   ← نیروگاه نمونه روی MongoDB: profile.yaml · documentation.md ·
+│   │                              examples.yaml · field_notes.yaml · golden_questions.yaml
+│   └── demo-mysql/             ← همان داده روی MySQL؛ فقط همین پنج فایل
 ├── templates/customer/         ← الگوی پوشه‌ی مشتری تازه (ابزار تحویل از آن می‌چیند)
 ├── scripts/                    ← seed_mongo.py · evaluate.py
 ├── docs/                       ← onboarding.md · adding-a-database.md

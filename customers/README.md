@@ -16,7 +16,7 @@
 ## `profile.yaml`
 
 ```yaml
-db_type: mongodb              # هم‌نام یکی از پوشه‌های rasam/databases/
+db_type: mongodb              # mongodb یا mysql — هم‌نام پوشه‌ی rasam/databases/
 connection_env: MONGO_URI     # فقط **نام** متغیر؛ مقدارش RASAM_MONGO_URI در .env است
 database: solar_telemetry     # نام دیتابیس (راز نیست، پس اینجاست نه در .env)
 allowed_sources:          # فهرست سفید؛ هرچه اینجا نیست نه توصیف می‌شود نه خوانده

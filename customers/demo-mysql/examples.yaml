@@ -1,0 +1,69 @@
+# نمونه‌های «سوال ← SQL درست» برای MySQL — همان نیت‌های `customers/demo/examples.yaml`.
+#
+# `query` یک متن SQL است (یک SELECT روی یک جدول). هر نمونه باید از گارد رد شود؛
+# `python onboard.py check demo-mysql` این را می‌سنجد.
+
+- question: میانگین دمای داخلی اینورترها چقدر است؟
+  source: inverter_data
+  why: ساده‌ترین حالت — یک تجمیع روی کل جدول.
+  query: SELECT AVG(int_temp) AS avg_temp FROM inverter_data
+
+- question: میانگین توان راکتیو اینورتر چقدر است؟
+  source: inverter_data
+  why: >-
+    tot_reactive_pow عدد بدون‌علامت ۳۲بیتی است و مقدار منفی را wrap می‌کند.
+    بدون این تبدیل، جواب حدود ۲٫۵ میلیارد می‌شود به‌جای حدود منفی ۲۷.
+  query: >-
+    SELECT AVG(CASE WHEN tot_reactive_pow >= 2147483648
+    THEN tot_reactive_pow - 4294967296 ELSE tot_reactive_pow END) AS avg_reactive_pow
+    FROM inverter_data
+
+- question: بیشترین توان راکتیو اینورتر چقدر بوده؟
+  source: inverter_data
+  why: همان تبدیل علامت، این بار با بیشینه. بدون آن جواب همیشه ۴۲۹۴۹۶۷۲۹۵ است.
+  query: >-
+    SELECT MAX(CASE WHEN tot_reactive_pow >= 2147483648
+    THEN tot_reactive_pow - 4294967296 ELSE tot_reactive_pow END) AS max_reactive_pow
+    FROM inverter_data
+
+- question: مصرف پنل فشار ضعیف چقدر است؟
+  source: lvpanel_data
+  why: «مصرف» یعنی توان اکتیو لحظه‌ای، نه کنتورهای انرژی مثل act_eng_receiv.
+  query: SELECT AVG(tot_active_pow) AS avg_active_pow FROM lvpanel_data
+
+- question: تولید انرژی روز آخر اینورتر چقدر بوده؟
+  source: inverter_data
+  why: >-
+    daily_pow_yield کنتور است نه اندازه‌گیری: صبح از صفر شروع می‌کند و بالا می‌رود.
+    «روز آخر» یعنی مقدار کنتور در آخرین رکورد (مرتب‌سازی نزولی روی timestamp و
+    یک نتیجه). هرگز SUM نزن؛ جمع‌زدن کنتور جواب را چند برابر می‌کند.
+  query: >-
+    SELECT device_code, daily_pow_yield AS produced FROM inverter_data
+    ORDER BY timestamp DESC LIMIT 1
+
+- question: آخرین توان اکتیو پنل فشار متوسط چقدر است؟
+  source: mvpanel_data
+  why: «آخرین» و «الان» یعنی مرتب‌سازی نزولی روی timestamp و یک نتیجه.
+  query: >-
+    SELECT timestamp, tot_active_pow FROM mvpanel_data
+    ORDER BY timestamp DESC LIMIT 1
+
+- question: اینورتر در هر حالت کاری چند رکورد دارد؟
+  source: inverter_data
+  why: work_state متنی است و چهار مقدار دارد؛ گروه‌بندی مستقیم روی خودش.
+  query: >-
+    SELECT work_state, COUNT(*) AS total FROM inverter_data
+    GROUP BY work_state ORDER BY total DESC
+
+- question: کمترین ولتاژ استرینگ‌ها که صفر نباشد چقدر است؟
+  source: string_data
+  why: شب‌ها ولتاژ صفر ثبت می‌شود، پس صفرها باید کنار گذاشته شوند.
+  query: SELECT MIN(voltage) AS min_voltage FROM string_data WHERE voltage > 0
+
+- question: لیست خطاهای رخ داده در اینورترها را نشان بده
+  source: inverter_data
+  why: >-
+    fa_al_code در تمام ردیف‌ها صفر است، پس این کوئری درست است و نتیجه‌ی خالی
+    می‌دهد. نتیجه‌ی خالی همان جواب است؛ فیلتر را شل نکن تا چیزی پیدا شود.
+  query: >-
+    SELECT timestamp, device_code, fa_al_code FROM inverter_data WHERE fa_al_code <> 0

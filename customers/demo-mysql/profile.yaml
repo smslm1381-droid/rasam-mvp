@@ -1,0 +1,19 @@
+# همان نیروگاه خورشیدیِ `demo`، با همان داده، ولی روی MySQL. اثبات اینکه مشتری تازه با
+# دیتابیس تازه فقط یک پوشه‌ی فایل است (قدم ۲۵). رمز اتصال: `RASAM_MYSQL_URI` در `.env`.
+db_type: mysql
+connection_env: MYSQL_URI
+database: solar_telemetry
+allowed_sources:
+  - inverter_data
+  - lvpanel_data
+  - mvpanel_data
+  - string_data
+capabilities:
+  - summary
+  - repair
+  - chart
+  - export_csv
+  - export_excel
+limits:
+  max_rows: 1000
+  max_attempts: 2

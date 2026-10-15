@@ -44,6 +44,12 @@ def agent(uri) -> MySQLAgent:
     return candidate
 
 
+def uri_as(admin_uri: str, user: str, password: str) -> str:
+    """رشته‌ی اتصال یک کاربر آزمایشی، روی همان سرور (میزبان و پورت) که اتصال مدیر دارد."""
+    parts = connection.parse_uri(admin_uri)
+    return f"mysql://{user}:{password}@{parts['host']}:{parts['port']}/solar_telemetry"
+
+
 def accepted(sql: str, max_time_ms: int = 60_000) -> Result:
     return Result(ok=True, query=sql, reason="", max_time_ms=max_time_ms)
 
@@ -109,7 +115,8 @@ def test_a_slow_query_is_cut_by_the_guards_time_limit(admin_uri):
     started = time.perf_counter()
     with pytest.raises(pymysql.MySQLError) as error:
         slow.execute("inverter_data", accepted(heavy, max_time_ms=300))
-    assert error.value.args[0] == 3024  # ER_QUERY_TIMEOUT
+    # MySQL: ER_QUERY_TIMEOUT (3024)؛ MariaDB: ER_STATEMENT_TIMEOUT (1969)
+    assert error.value.args[0] in (3024, 1969)
     assert time.perf_counter() - started < 5
 
 
@@ -134,7 +141,7 @@ def test_a_user_with_one_extra_write_privilege_is_caught(admin_uri):
         cursor.execute("GRANT SELECT ON `solar_telemetry`.`inverter_data` TO 'zz_sneaky'@'%'")
         cursor.execute("GRANT INSERT ON `solar_telemetry`.`inverter_data` TO 'zz_sneaky'@'%'")
         try:
-            sneaky = MySQLAgent("mysql://zz_sneaky:zz-sneaky-pass-1@127.0.0.1:3306/solar_telemetry",
+            sneaky = MySQLAgent(uri_as(admin_uri, "zz_sneaky", "zz-sneaky-pass-1"),
                                 "solar_telemetry", ALLOWED)
             report = sneaky.check_read_only()
             assert not report.read_only and "INSERT" in report.detail
@@ -148,7 +155,7 @@ def test_a_user_holding_grant_option_is_not_read_only(admin_uri):
         cursor.execute("CREATE USER 'zz_granter'@'%' IDENTIFIED BY 'zz-granter-pass-1'")
         cursor.execute("GRANT SELECT ON `solar_telemetry`.`inverter_data` TO 'zz_granter'@'%' WITH GRANT OPTION")
         try:
-            report = MySQLAgent("mysql://zz_granter:zz-granter-pass-1@127.0.0.1:3306/solar_telemetry",
+            report = MySQLAgent(uri_as(admin_uri, "zz_granter", "zz-granter-pass-1"),
                                 "solar_telemetry", ALLOWED).check_read_only()
             assert not report.read_only and "GRANT OPTION" in report.detail
         finally:
