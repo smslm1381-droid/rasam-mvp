@@ -110,7 +110,7 @@ def describe_collection(db: Database, name: str) -> str:
     return "\n".join([header] + [_field_line(k, v) for k, v in stats.items()])
 
 
-def describe_schema(db: Database) -> str:
+def describe_schema(db: Database, allowed_sources=None) -> str:
     """متن ساختار کالکشن‌های **مجاز** — همان چیزی که وارد پرامپت می‌شود.
 
     فقط فهرست سفید توصیف می‌شود، نه هرچه در دیتابیس هست. دو دلیل، و دومی
@@ -122,7 +122,8 @@ def describe_schema(db: Database) -> str:
        `billing` هم داشته باشد؛ کاربر فقط-خواندنی جلوی خواندنشان را نمی‌گیرد
        (تصمیم ۳۰ نقشه). توصیف‌نکردنشان یعنی حتی یک نام فیلد هم بیرون نمی‌رود.
     """
-    present = set(db.list_collection_names()) & set(config.settings.allowed_sources)
+    allowed = config.settings.allowed_sources if allowed_sources is None else allowed_sources
+    present = set(db.list_collection_names()) & set(allowed)
     return "\n\n".join(describe_collection(db, name) for name in sorted(present))
 
 

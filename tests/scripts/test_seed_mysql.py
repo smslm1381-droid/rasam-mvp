@@ -14,6 +14,7 @@ from rasam import config
 from rasam.databases.mongodb import schema as mongo_schema
 from rasam.databases.mysql import connection
 from scripts import csv_loader
+from tests.secret import Secret
 
 CSV_FILES = sorted(config.settings.csv_dir.glob("*.csv")) if config.settings.csv_dir else []
 TABLES = ["inverter_data", "lvpanel_data", "mvpanel_data", "string_data"]
@@ -24,7 +25,7 @@ def uri() -> str:
     value = config.env_value("MYSQL_URI")
     if not value:
         pytest.skip("RASAM_MYSQL_URI در `.env` نیست.")
-    return value
+    return Secret(value)
 
 
 @pytest.fixture(scope="module")

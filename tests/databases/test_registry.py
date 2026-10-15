@@ -10,6 +10,7 @@ from bson.decimal128 import Decimal128
 
 from rasam import config, customer
 from rasam.databases.mongodb import MongoAgent
+from rasam.databases.mysql import MySQLAgent
 from rasam.databases.mongodb import agent as agent_module
 from rasam.databases import registry
 from rasam.databases.base import Result
@@ -20,8 +21,8 @@ def test_registry_selects_mongodb_from_demo_profile():
 
 
 def test_only_adapters_that_pass_conformance_are_registered():
-    """آداپتوری که آزمون انطباق را سبز نکرده در رجیستری نیست (MySQL تا قدم ۲۴)."""
-    assert registry.AGENTS == {"mongodb": MongoAgent}
+    """آداپتوری که آزمون انطباق را سبز نکرده در رجیستری نیست."""
+    assert registry.AGENTS == {"mongodb": MongoAgent, "mysql": MySQLAgent}
     assert config.settings.customer.db_type == "mongodb"
 
 

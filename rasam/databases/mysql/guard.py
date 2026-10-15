@@ -100,6 +100,8 @@ FORBIDDEN_REASONS = {
     "optimizer hint": "می‌تواند متغیر نشست را عوض کند",
 }
 FORBIDDEN = frozenset(FORBIDDEN_REASONS)
+# فقط تابع‌های ممنوع (برای پرامپت): بقیه‌ی کلیدها ساختارند و در قاعده‌ی ۲ جداگانه می‌آیند.
+FORBIDDEN_FUNCTIONS = ("SLEEP", "BENCHMARK", "LOAD_FILE", "GET_LOCK")
 
 # گره‌ی ممنوعی که کلید دلیلش فرق دارد.
 _NODE_REASON = {

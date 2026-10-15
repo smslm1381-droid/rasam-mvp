@@ -89,7 +89,9 @@ class MongoAgent:
         return self._inspect(lambda database: schema.field_names(database, source))
 
     def describe_schema(self) -> str:
-        return schema.schema_text()
+        if self._connection_uri is None:
+            return schema.schema_text()
+        return self._inspect(lambda database: schema.describe_schema(database, self._allowed_sources))
 
     def build_query_prompt(self, schema_text: str, question: str, sources: set[str],
                            failure: tuple[Any, str] | None = None,
@@ -115,6 +117,10 @@ class MongoAgent:
         if not checked.ok:
             # خطای برنامه‌نویس است نه کاربر: گراف هرگز نباید کوئری ردشده را اینجا بیاورد.
             raise ValueError("execute فقط نتیجه‌ی پذیرفته‌شده‌ی گارد را اجرا می‌کند.")
-        database = schema.connect()
-        rows = database[source].aggregate(checked.query, maxTimeMS=checked.max_time_ms)
-        return [_plain(row) for row in rows]
+        def run(database):
+            return [_plain(row) for row in
+                    database[source].aggregate(checked.query, maxTimeMS=checked.max_time_ms)]
+
+        # بدون اتصال صریح، مشتری فعال (کلاینت مشترک و پایدار)؛ با اتصال صریح، یک
+        # اتصال کوتاه‌مدت که بسته می‌شود — برای آزمون انطباق و بررسی آمادگی.
+        return run(schema.connect()) if self._connection_uri is None else self._inspect(run)

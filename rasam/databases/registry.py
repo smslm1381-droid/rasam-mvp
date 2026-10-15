@@ -9,11 +9,12 @@ from rasam import config
 from rasam.customer import CustomerProfile
 from rasam.databases.base import DatabaseAgent
 from rasam.databases.mongodb import MongoAgent
+from rasam.databases.mysql import MySQLAgent
 
 # آداپتوری که آزمون انطباق (`tests/conformance`) را سبز نکند اینجا نمی‌ماند.
-# `mysql` در قدم ۲۴ — وقتی آزمون را سبز کرد — با یک خط اینجا اضافه می‌شود.
 AGENTS = {
     "mongodb": MongoAgent,
+    "mysql": MySQLAgent,
 }
 
 

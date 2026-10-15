@@ -9,8 +9,9 @@
 - **ساختاری** (بی‌نیاز از دیتابیس): هر حمله رد؛ هر کوئری سالم قبول؛ هیچ ورودی
   استثنا نمی‌دهد؛ و هر دسته‌ی حمله نمونه دارد یا دلیل `not_applicable`.
 - **رفتاری** (روی دیتابیس محلی): با سقف رکورد ۵، بیش از ۵ ردیف برنمی‌گردد؛ و
-  با شرط سطری، هیچ ردیفی بیرون از شرط برنمی‌گردد. اگر دیتابیس محلی بالا نیست
-  با پیام روشن skip می‌شود، نه بی‌صدا سبز.
+  با شرط سطری، هیچ ردیفی بیرون از شرط برنمی‌گردد. دیتابیس هر نوع با اتصال صریح از
+  `.env` می‌آید (مستقل از مشتری فعال). اگر بالا نیست با پیام روشن skip می‌شود،
+  نه بی‌صدا سبز.
 """
 
 from __future__ import annotations
@@ -95,7 +96,9 @@ def every(categories: tuple[str, ...]):
 
 
 def agent_for(db_type: str):
-    return registry.AGENTS[db_type]()
+    """آداپتور با فهرست سفیدِ آزمایشی؛ اتصال فقط وقتی لازم است که تست رفتاری باشد."""
+    local = LOCAL.get(db_type, {})
+    return registry.AGENTS[db_type](allowed_sources=local.get("allowed_sources"))
 
 
 db_types = pytest.mark.parametrize("db_type", sorted(registry.AGENTS))
@@ -198,12 +201,14 @@ def local(request):
     db_type = request.getfixturevalue("db_type")
     if db_type not in LOCAL:
         pytest.skip(f"برای «{db_type}» هنوز داده‌ی آزمایشی در tests/conformance/local.py نیست.")
-    if config.settings.customer.db_type != db_type:
-        pytest.skip(f"مشتری فعال از نوع «{config.settings.customer.db_type}» است؛ برای "
-                    f"سنجیدن «{db_type}» RASAM_CUSTOMER را روی مشتری آن بگذارید.")
-    agent = agent_for(db_type)
+    uri = config.env_value(LOCAL[db_type]["connection_env"])
+    if uri is None:
+        pytest.skip(f"RASAM_{LOCAL[db_type]['connection_env']} در `.env` نیست.")
+    agent = registry.AGENTS[db_type](
+        connection_uri=uri, database=LOCAL[db_type]["database"],
+        allowed_sources=LOCAL[db_type]["allowed_sources"])
     try:
-        agent.describe_schema()
+        agent.list_sources()
     except Exception as error:  # noqa: BLE001 — هر شکستی یعنی دیتابیس بالا نیست
         pytest.skip(f"دیتابیس محلی «{db_type}» در دسترس نیست: {type(error).__name__}")
     return agent
