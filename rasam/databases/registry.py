@@ -11,8 +11,7 @@ from rasam.databases.base import DatabaseAgent
 from rasam.databases.mongodb import MongoAgent
 
 # آداپتوری که آزمون انطباق (`tests/conformance`) را سبز نکند اینجا نمی‌ماند.
-# `postgresql` فعلاً فقط اسکلت است و هر کوئری را رد می‌کند؛ در قدم ۲۴، وقتی
-# آزمون را سبز کرد، یک خط به این فهرست برمی‌گردد.
+# `mysql` در قدم ۲۴ — وقتی آزمون را سبز کرد — با یک خط اینجا اضافه می‌شود.
 AGENTS = {
     "mongodb": MongoAgent,
 }

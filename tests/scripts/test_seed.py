@@ -15,7 +15,7 @@ from pymongo import MongoClient
 from pymongo.errors import OperationFailure, PyMongoError
 
 from rasam import config
-from scripts.seed_mongo import collection_name
+from scripts.csv_loader import table_name as collection_name
 
 CSV_FILES = sorted(config.settings.csv_dir.glob("*.csv")) if config.settings.csv_dir else []
 

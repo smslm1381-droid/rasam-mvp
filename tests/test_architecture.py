@@ -22,8 +22,9 @@ DATABASES = PACKAGE / "databases"
 DRIVERS = {
     "pymongo": "mongodb",
     "bson": "mongodb",
-    "psycopg": "postgresql",
-    "psycopg2": "postgresql",
+    "pymysql": "mysql",
+    # پارسر SQL: مشترک آداپتورهای SQL. فعلاً فقط mysql؛ آداپتور SQL بعدی اینجا اضافه می‌شود.
+    "sqlglot": "mysql",
 }
 
 # تنها ماژول‌هایی از `databases/` که بیرون از آن مجازند.

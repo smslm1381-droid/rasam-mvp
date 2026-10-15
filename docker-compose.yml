@@ -20,5 +20,19 @@ services:
       # داده روی volume نام‌دار می‌ماند تا هر restart دوباره seed لازم نداشته باشد.
       - mongo_data:/data/db
 
+  # دیتابیس دوم (قدم ۲۱): MySQL ۸ با همان داده‌ی دمو. احراز هویت همیشه روشن است
+  # (پسورد root اجباری)؛ کاربر فقط-خواندنیِ برنامه را `scripts/seed_mysql.py` می‌سازد.
+  mysql:
+    image: mysql:8
+    container_name: rasam-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?in .env tarif nashode}
+    volumes:
+      - mysql_data:/var/lib/mysql
+
 volumes:
   mongo_data:
+  mysql_data:

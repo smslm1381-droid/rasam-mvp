@@ -11,7 +11,6 @@ from bson.decimal128 import Decimal128
 from rasam import config, customer
 from rasam.databases.mongodb import MongoAgent
 from rasam.databases.mongodb import agent as agent_module
-from rasam.databases.postgresql import PostgresAgent
 from rasam.databases import registry
 from rasam.databases.base import Result
 
@@ -20,23 +19,17 @@ def test_registry_selects_mongodb_from_demo_profile():
     assert isinstance(registry.get_agent(), MongoAgent)
 
 
-def test_postgres_agent_rejects_queries_until_sql_guard_exists():
-    result = PostgresAgent("postgresql://example").validate_query("telemetry", "SELECT 1")
-    assert result.ok is False
-    assert result.query is None
-
-
 def test_only_adapters_that_pass_conformance_are_registered():
-    """پستگرس تا قدم ۲۴ اسکلت است و هر کوئری را رد می‌کند؛ ثبت‌شده نیست."""
+    """آداپتوری که آزمون انطباق را سبز نکرده در رجیستری نیست (MySQL تا قدم ۲۴)."""
     assert registry.AGENTS == {"mongodb": MongoAgent}
     assert config.settings.customer.db_type == "mongodb"
 
 
-def test_a_profile_asking_for_the_unregistered_postgres_fails_at_startup():
-    postgres_profile = customer.CustomerProfile(
-        **{**config.settings.customer.__dict__, "db_type": "postgresql"})
-    with pytest.raises(config.ConfigError, match="postgresql"):
-        registry.check_db_type(postgres_profile)
+def test_a_profile_asking_for_an_unregistered_database_fails_at_startup():
+    profile = customer.CustomerProfile(
+        **{**config.settings.customer.__dict__, "db_type": "oracle"})
+    with pytest.raises(config.ConfigError, match="oracle"):
+        registry.check_db_type(profile)
 
 
 class _Collection:

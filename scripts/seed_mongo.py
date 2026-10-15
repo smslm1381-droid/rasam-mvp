@@ -10,7 +10,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pandas as pd
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
@@ -18,32 +17,13 @@ from pymongo.errors import PyMongoError
 # مسیر ایمپورت نیست.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts import csv_loader  # noqa: E402
 from rasam import config  # noqa: E402
 
 
-def collection_name(path: Path) -> str:
-    """`solar_telemetry.inverter_data.csv` → `inverter_data`.
-
-    فایل‌های دامپ نام دیتابیس را هم جلوی نام کالکشن دارند. آخرین تکه همیشه نام
-    کالکشن است؛ همین قاعده برای فایلی به نام `inverter_data.csv` هم کار می‌کند.
-    """
-    return path.stem.rsplit(".", 1)[-1]
-
-
 def load_documents(path: Path) -> list[dict]:
-    """یک CSV را به فهرست داکیومنت آماده‌ی درج تبدیل می‌کند.
-
-    دو تمیزکاری اینجا انجام می‌شود چون بعداً گران تمام می‌شوند:
-    ۱. ستونی که در کل فایل خالی است اصلاً وارد نمی‌شود (مثل `fa_al_message`)،
-       وگرنه در قدم ۳ داخل schema می‌آید و مدل روی فیلد پوچ حساب باز می‌کند.
-    ۲. سلول خالی حذف می‌شود نه اینکه NaN درج شود؛ NaN در مونگو یک عددِ واقعی
-       است و `$avg` و `$max` را بی‌صدا خراب می‌کند.
-    """
-    frame = pd.read_csv(path, low_memory=False).dropna(axis="columns", how="all")
-    return [
-        {key: value for key, value in row.items() if pd.notna(value)}
-        for row in frame.to_dict("records")
-    ]
+    """یک CSV را به فهرست داکیومنت آماده‌ی درج تبدیل می‌کند (جزئیاتش در `csv_loader`)."""
+    return csv_loader.records(csv_loader.read_frame(path))
 
 
 def ensure_readonly_user(client: MongoClient, app_uri: str, db_name: str) -> str:
@@ -77,7 +57,7 @@ def seed(client: MongoClient, db_name: str, files: list[Path]) -> None:
     """
     database = client[db_name]
     for path in files:
-        name = collection_name(path)
+        name = csv_loader.table_name(path)
         documents = load_documents(path)
         database[name].drop()
         database[name].insert_many(documents)

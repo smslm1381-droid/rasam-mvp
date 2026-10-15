@@ -1,0 +1,46 @@
+"""اتصال به MySQL / MariaDB از روی رشته‌ی اتصال.
+
+رشته‌ی اتصال شکل `mysql://کاربر:رمز@میزبان:پورت/دیتابیس` دارد؛ درایور `pymysql`
+آرگومان‌های جدا می‌خواهد، پس اینجا شکسته می‌شود. **رمز هرگز در پیام خطا نمی‌آید.**
+"""
+
+from __future__ import annotations
+
+from typing import Any
+from urllib.parse import unquote, urlsplit
+
+import pymysql
+import pymysql.cursors
+
+DEFAULT_PORT = 3306
+
+
+def parse_uri(uri: str, database: str | None = None) -> dict[str, Any]:
+    """آرگومان‌های `pymysql.connect` از روی رشته‌ی اتصال.
+
+    `database` اگر داده شود بر نام دیتابیس داخل رشته مقدم است: نام دیتابیس مال
+    پروفایل مشتری است (تصمیم ۸۱) و رشته‌ی اتصال گاهی آن را ندارد. رشته‌ی خالی
+    (`""`) یعنی «به هیچ دیتابیسی وصل نشو»، مثلاً وقتی seed می‌خواهد خودِ دیتابیس را بسازد.
+    """
+    parts = urlsplit(uri)
+    if parts.scheme not in ("mysql", "mariadb") or not parts.hostname:
+        raise ValueError("رشته‌ی اتصال MySQL باید شکل mysql://کاربر:رمز@میزبان:پورت/دیتابیس داشته باشد.")
+    return {
+        "host": parts.hostname,
+        "port": parts.port or DEFAULT_PORT,
+        "user": unquote(parts.username or ""),
+        "password": unquote(parts.password or ""),
+        "database": (database or None) if database is not None else (parts.path.lstrip("/") or None),
+    }
+
+
+def connect(uri: str, database: str | None = None, timeout_s: int = 5, **extra) -> pymysql.Connection:
+    """اتصال با `DictCursor`، و **بدون** چند‌دستوری (پیش‌فرض درایور است و اینجا صریح)."""
+    return pymysql.connect(
+        **parse_uri(uri, database),
+        charset="utf8mb4",
+        connect_timeout=timeout_s,
+        cursorclass=pymysql.cursors.DictCursor,
+        client_flag=0,  # بدون CLIENT.MULTI_STATEMENTS
+        **extra,
+    )

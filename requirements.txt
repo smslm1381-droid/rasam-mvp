@@ -30,8 +30,10 @@ openpyxl>=3.1
 # قدم ۱۶ — بازیابی معنایی دانش
 chromadb>=0.5
 
-# قدم ۱۷ — اتصال PostgreSQL
-psycopg[binary]>=3.2
+# قدم ۲۱ تا ۲۴ — دیتابیس دوم: MySQL / MariaDB
+pymysql>=1.1
+# پارسر SQL: گارد روی درخت نحوی کار می‌کند، نه روی متن (قدم ۲۳)
+sqlglot>=25
 
 # تست
 pytest>=8.2
