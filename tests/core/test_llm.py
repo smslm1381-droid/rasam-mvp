@@ -7,9 +7,7 @@
 
 from __future__ import annotations
 
-import sys
 from dataclasses import replace
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -221,3 +219,14 @@ def test_timeout_is_configurable_in_milliseconds(monkeypatch):
                         replace(config.settings, llm_timeout_ms=5_000))
     llm._client.cache_clear()
     assert llm._client().request_timeout == 5.0
+
+
+@pytest.mark.parametrize("error", [ValueError("x"), KeyError("choices"), TypeError("y")])
+def test_an_unreadable_service_reply_does_not_blame_the_network(error):
+    """با مدل‌های رایگان گاهی پاسخ خالی یا ناقص می‌آید؛ اینترنت سالم است."""
+    message = llm._describe_failure(error)
+    assert "قابل‌خواندن نبود" in message and "اینترنت" not in message
+
+
+def test_a_dropped_connection_still_points_at_the_network():
+    assert "اینترنت" in llm._describe_failure(ConnectionError("down"))

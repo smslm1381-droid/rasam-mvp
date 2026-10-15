@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from pathlib import Path
 
 from bson import ObjectId
 from fastapi.testclient import TestClient
 
 from rasam import config
-from rasam.core import graph
+from rasam.core.answer import Answer
 from rasam.databases.mongodb.agent import _plain
 from rasam import api
 
@@ -30,7 +29,7 @@ def test_ask_requires_api_key(monkeypatch):
 
 
 def test_ask_serializes_answer_without_adding_logic(monkeypatch):
-    expected = graph.Answer(question="دما؟", rows=[{"avg": 28.6}])
+    expected = Answer(question="دما؟", rows=[{"avg": 28.6}])
     monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
     monkeypatch.setattr(api, "answer", lambda question: expected)
     response = client.post(
@@ -51,7 +50,7 @@ def test_ask_serializes_answer_without_adding_logic(monkeypatch):
 
 def test_ask_can_return_csv(monkeypatch):
     monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
-    monkeypatch.setattr(api, "answer", lambda question: graph.Answer(
+    monkeypatch.setattr(api, "answer", lambda question: Answer(
         question=question, rows=[{"avg": 28.6}]))
     response = client.post(
         "/ask", headers={"X-API-Key": "secret"},
@@ -78,7 +77,7 @@ def test_a_mongo_id_does_not_break_the_json_response(monkeypatch):
     identifier = ObjectId()
     rows = [_plain({"_id": identifier, "int_temp": 28.6})]
     monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
-    monkeypatch.setattr(api, "answer", lambda question: graph.Answer(
+    monkeypatch.setattr(api, "answer", lambda question: Answer(
         question=question, rows=rows))
     response = client.post(
         "/ask", headers={"X-API-Key": "secret"}, json={"question": "دما؟"})
@@ -89,7 +88,7 @@ def test_a_mongo_id_does_not_break_the_json_response(monkeypatch):
 def test_a_failed_answer_is_not_turned_into_an_empty_file(monkeypatch):
     """قبلاً سوالِ ردشده یک CSV خالی با کد ۲۰۰ می‌گرفت و خطا گم می‌شد."""
     monkeypatch.setattr(config, "settings", replace(config.settings, api_key="secret"))
-    monkeypatch.setattr(api, "answer", lambda question: graph.Answer(
+    monkeypatch.setattr(api, "answer", lambda question: Answer(
         question=question, error="کوئری ساخته‌شده پذیرفته نشد."))
     response = client.post(
         "/ask", headers={"X-API-Key": "secret"},
@@ -104,7 +103,7 @@ def test_export_is_refused_when_the_profile_does_not_have_it(monkeypatch):
     profile = replace(config.settings.customer, capabilities=frozenset({"chart"}))
     monkeypatch.setattr(config, "settings",
                         replace(config.settings, api_key="secret", customer=profile))
-    monkeypatch.setattr(api, "answer", lambda question: graph.Answer(
+    monkeypatch.setattr(api, "answer", lambda question: Answer(
         question=question, rows=[{"avg": 1}]))
     response = client.post(
         "/ask", headers={"X-API-Key": "secret"},

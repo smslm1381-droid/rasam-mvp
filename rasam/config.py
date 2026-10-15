@@ -19,6 +19,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from rasam.customer import CustomerProfile, load_profile
+from rasam.errors import UserFacingError
 
 # ریشه‌ی پروژه از محل همین فایل استنتاج می‌شود، نه از دایرکتوری جاری، تا
 # اجرای دستورها از هر جایی یک نتیجه بدهد. این فایل در `rasam/` است، پس ریشه
@@ -47,7 +48,7 @@ REQUIRED = (
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
-class ConfigError(Exception):
+class ConfigError(UserFacingError):
     """تنظیمات قابل خواندن نیست.
 
     این تنها جای پروژه است که استثنا پرتاب می‌شود و درست است: بدون تنظیمات
@@ -162,7 +163,7 @@ class Settings:
         return "Settings(\n" + "\n".join(lines) + "\n)"
 
 
-def _load() -> Settings:
+def _require_env() -> None:
     missing = [ENV_PREFIX + name for name in REQUIRED if _env(name) is None]
     if missing:
         raise ConfigError(
@@ -171,24 +172,36 @@ def _load() -> Settings:
             + "\n\nراه‌حل: فایل `.env.example` را به `.env` کپی کنید و مقادیرش را پر کنید."
         )
 
-    raw_csv_dir = _env("CSV_DIR")
-    csv_dir = Path(raw_csv_dir) if raw_csv_dir else None
-    profile = load_profile(_env("CUSTOMER"), CUSTOMERS_DIR)
-    connection_uri = _env(profile.connection_env)
-    if connection_uri is None:
+
+def _csv_dir() -> Path | None:
+    """مسیر CSVهای دمو، یا None. مسیر نسبی نسبت به ریشه‌ی پروژه معنا می‌شود، نه دایرکتوری جاری."""
+    raw = _env("CSV_DIR")
+    if raw is None:
+        return None
+    path = Path(raw)
+    return path if path.is_absolute() else (PROJECT_ROOT / path).resolve()
+
+
+def _connection_uri(profile: CustomerProfile) -> str:
+    uri = _env(profile.connection_env)
+    if uri is None:
         raise ConfigError(
             f"تنظیمات ناقص است. متغیر {ENV_PREFIX}{profile.connection_env} "
             f"از پروفایل مشتری «{profile.name}» پیدا نشد."
         )
+    return uri
+
+
+def _load() -> Settings:
+    _require_env()
+    profile = load_profile(_env("CUSTOMER"), CUSTOMERS_DIR)
     return Settings(
         customer=profile,
-        connection_uri=connection_uri,
+        connection_uri=_connection_uri(profile),
         database=profile.database,
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),
         allowed_sources=profile.allowed_sources,
-        # مسیر نسبی نسبت به ریشه‌ی پروژه معنا می‌شود، نه دایرکتوری جاری.
-        csv_dir=None if csv_dir is None else (
-            csv_dir if csv_dir.is_absolute() else (PROJECT_ROOT / csv_dir).resolve()),
+        csv_dir=_csv_dir(),
         llm_api_key=_env("LLM_API_KEY"),
         llm_base_url=_env("LLM_BASE_URL"),
         llm_model=_env("LLM_MODEL"),

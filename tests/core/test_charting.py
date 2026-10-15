@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from rasam.core import charting
 from rasam.databases.mongodb import schema as mongo_schema

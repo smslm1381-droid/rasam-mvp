@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import io
-from pathlib import Path
 
 from openpyxl import load_workbook
 
 from rasam import cli
 from rasam.core import exporting
-from rasam.core.graph import Answer
+from rasam.core.answer import Answer
 
 
 ROWS = [{"device": "in1", "avg": 28.6}, {"device": "in2", "max": 31.2}]

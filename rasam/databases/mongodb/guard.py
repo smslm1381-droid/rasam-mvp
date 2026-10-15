@@ -122,6 +122,22 @@ def _why_rejected(key: str, kind: str) -> str:
     return f"{kind} «{key}» در فهرست مجاز نیست."
 
 
+def _check_stages(pipeline: list) -> Result | None:
+    """هر مرحله‌ی pipeline را می‌سنجد؛ اولین ایراد را رد می‌کند، یا None اگر همه سالم‌اند."""
+    for stage in pipeline:
+        if not isinstance(stage, dict) or len(stage) != 1:
+            return _reject("هر مرحله باید یک دیکشنری با دقیقاً یک کلید باشد.")
+
+        (name, body), = stage.items()
+        if name not in ALLOWED_STAGES:
+            return _reject(_why_rejected(name, "مرحله"))
+
+        found = _forbidden_key(body)
+        if found:
+            return _reject(_why_rejected(found, "عملگر"))
+    return None
+
+
 def check(
     pipeline: Any,
     collection: str,
@@ -144,17 +160,9 @@ def check(
     if not isinstance(pipeline, list) or not pipeline:
         return _reject("کوئری باید یک فهرست ناخالی از مرحله‌ها باشد.")
 
-    for stage in pipeline:
-        if not isinstance(stage, dict) or len(stage) != 1:
-            return _reject("هر مرحله باید یک دیکشنری با دقیقاً یک کلید باشد.")
-
-        (name, body), = stage.items()
-        if name not in ALLOWED_STAGES:
-            return _reject(_why_rejected(name, "مرحله"))
-
-        found = _forbidden_key(body)
-        if found:
-            return _reject(_why_rejected(found, "عملگر"))
+    rejection = _check_stages(pipeline)
+    if rejection:
+        return rejection
 
     safe = list(pipeline)
     if row_filter:

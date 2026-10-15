@@ -6,10 +6,11 @@
 
 from __future__ import annotations
 
+
 from pathlib import Path
 
 from rasam import cli
-from rasam.core.graph import Answer
+from rasam.core.answer import Answer
 
 
 def test_an_error_is_labelled_as_one():
@@ -78,3 +79,17 @@ def test_columns_come_from_every_row_not_just_the_first():
     answer = Answer(question="q", rows=[{"a": 1}, {"b": 2}])
     header = cli.render(answer, show_query=False).splitlines()[0]
     assert "a" in header and "b" in header
+
+
+def test_a_broken_setup_prints_one_persian_line_and_no_traceback():
+    """پروفایل پیدا نشد → خطای فارسی و کد خروج ۲، نه traceback."""
+    import os
+    import subprocess
+    import sys
+
+    root = Path(__file__).resolve().parents[2]
+    done = subprocess.run(
+        [sys.executable, "ask.py", "سلام"], cwd=root, capture_output=True, text=True,
+        env={**os.environ, "RASAM_CUSTOMER": "no-such-customer"})
+    assert done.returncode == 2
+    assert "پیدا نشد" in done.stderr and "Traceback" not in done.stderr

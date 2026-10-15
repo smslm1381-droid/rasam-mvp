@@ -7,12 +7,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 
 import pytest
 import yaml
 
-from rasam.core.graph import Answer
+from rasam.core.answer import Answer
 from scripts.evaluate import QUESTIONS_FILE, grade
 
 QUESTIONS = yaml.safe_load(QUESTIONS_FILE.read_text(encoding="utf-8"))

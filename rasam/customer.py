@@ -19,6 +19,8 @@ from typing import Any
 
 import yaml
 
+from rasam.errors import UserFacingError
+
 # نشانه‌ای که ابزار تحویل در هر جای خالیِ دانش می‌گذارد. بررسی آمادگی تحویل تا
 # یکی از این‌ها در پوشه‌ی مشتری مانده باشد قرمز می‌ماند.
 TODO_MARKER = "TODO(onboarding)"
@@ -48,7 +50,7 @@ _SECRET_SHAPES = (
 )
 
 
-class ProfileError(ValueError):
+class ProfileError(UserFacingError, ValueError):
     """پروفایل مشتری معتبر نیست."""
 
 

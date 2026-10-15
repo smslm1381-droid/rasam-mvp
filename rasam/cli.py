@@ -13,7 +13,8 @@ from pathlib import Path
 
 from rasam import config
 from rasam.core import exporting
-from rasam.core.graph import Answer, answer, graph_nodes
+from rasam.core.answer import Answer
+from rasam.core.graph import answer, graph_nodes
 
 
 def _cell(value) -> str:

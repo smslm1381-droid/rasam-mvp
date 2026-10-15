@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rasam import config  # noqa: E402
 from rasam.core import graph  # noqa: E402
+from rasam.core.answer import Answer  # noqa: E402
 
 # سوالات طلایی مال هر مشتری است — جواب‌هایشان از داده‌ی همان مشتری آمده.
 QUESTIONS_FILE = config.settings.customer.directory / "golden_questions.yaml"
@@ -71,7 +72,7 @@ def _has_answer(row: dict, expect: dict) -> tuple[bool, str]:
     return False, f"{', '.join(f'{v:g}' for v in numbers.values())} به‌جای {want:g}"
 
 
-def grade(expect: dict, answer: graph.Answer) -> tuple[str, str]:
+def grade(expect: dict, answer: Answer) -> tuple[str, str]:
     """یک سوال را نمره می‌دهد. خروجی: (وضعیت، توضیح کوتاه).
 
     سه وضعیت، و تفکیکشان برای صداقتِ عدد حیاتی است: اگر خطای سرویس را «جواب
