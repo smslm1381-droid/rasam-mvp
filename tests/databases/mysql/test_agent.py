@@ -31,6 +31,10 @@ def admin_uri() -> str:
     value = config.env_value("MYSQL_ADMIN_URI")
     if not value:
         pytest.skip("RASAM_MYSQL_ADMIN_URI در `.env` نیست.")
+    try:
+        connection.connect(value, "solar_telemetry").close()
+    except pymysql.MySQLError:
+        pytest.skip("MySQL محلی در دسترس نیست.")
     return Secret(value)
 
 

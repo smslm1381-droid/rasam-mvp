@@ -91,3 +91,9 @@ python onboard.py check <نام>   # بررسی آمادگی تحویل (بدو�
 uvicorn rasam.api:app --reload  # اجرای API
 pytest                          # تست‌ها
 ```
+
+متغیر محیطی برای یک دستور: در bash `RASAM_CUSTOMER=demo-mysql python ask.py "…"`، در پاورشل
+`$env:RASAM_CUSTOMER="demo-mysql"; python ask.py "…"` (یا `RASAM_CUSTOMER` را در `.env` عوض کن).
+خروجی فارسی و ✅ روی کنسول ویندوز با `rasam/console.py` UTF-8 می‌شود؛ هر نقطه‌ی ورودِ تازه
+(`print` بیرون از `ask.py`/`onboard.py`) باید `console.use_utf8()` را صدا بزند. فایل متنیِ
+قابل‌ویرایش با انسان را با `console.read_text()` بخوان (BOM ویندوز).

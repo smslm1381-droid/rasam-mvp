@@ -73,9 +73,15 @@ def to_excel(rows: list[dict]) -> bytes:
     return buffer.getvalue()
 
 
+# Excel ویندوز فایل CSV را بدون BOM با کدگذاری محلی (نه UTF-8) باز می‌کند و فارسی
+# را به‌هم‌ریخته نشان می‌دهد. BOM همه‌ی نسخه‌های Excel را به UTF-8 می‌برد، و
+# برنامه‌های دیگر آن را نادیده می‌گیرند.
+CSV_BOM = "\ufeff"
+
+
 def write_csv(rows: list[dict], path: Path) -> None:
-    """CSV را در مسیر انتخاب‌شده‌ی کاربر می‌نویسد."""
-    path.write_text(to_csv(rows), encoding="utf-8", newline="")
+    """CSV را در مسیر انتخاب‌شده‌ی کاربر می‌نویسد، به شکلی که Excel فارسی را درست باز کند."""
+    path.write_text(CSV_BOM + to_csv(rows), encoding="utf-8", newline="")
 
 
 def write_excel(rows: list[dict], path: Path) -> None:

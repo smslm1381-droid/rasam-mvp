@@ -18,7 +18,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from rasam import config  # noqa: E402
+from rasam import config, console  # noqa: E402
 from rasam.core import graph  # noqa: E402
 from rasam.core.answer import Answer  # noqa: E402
 
@@ -139,6 +139,7 @@ def report(results: list[tuple[dict, str, str]]) -> int:
 
 
 def main() -> int:
+    console.use_utf8()
     parser = argparse.ArgumentParser(description="سنجش نرخ جواب درست روی سوالات طلایی")
     parser.add_argument("--pause", type=float, default=DEFAULT_PAUSE,
                         help="فاصله‌ی بین سوال‌ها به ثانیه، برای دورزدن سهمیه‌ی سرویس")
@@ -146,7 +147,7 @@ def main() -> int:
                         help="فقط سوالاتی که این متن در آن‌ها هست")
     args = parser.parse_args()
 
-    questions = yaml.safe_load(QUESTIONS_FILE.read_text(encoding="utf-8"))
+    questions = yaml.safe_load(console.read_text(QUESTIONS_FILE))
     if args.only:
         questions = [q for q in questions if args.only in q["question"]]
     if not questions:

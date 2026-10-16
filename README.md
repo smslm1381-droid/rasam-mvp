@@ -1,22 +1,17 @@
 # رصام
 
-دستیار پرسش‌وپاسخ روی دیتابیس. کاربر به فارسی سوال می‌پرسد، رصام کوئری مونگو
-می‌سازد، **اعتبارسنجی می‌کند**، اجرا می‌کند و نتیجه را برمی‌گرداند.
+دستیار پرسش‌وپاسخ روی دیتابیس. کاربر به فارسی سوال می‌پرسد، رصام کوئری (مونگو یا
+SQL) می‌سازد، **اعتبارسنجی می‌کند**، اجرا می‌کند و نتیجه را برمی‌گرداند. دیتابیس‌ها:
+**MongoDB** و **MySQL / MariaDB**.
 
 نقشه‌ی راه و وضعیت کار در [`PLAN.md`](PLAN.md) است. قواعد کار در
 [`CLAUDE.md`](CLAUDE.md).
 
 ## راه‌اندازی
 
-مک و لینوکس:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-cp .env.example .env   # سپس مقادیرش را پر کنید
-```
+**پیش‌نیازها:** Python 3.11 یا بالاتر، Git، و Docker Desktop (برای مونگو و MySQL محلی؛
+روی ویندوز با WSL2). بدون Docker همه‌چیز جز آزمون‌هایی که به دیتابیس واقعی وصل می‌شوند
+کار می‌کند — آن آزمون‌ها با پیام روشن skip می‌شوند، نه بی‌صدا سبز.
 
 ویندوز (پاورشل):
 
@@ -28,7 +23,17 @@ pip install -r requirements.txt
 Copy-Item .env.example .env   # سپس مقادیرش را پر کنید
 ```
 
-بررسی اینکه تنظیمات درست خوانده می‌شود:
+مک و لینوکس:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+cp .env.example .env   # سپس مقادیرش را پر کنید
+```
+
+بررسی اینکه تنظیمات درست خوانده می‌شود (روی هر دو یکی است):
 
 ```bash
 python -c "from rasam import config; print(config.settings)"
@@ -36,6 +41,34 @@ python -c "from rasam import config; print(config.settings)"
 
 اگر متغیر ضروری‌ای در `.env` نباشد، پیام فارسی می‌گوید کدام‌ها کم است.
 کلید مدل و رمز دیتابیس در این خروجی پوشانده می‌شوند.
+
+### نکته‌های ویندوز
+
+- **اگر پاورشل فعال‌سازی را رد کرد** («running scripts is disabled»): یک بار
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` را بزنید.
+- **ترمینال:** برای نمایش درست فارسی از **Windows Terminal** استفاده کنید؛ `cmd` قدیمی حروف
+  را جدا و برعکس نشان می‌دهد. خروجی برنامه خودش UTF-8 است و روی کنسول ویندوز نمی‌افتد.
+- **متغیر محیطی برای یک دستور:** در پاورشل به‌جای `RASAM_CUSTOMER=demo python ask.py …`
+  (که فقط در bash کار می‌کند):
+
+  ```powershell
+  $env:RASAM_CUSTOMER = "demo-mysql"      # تا بستن همین پنجره می‌ماند
+  python ask.py "سوال شما"
+  Remove-Item Env:RASAM_CUSTOMER          # برگشت به مقدار `.env`
+  ```
+
+  راه ساده‌تر و همیشگی: `RASAM_CUSTOMER` را در `.env` عوض کنید.
+- **ویرایش فایل‌ها:** Notepad قدیمی فایل UTF-8 را با BOM ذخیره می‌کند؛ برنامه آن را
+  می‌خواند. ولی VS Code یا Notepad++ بهتر است. پایان خط را `.gitattributes` روی LF نگه می‌دارد،
+  پس `git` ویندوز فایل‌ها را CRLF نمی‌کند (وگرنه آزمون‌های بایت‌به‌بایت می‌شکستند).
+- **فایل CSV** خروجی با BOM ساخته می‌شود تا Excel ویندوز فارسی را درست نشان دهد.
+- **اگر `pip install` روی `chromadb` یا `onnxruntime` شکست خورد:** معمولاً
+  [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) کم است.
+
+> **صادقانه:** همه‌ی کد و آزمون‌ها تاکنون روی مک اجرا شده‌اند. سازگاری با ویندوز با
+> شبیه‌سازی شرایطش آزمون شده (`tests/test_windows.py`: کنسول غیر UTF-8، BOM، CRLF)، ولی
+> دستورهای پاورشل بالا و نصب `chromadb` روی ویندوز واقعی هنوز اجرا نشده‌اند. اولین اجرای
+> واقعی را با `pytest` شروع کنید و هر شکستی را اینجا ثبت کنید.
 
 ## دستورها
 
@@ -51,7 +84,7 @@ python -c "from rasam import config; print(config.settings)"
 | `python ask.py --csv result.csv "سوال شما"` | ذخیره‌ی نتیجه به CSV | ۱۴ |
 | `python ask.py --excel result.xlsx "سوال شما"` | ذخیره‌ی نتیجه به Excel | ۱۴ |
 | `uvicorn rasam.api:app --reload` | اجرای API | ۱۳ |
-| `pytest` | تست‌ها | ۲ |
+| `pytest` | تست‌ها (بدون Docker، آزمون‌های وابسته به دیتابیس skip می‌شوند) | ۲ |
 
 ## ساختار پروژه
 
@@ -114,24 +147,17 @@ rasam-mvp/
 uvicorn rasam.api:app --reload
 ```
 
-سلامت سرویس بدون کلید در دسترس است:
+مک و لینوکس (bash):
 
 ```bash
 curl http://127.0.0.1:8000/health
-```
 
-برای پرسیدن سوال، کلید را در header بفرستید:
-
-```bash
 curl -X POST http://127.0.0.1:8000/ask \
 	-H 'Content-Type: application/json' \
 	-H 'X-API-Key: CHANGE_ME_API_KEY' \
 	-d '{"question":"میانگین دمای داخلی اینورترها چقدر است؟"}'
-```
 
-برای دریافت فایل از API، مقدار `export` را `csv` یا `excel` بفرستید:
-
-```bash
+# فایل: مقدار export را csv یا excel بفرستید
 curl -X POST http://127.0.0.1:8000/ask \
 	-H 'X-API-Key: CHANGE_ME_API_KEY' \
 	-H 'Content-Type: application/json' \
@@ -139,6 +165,29 @@ curl -X POST http://127.0.0.1:8000/ask \
 	-o result.csv
 ```
 
+ویندوز (پاورشل) — `curl` در پاورشل نام دیگری برای `Invoke-WebRequest` است و نقل‌قول
+JSON را خراب می‌کند، پس از `Invoke-RestMethod` استفاده کنید. بدنه را **بایت UTF-8**
+بفرستید، وگرنه فارسی خراب می‌رسد:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+
+$body = @{ question = "میانگین دمای داخلی اینورترها چقدر است؟" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/ask `
+    -Headers @{ "X-API-Key" = "CHANGE_ME_API_KEY" } `
+    -ContentType "application/json; charset=utf-8" `
+    -Body ([Text.Encoding]::UTF8.GetBytes($body))
+
+# فایل
+$body = @{ question = "میانگین دما؟"; export = "csv" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/ask -OutFile result.csv `
+    -Headers @{ "X-API-Key" = "CHANGE_ME_API_KEY" } `
+    -ContentType "application/json; charset=utf-8" `
+    -Body ([Text.Encoding]::UTF8.GetBytes($body))
+```
+
 ## وضعیت
 
-فاز ۴ — پروفایل و بازیابی معنایی آماده‌اند؛ زیرساخت دیتابیس دوم در حال تکمیل است.
+فاز ۵ تمام است: دو دیتابیس (MongoDB و MySQL / MariaDB)، پروفایل سخت‌گیر مشتری، آزمون انطباق
+مشترک، ابزار تحویل (`onboard.py new` و `check`). بعدی: فاز ۶ — نسخه‌ی رومیزی ویندوز.
+جزئیات و تصمیم‌ها در [`PLAN.md`](PLAN.md).

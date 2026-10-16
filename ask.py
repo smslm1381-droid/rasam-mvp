@@ -6,7 +6,11 @@
 
 import sys
 
+from rasam import console
 from rasam.errors import UserFacingError
+
+# پیش از هر چاپی: کنسول ویندوز فارسی را با UTF-8 نمی‌پذیرد (rasam/console.py).
+console.use_utf8()
 
 try:
     from rasam.cli import main

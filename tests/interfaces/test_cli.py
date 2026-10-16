@@ -88,7 +88,7 @@ def test_a_broken_setup_prints_one_persian_line_and_no_traceback():
 
     root = Path(__file__).resolve().parents[2]
     done = subprocess.run(
-        [sys.executable, "ask.py", "سلام"], cwd=root, capture_output=True, text=True,
-        env={**os.environ, "RASAM_CUSTOMER": "no-such-customer"})
+        [sys.executable, "ask.py", "سلام"], cwd=root, capture_output=True, text=True, encoding="utf-8",
+        env={**os.environ, "RASAM_CUSTOMER": "no-such-customer", "PYTHONUTF8": "1"})
     assert done.returncode == 2
     assert "پیدا نشد" in done.stderr and "Traceback" not in done.stderr

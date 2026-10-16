@@ -18,7 +18,7 @@ import pymysql
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from rasam import config  # noqa: E402
+from rasam import config, console  # noqa: E402
 from rasam.databases.mysql import connection  # noqa: E402
 from scripts import csv_loader  # noqa: E402
 
@@ -97,6 +97,7 @@ def ensure_readonly_user(conn, app_uri: str, database: str, tables: list[str]) -
 
 
 def main() -> int:
+    console.use_utf8()
     admin_uri = config.env_value("MYSQL_ADMIN_URI")
     app_uri = config.env_value("MYSQL_URI")
     if not admin_uri or not app_uri:

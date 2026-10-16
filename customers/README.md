@@ -44,8 +44,10 @@ limits:
 برای دیدن گره‌هایی که یک مشتری دارد:
 
 ```bash
-RASAM_CUSTOMER=demo python ask.py --nodes
+RASAM_CUSTOMER=demo python ask.py --nodes          # bash (مک و لینوکس)
 ```
+
+در پاورشل: `$env:RASAM_CUSTOMER="demo"; python ask.py --nodes`.
 
 ## افزودن مشتری تازه
 

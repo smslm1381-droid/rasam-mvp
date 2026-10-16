@@ -57,7 +57,9 @@ def test_ask_can_return_csv(monkeypatch):
         json={"question": "دما؟", "export": "csv"})
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/csv")
-    assert response.text == "avg\n28.6\n"
+    # BOM اول فایل، برای Excel ویندوز؛ پس از آن همان CSV ساده.
+    assert response.content.startswith(b"\xef\xbb\xbf")
+    assert response.content.decode("utf-8-sig") == "avg\n28.6\n"
 
 
 def test_invalid_export_format_is_rejected(monkeypatch):

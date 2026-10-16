@@ -19,6 +19,7 @@ from typing import Any
 
 import yaml
 
+from rasam import console
 from rasam.errors import UserFacingError
 
 # نشانه‌ای که ابزار تحویل در هر جای خالیِ دانش می‌گذارد. بررسی آمادگی تحویل تا
@@ -73,7 +74,7 @@ def load_profile(name: str, directory: Path) -> CustomerProfile:
     path = directory / name / "profile.yaml"
     if not path.is_file():
         raise ProfileError(f"پروفایل مشتری «{name}» پیدا نشد: {path}")
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    data = yaml.safe_load(console.read_text(path)) or {}
     if not isinstance(data, dict):
         raise ProfileError(f"پروفایل مشتری «{name}» باید یک شیء YAML باشد.")
     return _parse_profile(name, path.parent, data)

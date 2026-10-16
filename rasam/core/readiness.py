@@ -18,7 +18,7 @@ from typing import Any
 
 import yaml
 
-from rasam import config, customer
+from rasam import config, console, customer
 from rasam.databases import registry
 
 MIN_GOLDEN_QUESTIONS = 10
@@ -96,11 +96,11 @@ def _row_cap(profile: customer.CustomerProfile) -> Check:
 def _documentation(profile: customer.CustomerProfile) -> Check:
     name = "دانش دامنه کامل است"
     path = profile.directory / "documentation.md"
-    if not path.is_file() or not path.read_text(encoding="utf-8").strip():
+    if not path.is_file() or not console.read_text(path).strip():
         return Check(name, False, "documentation.md نیست یا خالی است.")
     left = [
         file.name for file in sorted(profile.directory.iterdir())
-        if file.is_file() and customer.TODO_MARKER in file.read_text(encoding="utf-8")
+        if file.is_file() and customer.TODO_MARKER in console.read_text(file)
     ]
     if left:
         return Check(name, False, f"{customer.TODO_MARKER} هنوز مانده در: {', '.join(left)}")
@@ -110,7 +110,7 @@ def _documentation(profile: customer.CustomerProfile) -> Check:
 def _yaml_list(path: Path) -> list[Any] | None:
     if not path.is_file():
         return []
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    data = yaml.safe_load(console.read_text(path))
     return data if isinstance(data, list) else None
 
 

@@ -155,9 +155,10 @@ print(json.dumps({
 
 
 def run_graph(*model_replies: str) -> dict:
-    env = {**os.environ, "RASAM_CUSTOMER": "demo-mysql"}
+    env = {**os.environ, "RASAM_CUSTOMER": "demo-mysql", "PYTHONUTF8": "1"}
     done = subprocess.run([sys.executable, "-c", SCRIPT, json.dumps(list(model_replies))],
-                          cwd=ROOT, env=env, capture_output=True, text=True, timeout=120)
+                          cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8",
+                          timeout=120)
     assert done.returncode == 0, done.stderr[-800:]
     return json.loads(done.stdout.strip().splitlines()[-1])
 

@@ -29,7 +29,9 @@ def test_cli_writes_requested_csv(monkeypatch, tmp_path):
     path = tmp_path / "result.csv"
     monkeypatch.setattr(cli, "answer", lambda _: Answer(question="q", rows=ROWS))
     assert cli.main(["--csv", str(path), "q"]) == 0
-    assert path.read_text(encoding="utf-8") == exporting.to_csv(ROWS)
+    # با BOM (utf-8-sig آن را برمی‌دارد) تا Excel ویندوز فارسی را درست باز کند.
+    assert path.read_text(encoding="utf-8-sig") == exporting.to_csv(ROWS)
+    assert path.read_bytes().startswith(b"\xef\xbb\xbf")
 
 def test_a_cell_that_excel_would_run_as_a_formula_is_neutralized():
     """محتوای دیتابیس غیرقابل‌اعتماد است.

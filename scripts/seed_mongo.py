@@ -18,7 +18,7 @@ from pymongo.errors import PyMongoError
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import csv_loader  # noqa: E402
-from rasam import config  # noqa: E402
+from rasam import config, console  # noqa: E402
 
 
 def load_documents(path: Path) -> list[dict]:
@@ -65,6 +65,7 @@ def seed(client: MongoClient, db_name: str, files: list[Path]) -> None:
 
 
 def main() -> int:
+    console.use_utf8()
     settings = config.settings
 
     if not settings.mongo_admin_uri:

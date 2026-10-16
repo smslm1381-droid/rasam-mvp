@@ -54,7 +54,7 @@ _FILENAME = {"csv": "result.csv", "excel": "result.xlsx"}
 
 
 def _file(kind: str, rows: list[dict]) -> Response:
-    content = exporting.to_csv(rows) if kind == "csv" else exporting.to_excel(rows)
+    content = (exporting.CSV_BOM + exporting.to_csv(rows)) if kind == "csv" else exporting.to_excel(rows)
     return Response(
         content=content,
         media_type=_MEDIA[kind],

@@ -18,7 +18,7 @@ import chromadb
 import yaml
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 
-from rasam import config
+from rasam import config, console
 
 DOCUMENTATION_FILE = "documentation.md"
 EXAMPLES_FILE = "examples.yaml"
@@ -37,7 +37,7 @@ def _customer_file(name: str) -> Path:
 def documentation_text() -> str:
     """واژگان فارسی، توضیح کالکشن‌ها و تله‌های داده. مشتری بدون این فایل، متن خالی."""
     path = _customer_file(DOCUMENTATION_FILE)
-    return path.read_text(encoding="utf-8").strip() if path.is_file() else ""
+    return console.read_text(path).strip() if path.is_file() else ""
 
 
 @lru_cache(maxsize=1)
@@ -46,7 +46,7 @@ def examples() -> list[dict]:
     path = _customer_file(EXAMPLES_FILE)
     if not path.is_file():
         return []
-    return yaml.safe_load(path.read_text(encoding="utf-8")) or []
+    return yaml.safe_load(console.read_text(path)) or []
 
 
 def examples_text(format_example: Callable[[dict], str]) -> str:
@@ -70,7 +70,7 @@ def field_notes() -> dict[str, str]:
     path = _customer_file(FIELD_NOTES_FILE)
     if not path.is_file():
         return {}
-    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return yaml.safe_load(console.read_text(path)) or {}
 
 
 class MultilingualEmbedding(EmbeddingFunction[Documents]):
@@ -175,7 +175,7 @@ def _documentation_documents(directory: Path) -> list[dict[str, Any]]:
     path = directory / "documentation.md"
     if not path.is_file():
         return []
-    chunks = [chunk.strip() for chunk in path.read_text(encoding="utf-8").split("\n\n")]
+    chunks = [chunk.strip() for chunk in console.read_text(path).split("\n\n")]
     return [_document(f"documentation-{index}", chunk, {"kind": "documentation"})
             for index, chunk in enumerate(chunks) if chunk]
 
@@ -184,7 +184,7 @@ def _example_documents(directory: Path) -> list[dict[str, Any]]:
     path = directory / "examples.yaml"
     if not path.is_file():
         return []
-    examples = yaml.safe_load(path.read_text(encoding="utf-8")) or []
+    examples = yaml.safe_load(console.read_text(path)) or []
     return [_document(
         f"example-{index}",
         f"Q: {item['question']}\nWhy: {item.get('why', '')}\nA: {item['source']} {item['query']}",
