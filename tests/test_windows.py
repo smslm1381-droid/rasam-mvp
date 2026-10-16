@@ -85,16 +85,25 @@ def test_read_text_works_without_a_bom_too(tmp_path):
     assert console.read_text(path) == "سلام"
 
 
-def test_the_env_file_with_a_bom_and_crlf_needs_no_special_handling():
-    """سنجیده شد، نه حدس: python-dotenv خودش BOM و CRLF را درست می‌خواند."""
-    from dotenv import dotenv_values
+@pytest.mark.parametrize("prefix", [b"", b"\xef\xbb\xbf"])
+def test_settings_load_the_first_env_variable_with_crlf(tmp_path, monkeypatch, prefix):
+    """خودِ مسیر بارگذاری تنظیمات باید اولین متغیر فایل Notepad را بشناسد."""
+    import runpy
+    import dotenv
+    from rasam import config
 
-    env = ROOT / "tests" / "_bom.env"
-    env.write_bytes(b"\xef\xbb\xbfRASAM_FIRST=1\r\nRASAM_SECOND=2\r\n")
-    try:
-        assert dotenv_values(env, encoding="utf-8") == {"RASAM_FIRST": "1", "RASAM_SECOND": "2"}
-    finally:
-        env.unlink()
+    env = tmp_path / ".env"
+    env.write_bytes(prefix + b"RASAM_MAX_QUESTION_CHARS=1234\r\n")
+    monkeypatch.setenv("RASAM_MAX_QUESTION_CHARS", "")
+    monkeypatch.delenv("RASAM_MAX_QUESTION_CHARS")
+    load_dotenv = dotenv.load_dotenv
+
+    def load_test_env(path, **kwargs):
+        return load_dotenv(env, **kwargs)
+
+    monkeypatch.setattr(dotenv, "load_dotenv", load_test_env)
+    loaded = runpy.run_path(str(Path(config.__file__)))
+    assert loaded["settings"].max_question_chars == 1234
 
 
 # --- Excel -------------------------------------------------------------------

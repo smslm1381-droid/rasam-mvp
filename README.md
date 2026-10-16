@@ -45,7 +45,22 @@ python -c "from rasam import config; print(config.settings)"
 ### نکته‌های ویندوز
 
 - **اگر پاورشل فعال‌سازی را رد کرد** («running scripts is disabled»): یک بار
-  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` را بزنید.
+  می‌توانید بدون تغییر تنظیمات ویندوز، پایتون محیط پروژه را مستقیم اجرا کنید:
+
+  ```powershell
+  .\.venv\Scripts\python.exe -m pytest
+  .\.venv\Scripts\python.exe ask.py "میانگین دمای داخلی اینورترها چقدر است؟"
+  .\.venv\Scripts\python.exe -m uvicorn rasam.api:app --host 127.0.0.1 --port 8000
+  ```
+
+- **اگر Docker اجرا نمی‌شود:** ورود به حساب Docker جای نصب WSL را نمی‌گیرد.
+  در PowerShell با دسترسی Administrator، دستور
+  `wsl --install --no-distribution` را اجرا کنید؛ اگر درخواست شد ویندوز را ری‌استارت
+  کنید و سپس Docker Desktop را باز کنید. `docker info` باید اطلاعات سرور را نشان دهد.
+- **مسیر CSVهای دمو:** مقدار `RASAM_CSV_DIR` در `.env` باید به پوشه‌ای برسد که
+  خودِ چهار فایل CSV در آن هستند. مسیر نسبی از ریشه‌ی پروژه حساب می‌شود؛ برای
+  فایل‌های منتقل‌شده به این سیستم، مقدار `data/data/raw` است. مسیر ماشین خودتان
+  را در `.env` نگه دارید، نه در کد.
 - **ترمینال:** برای نمایش درست فارسی از **Windows Terminal** استفاده کنید؛ `cmd` قدیمی حروف
   را جدا و برعکس نشان می‌دهد. خروجی برنامه خودش UTF-8 است و روی کنسول ویندوز نمی‌افتد.
 - **متغیر محیطی برای یک دستور:** در پاورشل به‌جای `RASAM_CUSTOMER=demo python ask.py …`
@@ -65,10 +80,14 @@ python -c "from rasam import config; print(config.settings)"
 - **اگر `pip install` روی `chromadb` یا `onnxruntime` شکست خورد:** معمولاً
   [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) کم است.
 
-> **صادقانه:** همه‌ی کد و آزمون‌ها تاکنون روی مک اجرا شده‌اند. سازگاری با ویندوز با
-> شبیه‌سازی شرایطش آزمون شده (`tests/test_windows.py`: کنسول غیر UTF-8، BOM، CRLF)، ولی
-> دستورهای پاورشل بالا و نصب `chromadb` روی ویندوز واقعی هنوز اجرا نشده‌اند. اولین اجرای
-> واقعی را با `pytest` شروع کنید و هر شکستی را اینجا ثبت کنید.
+> **اجرای واقعی ویندوز (۱۴۰۵/۰۷/۲۴):** وابستگی‌ها، از جمله `chromadb`، در محیط
+> `.venv` با Python 3.13 نصب شدند و API روی `127.0.0.1:8000/health` پاسخ `ok` داد.
+> خواندن اولین متغیر `.env` با BOM و نام بسیار بلند یکی از تست‌ها اصلاح شد.
+> اجرای تست‌ها: **۶۲۹ موفق، ۹۳ skip، بدون شکست یا خطا**؛ تست‌های نیازمند دیتابیس
+> واقعی هنوز اجرا نشده‌اند.
+> قابلیت‌های WSL و Virtual Machine Platform فعال شده‌اند و نیاز به ری‌استارت دارند؛
+> اجرای دیتابیس واقعی و seed تا آماده‌شدن Docker باقی است. سرویس مدل نیز کلید فعلی
+> این ماشین را با ۴۰۱ رد کرد؛ تست کامل پاسخ‌گویی نیاز به کلید معتبر در `.env` دارد.
 
 ## دستورها
 

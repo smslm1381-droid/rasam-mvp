@@ -29,7 +29,7 @@ CUSTOMERS_DIR = PROJECT_ROOT / "customers"
 
 # override=False یعنی متغیر واقعیِ محیط سیستم بر فایل `.env` اولویت دارد؛
 # رفتار درستِ استقرار روی سرور، جایی که `.env` وجود ندارد.
-load_dotenv(PROJECT_ROOT / ".env", override=False)
+load_dotenv(PROJECT_ROOT / ".env", override=False, encoding="utf-8-sig")
 
 ENV_PREFIX = "RASAM_"
 

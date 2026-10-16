@@ -155,9 +155,14 @@ def test_a_malformed_row_filter_is_rejected_not_executed(bad):
 
 # --- هرگز استثنا --------------------------------------------------------------
 
-@pytest.mark.parametrize("query", [None, 0, "", "   ", [], {}, ["SELECT 1"], "x" * 50_000,
-                                   "(" * 5000, "SELECT " + "(" * 3000 + "1" + ")" * 3000,
-                                   "\x00", "SELECT '", "SELECT `", "SELECT /*", "';--"])
+# pytest نام تست را در متغیر محیطی می‌گذارد؛ ویندوز مقدار ۵۰هزارحرفی را نمی‌پذیرد.
+@pytest.mark.parametrize("query", [
+    None, 0, "", "   ", [], {}, ["SELECT 1"],
+    pytest.param("x" * 50_000, id="oversized-query"),
+    pytest.param("(" * 5000, id="unclosed-parentheses"),
+    pytest.param("SELECT " + "(" * 3000 + "1" + ")" * 3000, id="deep-parentheses"),
+    "\x00", "SELECT '", "SELECT `", "SELECT /*", "';--",
+])
 def test_garbage_queries_are_rejected_never_raise(query):
     result = run(query)
     assert result.ok is False and result.query is None
