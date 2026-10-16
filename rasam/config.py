@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from dataclasses import dataclass, fields
 from pathlib import Path
 
 from dotenv import load_dotenv
 
+from rasam import vault
 from rasam.customer import CustomerProfile, load_profile
 from rasam.errors import UserFacingError
 
@@ -25,11 +27,30 @@ from rasam.errors import UserFacingError
 # اجرای دستورها از هر جایی یک نتیجه بدهد. این فایل در `rasam/` است، پس ریشه
 # یک پوشه بالاتر است.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CUSTOMERS_DIR = PROJECT_ROOT / "customers"
+DESKTOP_MODE = os.getenv("RASAM_DESKTOP", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _home_dir() -> Path:
+    if raw := os.getenv("RASAM_HOME", "").strip():
+        return Path(raw).expanduser().resolve()
+    if not DESKTOP_MODE:
+        return PROJECT_ROOT
+    if sys.platform == "win32":
+        return Path(os.getenv("APPDATA") or Path.home() / "AppData" / "Roaming") / "Rasam"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Rasam"
+    return Path.home() / ".local" / "share" / "Rasam"
+
+
+DATA_HOME = _home_dir()
+CUSTOMERS_DIR = DATA_HOME / "customers"
+CHROMA_DIR = DATA_HOME / "chroma"
 
 # override=False یعنی متغیر واقعیِ محیط سیستم بر فایل `.env` اولویت دارد؛
 # رفتار درستِ استقرار روی سرور، جایی که `.env` وجود ندارد.
-load_dotenv(PROJECT_ROOT / ".env", override=False, encoding="utf-8-sig")
+# نصب رومیزی نباید تصادفی رازهای فایل توسعه را بخواند.
+if not DESKTOP_MODE:
+    load_dotenv(DATA_HOME / ".env", override=False, encoding="utf-8-sig")
 
 ENV_PREFIX = "RASAM_"
 
@@ -66,6 +87,20 @@ def _env(name: str) -> str | None:
 def env_value(name: str) -> str | None:
     """مقدار یک متغیر با پیشوند پروژه، برای ابزارهایی که فقط وجودش را می‌پرسند."""
     return _env(name)
+
+
+def secret_value(name: str) -> str | None:
+    value = env_value(name)
+    if value is not None:
+        return value
+    result = vault.read_secret(name)
+    if not result.ok:
+        raise ConfigError(f"خواندن راز {ENV_PREFIX}{name}: {result.error}")
+    return result.value
+
+
+def _required_value(name: str) -> str | None:
+    return secret_value(name) if name == "LLM_API_KEY" else _env(name)
 
 
 def _number(name: str, default, convert, kind: str):
@@ -164,7 +199,7 @@ class Settings:
 
 
 def _require_env() -> None:
-    missing = [ENV_PREFIX + name for name in REQUIRED if _env(name) is None]
+    missing = [ENV_PREFIX + name for name in REQUIRED if _required_value(name) is None]
     if missing:
         raise ConfigError(
             "تنظیمات ناقص است. این متغیرها در فایل `.env` نیستند یا خالی‌اند:\n"
@@ -183,11 +218,11 @@ def _csv_dir() -> Path | None:
 
 
 def _connection_uri(profile: CustomerProfile) -> str:
-    uri = _env(profile.connection_env)
+    uri = secret_value(profile.connection_env)
     if uri is None:
         raise ConfigError(
             f"تنظیمات ناقص است. متغیر {ENV_PREFIX}{profile.connection_env} "
-            f"از پروفایل مشتری «{profile.name}» پیدا نشد."
+            f"از پروفایل مشتری «{profile.name}» در محیط یا انبار امن رمز پیدا نشد."
         )
     return uri
 
@@ -202,7 +237,7 @@ def _load() -> Settings:
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),
         allowed_sources=profile.allowed_sources,
         csv_dir=_csv_dir(),
-        llm_api_key=_env("LLM_API_KEY"),
+        llm_api_key=secret_value("LLM_API_KEY"),
         llm_base_url=_env("LLM_BASE_URL"),
         llm_model=_env("LLM_MODEL"),
         api_key=_env("API_KEY"),

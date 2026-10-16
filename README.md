@@ -210,6 +210,9 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/ask -OutFile result.cs
 
 ## وضعیت
 
-فاز ۵ تمام است: دو دیتابیس (MongoDB و MySQL / MariaDB)، پروفایل سخت‌گیر مشتری، آزمون انطباق
-مشترک، ابزار تحویل (`onboard.py new` و `check`). بعدی: فاز ۶ — نسخه‌ی رومیزی ویندوز.
+فاز ۵ تمام است. فاز ۶ شروع شده و قدم ۲۹ کامل است: `RASAM_HOME` پوشهٔ مشتریان و
+شاخص دانش را تعیین می‌کند؛ با `RASAM_DESKTOP=1` مسیر پیش‌فرض ویندوز `%APPDATA%/Rasam`
+است و `.env` خوانده نمی‌شود. راز اتصال پس از متغیر محیطی از Credential Manager خوانده
+می‌شود؛ فایل رمز محلی نداریم. تست این بخش: `python -m pytest tests/test_vault.py -q`.
+بعدی: رابط مرورگری محلی در قدم ۳۰.
 جزئیات و تصمیم‌ها در [`PLAN.md`](PLAN.md).

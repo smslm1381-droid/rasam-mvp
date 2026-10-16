@@ -90,7 +90,7 @@ def _knowledge(question: str, schema: str) -> dict[str, str]:
 def _knowledge_store(schema: str) -> knowledge.KnowledgeStore:
     store = knowledge.KnowledgeStore(
         config.settings.customer.name,
-        config.PROJECT_ROOT / "chroma",
+        config.CHROMA_DIR,
     )
     store.rebuild(schema, config.settings.customer.directory)
     return store
