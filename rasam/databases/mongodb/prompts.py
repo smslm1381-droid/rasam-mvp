@@ -17,7 +17,7 @@ from rasam.core import knowledge
 from rasam.core.prompts import QUESTION_TAG, wrap_untrusted
 from rasam.databases.mongodb import guard
 from rasam.databases.prompt_parts import (
-    CHART_REQUEST, FAILURE_TEMPLATE, MAX_ERROR_CHARS, security_rules)
+    CHART_REQUEST, FAILURE_TEMPLATE, MAX_ERROR_CHARS, security_rules, context_text)
 
 # فهرست‌ها از `guard.py` نقل می‌شوند، نه دوباره نوشته. گارد مرجع است؛ اگر
 # پرامپت فهرست جداگانه‌ای داشته باشد، روزی از هم دور می‌افتند و مدل چیزی
@@ -79,9 +79,9 @@ def build_query_prompt(schema: str, question: str, collections: set[str],
     قبول نشد، بدون اینکه schema و نمونه‌ها دوباره تکرار شوند.
     """
     built = _TEMPLATE.format(
-        schema=schema,
-        documentation=documentation if documentation is not None else knowledge.documentation_text(),
-        examples=examples if examples is not None else knowledge.examples_text(format_example),
+        schema=context_text(schema, "SCHEMA_CONTEXT"),
+        documentation=context_text(documentation if documentation is not None else knowledge.documentation_text(), "DOMAIN_CONTEXT"),
+        examples=context_text(examples if examples is not None else knowledge.examples_text(format_example), "EXAMPLE_CONTEXT"),
         rules=SECURITY_RULES,
         collections=", ".join(sorted(collections)),
         question=wrap_untrusted(question, QUESTION_TAG),

@@ -95,6 +95,10 @@ function showChart(chart, rows) {
 }
 
 function showAnswer(answer) {
+  $('feedback-positive').disabled = false;
+  $('feedback-negative').disabled = false;
+  $('feedback-positive').hidden = !!answer.message || !answer.source || answer.query == null;
+  $('feedback-notice').textContent = '';
   $('empty').hidden = true;
   $('result').hidden = !!answer.error;
   notice(answer.error || '', !!answer.error);

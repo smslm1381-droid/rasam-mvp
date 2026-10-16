@@ -83,6 +83,8 @@ def finish(pending, name, sources, confirmed):
         agent = pending_agent(pending)
         folder = onboarding._write_customer(name, pending["db_type"], secret_name,
                                             pending["database"], sorted(set(sources)), agent)
+        # کاربر رومیزی از فرم آموزش شروع می‌کند، نه الگوی فنیِ قابل ویرایش با متن‌ویرایشگر.
+        (folder / "documentation.md").write_text("", encoding="utf-8")
         activation.activate(name)
         desktop_preferences.write_customer(config.DATA_HOME, name)
         vault.delete_secret(pending["connection_env"])

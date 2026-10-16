@@ -70,3 +70,8 @@ select, input { font: inherit; padding: .65rem; border: 1px solid #ccd8d8; borde
 .source-row label { display: block; margin: .4rem 0; }
 .source-row input { width: auto; margin-inline-end: .7rem; }
 #readonly-script { white-space: pre-wrap; overflow-wrap: anywhere; background: #f4f6f6; padding: 1rem; }
+#teaching { margin-top: 1rem; }
+#teaching-fields td { min-width: 170px; }
+#teaching-fields td:first-child { direction: ltr; font-size: .85rem; }
+#teaching-fields textarea { min-height: 75px; font: inherit; }
+#feedback { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1rem; }

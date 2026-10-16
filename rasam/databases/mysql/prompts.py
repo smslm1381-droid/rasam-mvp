@@ -18,7 +18,7 @@ from rasam.core import knowledge
 from rasam.core.prompts import QUESTION_TAG, wrap_untrusted
 from rasam.databases.mysql import guard
 from rasam.databases.prompt_parts import (
-    CHART_REQUEST, FAILURE_TEMPLATE, MAX_ERROR_CHARS, security_rules)
+    CHART_REQUEST, FAILURE_TEMPLATE, MAX_ERROR_CHARS, security_rules, context_text)
 
 SECURITY_RULES = security_rules(
     "Produce exactly ONE read-only SQL statement: a single SELECT on a single table, "
@@ -75,9 +75,9 @@ def build_query_prompt(schema: str, question: str, tables: set[str],
     فقط در تلاش ترمیم می‌آید: (کوئری ردشده، دلیل رد).
     """
     built = _TEMPLATE.format(
-        schema=schema,
-        documentation=documentation if documentation is not None else knowledge.documentation_text(),
-        examples=examples if examples is not None else knowledge.examples_text(format_example),
+        schema=context_text(schema, "SCHEMA_CONTEXT"),
+        documentation=context_text(documentation if documentation is not None else knowledge.documentation_text(), "DOMAIN_CONTEXT"),
+        examples=context_text(examples if examples is not None else knowledge.examples_text(format_example), "EXAMPLE_CONTEXT"),
         rules=SECURITY_RULES,
         tables=", ".join(sorted(tables)),
         question=wrap_untrusted(question, QUESTION_TAG),
