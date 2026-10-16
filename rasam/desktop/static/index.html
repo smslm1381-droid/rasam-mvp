@@ -9,6 +9,7 @@
   <script defer src="/static/plotly.min.js"></script>
   <script defer src="/static/app.js"></script>
   <script defer src="/static/connect.js"></script>
+  <script defer src="/static/profile.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -27,6 +28,22 @@
         <button id="connection-test" type="submit">آزمایش اتصال</button>
       </form>
       <p id="connection-result" role="status" aria-live="polite"></p>
+      <section id="source-step" hidden>
+        <h2>رصام کدام داده‌ها را ببیند؟</h2>
+        <p>فقط منابع لازم برای پاسخ را انتخاب کنید. نام فیلدها و نتیجهٔ پرسش به سرویس مدل فرستاده می‌شوند.</p>
+        <form id="profile-form">
+          <label for="customer-name">نام این اتصال (حروف کوچک لاتین، عدد و خط تیره)</label>
+          <input id="customer-name" maxlength="64" pattern="[a-z][a-z0-9-]*" required dir="ltr">
+          <div id="source-list"></div>
+          <button type="submit" id="profile-save">ذخیره و شروع پرسش</button>
+        </form>
+      </section>
+      <section id="readonly-help" hidden>
+        <h2>این را برای مسئول فنی یا پشتیبانی رصام بفرستید</h2>
+        <p>مسئول فنی باید با دسترسی مدیریت، کاربر فقط‌خواندنی بسازد؛ سپس با اطلاعات آن کاربر اتصال را دوباره آزمایش کنید.</p>
+        <pre id="readonly-script" dir="ltr"></pre><button type="button" id="copy-script" class="secondary">کپی دستور</button>
+      </section>
+      <div id="readiness" aria-live="polite"></div>
     </section>
     <div id="qa">
     <section class="intro"><span class="eyebrow">از پرسش تا پاسخ</span><h1>داده‌هایتان چه می‌گویند؟</h1><p>سؤال را به زبان خودتان بنویسید؛ پاسخ را همراه با جدول و نمودار ببینید.</p></section>

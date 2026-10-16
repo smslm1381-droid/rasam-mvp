@@ -12,6 +12,8 @@ from rasam.core.answer import Answer
 def answer_question(question: str) -> Answer:
     if config.settings is None:
         return Answer(question=question, error="ابتدا اتصال به دیتابیس را تنظیم کنید.")
+    if not all((config.settings.llm_api_key, config.settings.llm_base_url, config.settings.llm_model)):
+        return Answer(question=question, error="اتصال دیتابیس آماده است؛ ابتدا سرویس مدل و لایسنس را فعال کنید.")
     from rasam.core.graph import answer
     return answer(question)
 

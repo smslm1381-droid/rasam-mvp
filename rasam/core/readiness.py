@@ -47,7 +47,7 @@ def _load_profile(name: str, directory: Path) -> tuple[Check, customer.CustomerP
 def _build_agent(profile: customer.CustomerProfile):
     """ایجنت با اتصال و فهرست سفیدِ **همین مشتری**. مقدار اتصال هرگز چاپ نمی‌شود."""
     return registry.AGENTS[profile.db_type](
-        connection_uri=config.env_value(profile.connection_env),
+        connection_uri=config.secret_value(profile.connection_env),
         database=profile.database,
         allowed_sources=profile.allowed_sources,
     )
@@ -56,7 +56,7 @@ def _build_agent(profile: customer.CustomerProfile):
 def _connection(profile: customer.CustomerProfile, agent) -> tuple[Check, list[str] | None]:
     name = "متغیر اتصال و برقراری اتصال"
     variable = f"{config.ENV_PREFIX}{profile.connection_env}"
-    if config.env_value(profile.connection_env) is None:
+    if config.secret_value(profile.connection_env) is None:
         return Check(name, False, f"متغیر {variable} در `.env` یا محیط نیست."), None
     try:
         return Check(name, True, f"{variable} هست و وصل شد."), agent.list_sources()
@@ -149,8 +149,11 @@ def run_checks(name: str, directory: Path | None = None) -> list[Check]:
     if profile is None:
         return [profile_check, Check("بقیه‌ی بررسی‌ها", False, "تا پروفایل معتبر نشود انجام نمی‌شوند.")]
 
-    agent = _build_agent(profile)
-    connection, sources = _connection(profile, agent)
+    try:
+        agent = _build_agent(profile)
+        connection, sources = _connection(profile, agent)
+    except Exception:
+        return [profile_check, Check("اتصال", False, "اطلاعات اتصال یا انبار امن رمز در دسترس نیست.")]
     return [
         profile_check,
         connection,

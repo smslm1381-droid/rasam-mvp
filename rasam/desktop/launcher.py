@@ -15,7 +15,7 @@ from rasam.errors import UserFacingError
 
 def serve(open_browser: bool = True) -> int:
     try:
-        config.settings = config._load()
+        config.settings = config._load(require_model=False)
     except UserFacingError:
         config.settings = None
     app = create_app()

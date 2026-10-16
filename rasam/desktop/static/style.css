@@ -66,3 +66,7 @@ select, input { font: inherit; padding: .65rem; border: 1px solid #ccd8d8; borde
 .database-cards { display: flex; gap: 1rem; }
 .database-cards button { background: #f2f7f7; color: #234; border: 2px solid transparent; }
 .database-cards button[aria-pressed="true"] { border-color: #176e70; background: #e5f2f0; }
+.source-row { margin: .8rem 0; padding: .8rem; border: 1px solid #dee7e7; border-radius: .5rem; }
+.source-row label { display: block; margin: .4rem 0; }
+.source-row input { width: auto; margin-inline-end: .7rem; }
+#readonly-script { white-space: pre-wrap; overflow-wrap: anywhere; background: #f4f6f6; padding: 1rem; }

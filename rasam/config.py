@@ -81,6 +81,9 @@ class ConfigError(UserFacingError):
 def _env(name: str) -> str | None:
     """مقدار متغیر با پیشوند پروژه؛ رشته‌ی خالی مثل نبودن حساب می‌شود."""
     value = os.getenv(ENV_PREFIX + name)
+    if not value and DESKTOP_MODE and name == "CUSTOMER":
+        from rasam.desktop_preferences import read_customer
+        value = read_customer(DATA_HOME)
     return value.strip() if value and value.strip() else None
 
 
@@ -227,9 +230,16 @@ def _connection_uri(profile: CustomerProfile) -> str:
     return uri
 
 
-def _load() -> Settings:
-    _require_env()
-    profile = load_profile(_env("CUSTOMER"), CUSTOMERS_DIR)
+def _load(customer_name=None, require_model=True) -> Settings:
+    if require_model:
+        _require_env()
+    if not (customer_name or _env("CUSTOMER")):
+        raise ConfigError("ابتدا اتصال دیتابیس و پروفایل مشتری را تنظیم کنید.")
+    return _settings(customer_name)
+
+
+def _settings(customer_name=None) -> Settings:
+    profile = load_profile(customer_name or _env("CUSTOMER"), CUSTOMERS_DIR)
     return Settings(
         customer=profile,
         connection_uri=_connection_uri(profile),
@@ -237,9 +247,9 @@ def _load() -> Settings:
         mongo_admin_uri=_env("MONGO_ADMIN_URI"),
         allowed_sources=profile.allowed_sources,
         csv_dir=_csv_dir(),
-        llm_api_key=secret_value("LLM_API_KEY"),
-        llm_base_url=_env("LLM_BASE_URL"),
-        llm_model=_env("LLM_MODEL"),
+        llm_api_key=secret_value("LLM_API_KEY") or "",
+        llm_base_url=_env("LLM_BASE_URL") or "",
+        llm_model=_env("LLM_MODEL") or "",
         api_key=_env("API_KEY"),
         # کندترین کوئری واقعیِ اندازه‌گیری‌شده ۰٫۰۶ ثانیه بود؛ ۶۰ ثانیه یعنی هیچ
         # سوال سالمی به سقف نمی‌خورد، ولی یک کوئری معیوب سرور را گروگان نمی‌گیرد.

@@ -69,6 +69,9 @@ class DatabaseAgent(Protocol):
     @staticmethod
     def test_connection(uri: str, database: str): ...
 
+    @staticmethod
+    def read_only_user_script(database: str) -> str: ...
+
     def describe_schema(self) -> str: ...
 
     def list_sources(self) -> list[str]:

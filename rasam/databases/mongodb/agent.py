@@ -61,6 +61,14 @@ class MongoAgent:
         from rasam.databases.mongodb.connecting import test_connection
         return test_connection(uri, database)
 
+    @staticmethod
+    def read_only_user_script(database):
+        import json
+        name = json.dumps(database, ensure_ascii=True)
+        return (f"db.getSiblingDB({name}).createUser({{\n"
+                '  user: "rasam_reader", pwd: passwordPrompt(),\n'
+                f'  roles: [{{role: "read", db: {name}}}]\n' + "});")
+
     def __init__(self, connection_uri: str | None = None, database: str | None = None,
                  allowed_sources: frozenset[str] | None = None):
         """بدون آرگومان، مشتری فعال را سرویس می‌دهد.

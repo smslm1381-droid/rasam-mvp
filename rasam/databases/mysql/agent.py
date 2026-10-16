@@ -55,6 +55,13 @@ class MySQLAgent:
         from rasam.databases.mysql.connecting import test_connection
         return test_connection(uri, database)
 
+    @staticmethod
+    def read_only_user_script(database):
+        database_name = connection.quote_identifier(database)
+        account = "'rasam_reader'@'REPLACE_WITH_CLIENT_HOST'"
+        return (f"CREATE USER {account} IDENTIFIED BY 'REPLACE_WITH_A_STRONG_PASSWORD';\n"
+                f"GRANT SELECT ON {database_name}.* TO {account};")
+
     def __init__(self, connection_uri: str | None = None, database: str | None = None,
                  allowed_sources: frozenset[str] | None = None):
         """بدون آرگومان، مشتری فعال را سرویس می‌دهد؛ با آرگومان، دیتابیس مشتریِ دیگر را

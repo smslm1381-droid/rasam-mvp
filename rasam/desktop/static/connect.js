@@ -58,6 +58,10 @@ async function testConnection(event) {
     if (result.ok) {
       $('connection-uri').value = '';
       $('connection-fields').querySelector('[name="password"]').value = '';
+      await loadSources();
+    } else {
+      $('source-step').hidden = true;
+      $('readonly-help').hidden = true;
     }
   } catch (error) {
     $('connection-result').textContent = error instanceof TypeError ? 'ارتباط با برنامه قطع شد؛ دوباره رصام را باز کنید.' : error.message;

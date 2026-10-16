@@ -148,5 +148,6 @@ async function refreshStatus() {
   $('qa').hidden = !data.configured;
   $('connection-status').textContent = data.configured ? `آمادهٔ پرسش · ${data.customer}` : 'اتصال دیتابیس هنوز تنظیم نشده';
   if (!data.configured) notice('ابتدا اتصال دیتابیس را تنظیم کنید.');
+  else notice('');
 }
 refreshStatus().catch((error) => notice(error.message, true));

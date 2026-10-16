@@ -20,30 +20,14 @@
 from __future__ import annotations
 
 import re
-import shutil
 from collections.abc import Callable
 from pathlib import Path
-from string import Template
 
 from rasam import config, customer
 from rasam.core import readiness
+from rasam.core.onboarding import _write_customer, TEMPLATE_FILES, TODO_MARKER, NAME_RE, SENSITIVE_NAME
 from rasam.databases import registry
 
-TEMPLATES_DIR = config.PROJECT_ROOT / "templates" / "customer"
-TEMPLATE_FILES = ("profile.yaml", "documentation.md", "examples.yaml",
-                  "field_notes.yaml", "golden_questions.yaml")
-
-TODO_MARKER = customer.TODO_MARKER
-
-NAME_RE = re.compile(r"^[a-z][a-z0-9-]*$")
-
-# نام‌هایی که معمولاً داده‌ی حساس نگه می‌دارند. این **حدس** است و فقط برای یک
-# سوال تاییدیه‌ی اضافه به کار می‌رود، نه برای رد یا قبول؛ تصمیم همیشه با انسان است.
-# در تمرین تحویل پیدا شد: انتخاب `1,3` به‌جای `1,2` یک جدول `secrets_log` را بی‌هیچ
-# هشداری مجاز کرد.
-SENSITIVE_NAME = re.compile(
-    r"user|account|billing|invoice|payment|secret|token|password|credential|auth|session|log|audit",
-    re.IGNORECASE)
 ENV_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
 Ask = Callable[[str], str]
@@ -131,38 +115,10 @@ def _confirm_sensitive(chosen: list[str], ask: Ask, say: Say) -> list[str] | Non
     return kept
 
 
-def _render(template: str, **values: str) -> str:
-    return Template((TEMPLATES_DIR / template).read_text(encoding="utf-8")).safe_substitute(values)
 
 
-def _sources_block(agent, sources: list[str]) -> str:
-    """برای هر منبع یک بند با نام فیلدهایش و جای خالی توضیح."""
-    blocks = []
-    for source in sources:
-        fields = ", ".join(f"`{field}`" for field in agent.list_fields(source))
-        blocks.append(f"- `{source}` — {TODO_MARKER}: what it holds, and the Persian word "
-                      f"users say for it.\n  Fields: {fields}")
-    return "\n".join(blocks)
 
 
-def _write_customer(name: str, db_type: str, connection_env: str, database: str,
-                    sources: list[str], agent) -> Path:
-    folder = config.CUSTOMERS_DIR / name
-    folder.mkdir(parents=True)
-    try:
-        values = {
-            "name": name, "db_type": db_type, "connection_env": connection_env,
-            "database": database,
-            "sources": "\n".join(f"  - {source}" for source in sources),
-            "sources_block": _sources_block(agent, sources),
-        }
-        for template in TEMPLATE_FILES:
-            (folder / template).write_text(_render(template, **values), encoding="utf-8")
-        customer.load_profile(name, config.CUSTOMERS_DIR)  # خودآزمایی: پروفایل ساخته‌شده معتبر است
-    except Exception:
-        shutil.rmtree(folder, ignore_errors=True)  # نیمه‌کاره نماند
-        raise
-    return folder
 
 
 def run_new(ask: Ask = input, say: Say = print) -> int:

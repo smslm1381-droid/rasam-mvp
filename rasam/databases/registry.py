@@ -37,3 +37,10 @@ def get_agent() -> DatabaseAgent:
     if agent_class is None:
         raise ValueError(f"نوع دیتابیس «{agent_type}» پشتیبانی نمی‌شود.")
     return agent_class()
+
+
+def reset_caches():
+    from rasam.databases.mongodb import schema as mongo_schema
+    from rasam.databases.mysql import schema as mysql_schema
+    mongo_schema.reset_cache()
+    mysql_schema.reset_cache()
