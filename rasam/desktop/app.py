@@ -17,6 +17,7 @@ from rasam import config
 from rasam.core import exporting
 from rasam.desktop.security import LocalSecurity
 from rasam.desktop.session import Session
+from rasam.desktop.connecting import routes
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -29,6 +30,8 @@ def create_app(token: str | None = None, answerer=None) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.token = token or secrets.token_urlsafe(32)
     app.state.session = Session(answerer)
+    setup_routes, app.state.setup = routes()
+    app.include_router(setup_routes)
     app.add_middleware(LocalSecurity, token=app.state.token)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.add_api_route("/", index, methods=["GET"])

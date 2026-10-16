@@ -40,6 +40,21 @@ def _plain(value: Any) -> Any:
 class MySQLAgent:
     db_type = "mysql"
 
+    @staticmethod
+    def connection_fields():
+        from rasam.databases.connectivity import fields
+        return fields(3306)
+
+    @staticmethod
+    def build_connection_uri(values):
+        from rasam.databases.connectivity import build_uri
+        return build_uri("mysql", values, 3306)
+
+    @staticmethod
+    def test_connection(uri, database):
+        from rasam.databases.mysql.connecting import test_connection
+        return test_connection(uri, database)
+
     def __init__(self, connection_uri: str | None = None, database: str | None = None,
                  allowed_sources: frozenset[str] | None = None):
         """بدون آرگومان، مشتری فعال را سرویس می‌دهد؛ با آرگومان، دیتابیس مشتریِ دیگر را

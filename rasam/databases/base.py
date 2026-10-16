@@ -60,6 +60,15 @@ class AccessReport:
 class DatabaseAgent(Protocol):
     db_type: str
 
+    @staticmethod
+    def connection_fields() -> list[dict]: ...
+
+    @staticmethod
+    def build_connection_uri(values: dict[str, str]) -> str: ...
+
+    @staticmethod
+    def test_connection(uri: str, database: str): ...
+
     def describe_schema(self) -> str: ...
 
     def list_sources(self) -> list[str]:

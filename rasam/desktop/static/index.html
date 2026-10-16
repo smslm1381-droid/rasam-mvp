@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/static/style.css">
   <script defer src="/static/plotly.min.js"></script>
   <script defer src="/static/app.js"></script>
+  <script defer src="/static/connect.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -15,6 +16,19 @@
     <div class="connection"><span class="dot"></span><span id="connection-status">در حال بررسی اتصال…</span></div>
   </header>
   <main>
+    <button id="setup-open" type="button" class="secondary">تنظیم اتصال دیتابیس</button>
+    <section id="setup" class="question-card" hidden>
+      <h1>اتصال به داده‌های شما</h1>
+      <p>اطلاعات کاربر فقط‌خواندنی را از مسئول فنی بگیرید. رمز فقط در انبار امن ویندوز نگه داشته می‌شود.</p>
+      <form id="connection-form">
+        <p>نوع دیتابیس</p><div id="database-cards" class="database-cards"></div><select id="database-type" aria-label="نوع دیتابیس" hidden></select>
+        <div id="connection-fields" class="connection-fields"></div>
+        <details><summary>پیشرفته: رشتهٔ اتصال</summary><label for="connection-uri">رشتهٔ اتصال (اختیاری؛ نام دیتابیس را هم در فرم بالا بنویسید)</label><input id="connection-uri" type="password" maxlength="4096" autocomplete="off" dir="ltr"></details>
+        <button id="connection-test" type="submit">آزمایش اتصال</button>
+      </form>
+      <p id="connection-result" role="status" aria-live="polite"></p>
+    </section>
+    <div id="qa">
     <section class="intro"><span class="eyebrow">از پرسش تا پاسخ</span><h1>داده‌هایتان چه می‌گویند؟</h1><p>سؤال را به زبان خودتان بنویسید؛ پاسخ را همراه با جدول و نمودار ببینید.</p></section>
     <section class="question-card">
       <form id="ask-form">
@@ -31,6 +45,7 @@
       <div id="chart" hidden></div><div id="table" class="table-wrap"></div>
       <small id="row-count"></small>
     </section>
+    </div>
   </main>
   <footer>رصام <span>·</span> یک راه ساده‌تر برای دیدن داده‌ها</footer>
 </body>

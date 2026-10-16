@@ -58,3 +58,11 @@ footer span { padding: 0 10px; }
   .question-card, .result-card { padding: 18px; }
   .form-footer, .result-heading { align-items: stretch; flex-direction: column; }
 }
+select, input { font: inherit; padding: .65rem; border: 1px solid #ccd8d8; border-radius: .5rem; width: 100%; box-sizing: border-box; background: white; }
+.connection-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.25rem 0; }
+.connection-fields label { display: grid; gap: .4rem; }
+#connection-form details { margin: 1rem 0; }
+#setup { margin-top: 1rem; }
+.database-cards { display: flex; gap: 1rem; }
+.database-cards button { background: #f2f7f7; color: #234; border: 2px solid transparent; }
+.database-cards button[aria-pressed="true"] { border-color: #176e70; background: #e5f2f0; }

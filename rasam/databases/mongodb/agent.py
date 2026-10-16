@@ -46,6 +46,21 @@ def _plain(value):
 class MongoAgent:
     db_type = "mongodb"
 
+    @staticmethod
+    def connection_fields():
+        from rasam.databases.connectivity import fields
+        return fields(27017)
+
+    @staticmethod
+    def build_connection_uri(values):
+        from rasam.databases.connectivity import build_uri
+        return build_uri("mongodb", values, 27017)
+
+    @staticmethod
+    def test_connection(uri, database):
+        from rasam.databases.mongodb.connecting import test_connection
+        return test_connection(uri, database)
+
     def __init__(self, connection_uri: str | None = None, database: str | None = None,
                  allowed_sources: frozenset[str] | None = None):
         """بدون آرگومان، مشتری فعال را سرویس می‌دهد.

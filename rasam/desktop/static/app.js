@@ -145,6 +145,7 @@ for (const button of document.querySelectorAll('[data-export]')) {
 async function refreshStatus() {
   const data = await (await request('/status')).json();
   capabilities = data.capabilities;
+  $('qa').hidden = !data.configured;
   $('connection-status').textContent = data.configured ? `آمادهٔ پرسش · ${data.customer}` : 'اتصال دیتابیس هنوز تنظیم نشده';
   if (!data.configured) notice('ابتدا اتصال دیتابیس را تنظیم کنید.');
 }
