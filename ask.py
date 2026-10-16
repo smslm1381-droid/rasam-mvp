@@ -13,6 +13,9 @@ from rasam.errors import UserFacingError
 console.use_utf8()
 
 try:
+    from rasam import config
+    if config.settings is None:
+        config.settings = config._load()
     from rasam.cli import main
 except UserFacingError as error:  # پروفایل خراب یا `.env` ناقص — هنگام import تنظیمات
     print(f"خطا: {error}", file=sys.stderr)

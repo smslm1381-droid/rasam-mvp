@@ -267,4 +267,5 @@ def _load() -> Settings:
     )
 
 
-settings = _load()
+# راهنمای اتصال رومیزی باید حتی پیش از ساختن اولین مشتری باز شود.
+settings = None if DESKTOP_MODE else _load()

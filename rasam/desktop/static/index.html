@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>رصام | دستیار دادهٔ شما</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/style.css">
+  <script defer src="/static/plotly.min.js"></script>
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="brand-mark">ر</span><span>رصام<small>دستیار دادهٔ شما</small></span></a>
+    <div class="connection"><span class="dot"></span><span id="connection-status">در حال بررسی اتصال…</span></div>
+  </header>
+  <main>
+    <section class="intro"><span class="eyebrow">از پرسش تا پاسخ</span><h1>داده‌هایتان چه می‌گویند؟</h1><p>سؤال را به زبان خودتان بنویسید؛ پاسخ را همراه با جدول و نمودار ببینید.</p></section>
+    <section class="question-card">
+      <form id="ask-form">
+        <label for="question">سؤال شما</label>
+        <textarea id="question" rows="3" maxlength="2000" placeholder="دنبال چه چیزی در داده‌ها هستید؟" required></textarea>
+        <div class="form-footer"><span>برای رسم نمودار، در سؤالتان «نمودار» را بنویسید.</span><button id="ask-button" type="submit">پرسیدن سؤال <span aria-hidden="true">←</span></button></div>
+      </form>
+    </section>
+    <div id="notice" role="status" aria-live="polite" hidden></div>
+    <section id="empty" class="empty"><span class="empty-symbol" aria-hidden="true">▥</span><h2>پاسخ از اینجا شروع می‌شود</h2><p>اولین سؤال را بپرسید تا نتیجهٔ داده‌ها را اینجا ببینید.</p></section>
+    <section id="result" class="result-card" hidden>
+      <div class="result-heading"><h2>پاسخ رصام</h2><div id="exports"><button type="button" data-export="csv" class="secondary">دریافت CSV</button><button type="button" data-export="excel" class="secondary">دریافت Excel</button></div></div>
+      <p id="summary"></p><p id="message"></p>
+      <div id="chart" hidden></div><div id="table" class="table-wrap"></div>
+      <small id="row-count"></small>
+    </section>
+  </main>
+  <footer>رصام <span>·</span> یک راه ساده‌تر برای دیدن داده‌ها</footer>
+</body>
+</html>

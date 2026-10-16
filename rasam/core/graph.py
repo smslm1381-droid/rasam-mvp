@@ -45,7 +45,7 @@ def generate(state: State) -> State:
     try:
         schema = registry.get_agent().describe_schema()
     except Exception as error:  # noqa: BLE001 — backend خطا را به مقدار تبدیل می‌کند
-        return {"error": f"اتصال به دیتابیس برقرار نشد: {error}"}
+        return {"error": f"اتصال به دیتابیس برقرار نشد ({type(error).__name__}). آدرس و دسترسی اتصال را بررسی کنید."}
 
     selected = _knowledge(state["question"], schema)
     agent = registry.get_agent()
@@ -110,7 +110,8 @@ def execute(state: State) -> State:
     try:
         rows = registry.get_agent().execute(state["source"], state["checked"])
     except Exception as error:  # noqa: BLE001 — backend خطا را به مقدار تبدیل می‌کند
-        return {"error": f"اجرای کوئری روی دیتابیس شکست خورد: {error}"}
+        # پیام درایور ممکن است آدرس و رمز داشته باشد؛ حتی به مدل ترمیم نمی‌رود.
+        return {"error": f"اجرای کوئری روی دیتابیس شکست خورد ({type(error).__name__}). ساختار کوئری و دسترسی خواندن را بررسی کنید."}
     return {"rows": rows}
 
 

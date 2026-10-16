@@ -214,5 +214,7 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/ask -OutFile result.cs
 شاخص دانش را تعیین می‌کند؛ با `RASAM_DESKTOP=1` مسیر پیش‌فرض ویندوز `%APPDATA%/Rasam`
 است و `.env` خوانده نمی‌شود. راز اتصال پس از متغیر محیطی از Credential Manager خوانده
 می‌شود؛ فایل رمز محلی نداریم. تست این بخش: `python -m pytest tests/test_vault.py -q`.
-بعدی: رابط مرورگری محلی در قدم ۳۰.
+قدم ۳۰ هم کامل است: `python rasam_desktop.py` صفحهٔ فارسی را در مرورگر باز می‌کند؛
+جدول، نمودار و CSV/Excel از همان پاسخ هسته می‌آیند. نصب تازه بدون تنظیمات هم باز می‌شود؛
+راهنمای اتصال در قدم ۳۱ اضافه می‌شود. آزمون: `python -m pytest tests/desktop -q`.
 جزئیات و تصمیم‌ها در [`PLAN.md`](PLAN.md).

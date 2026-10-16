@@ -116,6 +116,23 @@ def test_a_database_failure_becomes_an_error(monkeypatch, wired):
     assert graph.answer("سوال").error is not None
 
 
+def test_driver_secrets_never_reach_the_answer_or_repair_model(monkeypatch, wired):
+    captured = []
+    broken = FakeCollection([], error=PyMongoError("password=private-driver-secret"))
+    monkeypatch.setattr(mongo_schema, "connect", lambda: FakeDatabase(inverter_data=broken))
+
+    def model(prompt):
+        captured.append(prompt)
+        return llm.Result(ok=True, text=json.dumps(GOOD), reason="")
+
+    monkeypatch.setattr(graph.llm, "ask", model)
+    result = graph.answer("سوال")
+    assert result.error and "PyMongoError" in result.error
+    assert "private-driver-secret" not in result.error
+    assert "private-driver-secret" not in str(captured)
+    assert len(captured) > 1
+
+
 @pytest.mark.parametrize("question", ["", "   ", "\n"])
 def test_an_empty_question_is_refused_without_calling_the_model(wired, question):
     assert graph.answer(question).error is not None
