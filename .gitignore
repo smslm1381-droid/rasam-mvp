@@ -1,5 +1,7 @@
 # محیط و رازها
 .venv/
+.venv-*/
+.venv313/
 venv/
 .env
 
