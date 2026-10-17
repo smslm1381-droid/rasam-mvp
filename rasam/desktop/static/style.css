@@ -81,3 +81,5 @@ select, input { font: inherit; padding: .65rem; border: 1px solid #ccd8d8; borde
 #license-form { display: grid; gap: .8rem; margin: 1rem 0; }
 #activation > button, #license-support { margin: .7rem 0; display: inline-block; }
 #license-support[hidden] { display: none; }
+#update-banner { padding: 1rem; margin-bottom: 1rem; border-radius: .7rem; background: #e5f2f0; }
+#update-banner p { margin: .5rem 0 0; font-size: .85rem; }

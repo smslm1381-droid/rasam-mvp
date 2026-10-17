@@ -2,6 +2,11 @@ name = "rasam-gateway"
 main = ".worker/worker.py"
 compatibility_date = "2026-10-16"
 compatibility_flags = ["python_workers"]
+workers_dev = true
+preview_urls = false
+
+[vars]
+LATEST_VERSION = "0.1.1"
 
 [build]
 command = "python build_worker.py"

@@ -165,6 +165,7 @@ $('quit-button').addEventListener('click', async () => {
     $('workspace').hidden = true;
     $('activation').hidden = true;
     $('license-banner').hidden = true;
+    $('update-banner').hidden = true;
     $('connection-status').textContent = 'برنامه بسته شد';
     $('shutdown-message').textContent = 'رصام بسته شد؛ اکنون می‌توانید این صفحه را ببندید.';
     $('shutdown-message').hidden = false;

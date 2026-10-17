@@ -12,6 +12,7 @@
   <script defer src="/static/profile.js"></script>
   <script defer src="/static/teach.js"></script>
   <script defer src="/static/license.js"></script>
+  <script defer src="/static/updates.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -19,6 +20,7 @@
     <div class="connection"><span class="dot"></span><span id="connection-status">در حال بررسی اتصال…</span></div>
   </header>
   <main>
+    <div id="update-banner" role="status" hidden><span id="update-description"></span> <a id="update-download" target="_blank" rel="noopener noreferrer">دریافت نسخهٔ تازه</a><p>نصب نسخهٔ تازه، اتصال و آموزش‌های شما را نگه می‌دارد.</p></div>
     <div id="license-banner" role="status" hidden><span id="license-description"></span><button type="button" data-license-refresh class="secondary">بررسی اعتبار</button></div>
     <section id="activation" class="question-card">
       <h1>به رصام خوش آمدید</h1>

@@ -3,6 +3,8 @@
 import json
 import math
 import logging
+import re
+from urllib.parse import urlsplit
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from gateway import licenses, upstream
@@ -68,6 +70,22 @@ def payload(body, env):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/version")
+async def version(request: Request):
+    env = request.scope["env"]
+    latest = getattr(env, "LATEST_VERSION", "")
+    download = getattr(env, "DOWNLOAD_URL", "")
+    try:
+        parts = urlsplit(download)
+    except ValueError:
+        parts = urlsplit("")
+    valid_url = (parts.scheme == "https" and parts.hostname and not parts.username
+                 and not parts.password and not any(char.isspace() for char in download))
+    valid_version = bool(re.fullmatch(r"\d{1,5}\.\d{1,5}\.\d{1,5}", latest))
+    return JSONResponse({"version": latest if valid_version else None,
+                         "download_url": download if valid_url else None}, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/license/status")

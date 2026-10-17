@@ -15,7 +15,7 @@ from starlette.background import BackgroundTask
 from pydantic import BaseModel, Field
 
 from rasam import config
-from rasam.core import exporting
+from rasam.core import exporting, updates
 from rasam.desktop.security import LocalSecurity
 from rasam.desktop.session import Session
 from rasam.desktop.connecting import routes
@@ -47,6 +47,7 @@ def create_app(token: str | None = None, answerer=None, license_manager=None) ->
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.add_api_route("/", index, methods=["GET"])
     app.add_api_route("/status", status, methods=["GET"])
+    app.add_api_route("/updates", updates.check, methods=["GET"])
     app.add_api_route("/shutdown", shutdown_route(app), methods=["POST"])
     app.add_api_route("/ask", ask_route(app), methods=["POST"])
     app.add_api_route("/export/{answer_id}/{kind}", export_route(app), methods=["GET"])

@@ -64,6 +64,16 @@ def test_missing_or_malformed_license_never_uses_database(gateway):
     assert state["reserves"] == 0
 
 
+def test_public_version_has_no_download_until_a_release_is_published():
+    env = SimpleNamespace(LATEST_VERSION="0.1.1")
+    client = TestClient(BoundApp(env))
+    assert client.get("/version").json() == {"version": "0.1.1", "download_url": None}
+    env.DOWNLOAD_URL = "https://downloads.example/RasamSetup.exe"
+    assert client.get("/version").json()["download_url"] == env.DOWNLOAD_URL
+    env.DOWNLOAD_URL = "https://["
+    assert client.get("/version").json()["download_url"] is None
+
+
 @pytest.mark.parametrize("body", [{}, {**BODY, "stream": True}, {**BODY, "messages": []},
     {**BODY, "messages": [{"role": "tool", "content": "x"}]}, {**BODY, "max_tokens": -1},
     {**BODY, "temperature": 5}, {**BODY, "messages": [{"role": "user", "content": {"secret": "x"}}]}])
