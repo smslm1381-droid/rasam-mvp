@@ -75,3 +75,9 @@ select, input { font: inherit; padding: .65rem; border: 1px solid #ccd8d8; borde
 #teaching-fields td:first-child { direction: ltr; font-size: .85rem; }
 #teaching-fields textarea { min-height: 75px; font: inherit; }
 #feedback { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1rem; }
+#license-banner { padding: 1rem; margin-bottom: 1rem; border-radius: .7rem; background: #e5f2f0; }
+#license-banner button { margin-inline-start: 1rem; }
+#license-banner.license-warning { background: #fff1d5; }
+#license-form { display: grid; gap: .8rem; margin: 1rem 0; }
+#activation > button, #license-support { margin: .7rem 0; display: inline-block; }
+#license-support[hidden] { display: none; }

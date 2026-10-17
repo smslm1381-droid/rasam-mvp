@@ -16,6 +16,7 @@ from functools import lru_cache
 from langchain_openai import ChatOpenAI
 
 from rasam import config
+from rasam.core.licensing_messages import MESSAGES as LICENSE_MESSAGES
 
 # پیام‌ها بر اساس کد وضعیت HTTP. هر پیام باید بگوید کاربر چه کار کند، نه فقط
 # اینکه چیزی خراب شد.
@@ -83,17 +84,11 @@ def _client() -> ChatOpenAI:
 
 def _gateway_failure(error):
     """فقط کدهای شناخته‌شده ترجمه می‌شوند؛ متن دلخواه سرور بازتاب داده نمی‌شود."""
-    messages = {
-        "license_invalid": "کد لایسنس معتبر نیست؛ کد را بررسی کنید.",
-        "license_revoked": "این لایسنس غیرفعال شده است؛ با پشتیبانی تماس بگیرید.",
-        "license_expired": "اعتبار لایسنس تمام شده است؛ برای تمدید با پشتیبانی تماس بگیرید.",
-        "quota_exceeded": "سهمیهٔ روزانهٔ درخواست مدل تمام شده است؛ فردا دوباره تلاش کنید.",
-    }
     body = getattr(error, "body", None)
     if not isinstance(body, dict):
         return None
     detail = body.get("error", body)
-    return messages.get(detail.get("code")) if isinstance(detail, dict) else None
+    return LICENSE_MESSAGES.get(detail.get("code")) if isinstance(detail, dict) else None
 
 
 def _describe_failure(error: Exception) -> str:

@@ -11,6 +11,7 @@
   <script defer src="/static/connect.js"></script>
   <script defer src="/static/profile.js"></script>
   <script defer src="/static/teach.js"></script>
+  <script defer src="/static/license.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -18,6 +19,19 @@
     <div class="connection"><span class="dot"></span><span id="connection-status">در حال بررسی اتصال…</span></div>
   </header>
   <main>
+    <div id="license-banner" role="status" hidden><span id="license-description"></span><button type="button" data-license-refresh class="secondary">بررسی اعتبار</button></div>
+    <section id="activation" class="question-card">
+      <h1>به رصام خوش آمدید</h1>
+      <p>برای شروع کد لایسنسی را که همراه برنامه دریافت کرده‌اید وارد کنید.</p>
+      <p id="license-message" role="status" aria-live="polite">در حال بررسی اعتبار…</p>
+      <form id="license-form">
+        <label for="license-key">کد لایسنس</label><input id="license-key" type="password" dir="ltr" minlength="20" maxlength="200" autocomplete="off" required>
+        <button id="license-activate" type="submit">فعال‌سازی رصام</button>
+      </form>
+      <button type="button" data-license-refresh class="secondary">بررسی دوباره اعتبار پس از تمدید</button>
+      <a id="license-support" target="_blank" rel="noopener noreferrer" hidden>تماس با پشتیبانی برای تمدید</a>
+    </section>
+    <div id="workspace" hidden>
     <button id="setup-open" type="button" class="secondary">تنظیم اتصال دیتابیس</button>
     <button id="teaching-open" type="button" class="secondary">آموزش رصام</button>
     <section id="teaching" class="question-card" hidden>
@@ -77,6 +91,7 @@
       <div id="feedback"><button type="button" id="feedback-positive" class="secondary">👍 این پاسخ درست است؛ نمونه نگه دار</button><button type="button" id="feedback-negative" class="secondary">👎 این پاسخ درست نیست</button></div>
       <p id="feedback-notice" role="status" aria-live="polite"></p>
     </section>
+    </div>
     </div>
   </main>
   <footer>رصام <span>·</span> یک راه ساده‌تر برای دیدن داده‌ها</footer>

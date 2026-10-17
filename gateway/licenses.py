@@ -45,6 +45,20 @@ class Licenses:
         return plain(await self.db.prepare("SELECT * FROM licenses WHERE token_hash = ?")
                      .bind(token_hash(key)).first())
 
+    async def status(self, key, now=None):
+        now = int(time.time()) if now is None else now
+        row = await self.read(key)
+        reason = failure(row, now)
+        if row is None:
+            return None
+        day = datetime.fromtimestamp(now, timezone.utc).date().isoformat()
+        used = int(row["used"]) if row["usage_day"] == day else 0
+        expires = int(row["expires_at"])
+        return {"valid": reason is None, "code": reason, "customer": row["customer"],
+                "plan": row["plan"], "expires_at": expires,
+                "days_remaining": max(0, (expires - now + 86399) // 86400),
+                "daily_limit": int(row["daily_limit"]), "used_today": used}
+
     async def reserve(self, key, now=None):
         now = int(time.time()) if now is None else now
         day = datetime.fromtimestamp(now, timezone.utc).date().isoformat()

@@ -70,6 +70,23 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/license/status")
+async def license_status(request: Request):
+    key = key_from(request)
+    if key is None:
+        return license_error("license_invalid")
+    try:
+        env = request.scope["env"]
+        status = await licenses.Licenses(env.DB).status(key)
+        if status is None:
+            return license_error("license_invalid")
+        status["model"] = env.UPSTREAM_MODEL
+        status["support_url"] = getattr(env, "SUPPORT_URL", "")
+        return JSONResponse(status, headers={"Cache-Control": "no-store"})
+    except Exception:
+        return error("gateway_unavailable", "سرور رصام اکنون در دسترس نیست؛ کمی بعد دوباره تلاش کنید.", 503)
+
+
 @app.post("/v1/chat/completions")
 async def completion(request: Request):
     key = key_from(request)

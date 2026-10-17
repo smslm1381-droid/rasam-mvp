@@ -20,6 +20,8 @@ from rasam.desktop.session import Session
 from rasam.desktop.connecting import routes
 from rasam.desktop.profiles import routes as profile_routes
 from rasam.desktop.teaching import routes as teaching_routes
+from rasam.desktop.licensing import routes as licensing_routes
+from rasam.core.licensing import LicenseManager
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -28,14 +30,17 @@ class Question(BaseModel):
     question: str = Field(max_length=10000)
 
 
-def create_app(token: str | None = None, answerer=None) -> FastAPI:
+def create_app(token: str | None = None, answerer=None, license_manager=None) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.token = token or secrets.token_urlsafe(32)
     app.state.session = Session(answerer)
+    app.state.licensing = license_manager or LicenseManager()
+    app.state.licensing.configure_runtime()
     setup_routes, app.state.setup = routes()
     app.include_router(setup_routes)
     app.include_router(profile_routes(app))
     app.include_router(teaching_routes(app))
+    app.include_router(licensing_routes(app))
     app.add_middleware(LocalSecurity, token=app.state.token)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.add_api_route("/", index, methods=["GET"])
@@ -63,6 +68,7 @@ def status():
 
 def ask_route(app):
     def ask(body: Question, response: Response):
+        app.state.licensing.configure_runtime()
         result, answer_id = app.state.session.ask(body.question)
         response.headers["X-Answer-ID"] = answer_id
         return asdict(result)

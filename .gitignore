@@ -24,6 +24,7 @@ gateway/.dev.vars
 gateway/.env
 gateway/python_modules/
 gateway/.worker/
+.wrangler/
 
 # ویرایشگر و سیستم‌عامل
 .vscode/

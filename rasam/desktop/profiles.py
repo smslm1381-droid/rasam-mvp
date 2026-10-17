@@ -25,6 +25,7 @@ def routes(app):
             result = desktop_onboarding.finish(app.state.setup.pending, body.name,
                                               body.sources, body.confirmed_sensitive)
             if result["ok"]:
+                app.state.licensing.configure_runtime()
                 app.state.setup.pending = None
                 app.state.session.last_answer = None
                 app.state.session.answer_id = None
