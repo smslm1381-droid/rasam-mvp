@@ -31,3 +31,9 @@ gateway/.worker/
 .idea/
 .DS_Store
 Thumbs.db
+
+# ابزارها و شاخص محلی Codex؛ تنظیم مسیرها مخصوص همین ماشین است
+.codex/tools/
+.codex/cache/
+.codex/config.toml
+.codebase-memory/
