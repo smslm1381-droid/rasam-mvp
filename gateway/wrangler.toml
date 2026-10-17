@@ -13,5 +13,5 @@ enabled = false
 [[d1_databases]]
 binding = "DB"
 database_name = "rasam-licenses"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "6045705e-9aa3-4c50-868c-2cf87b4ffd7f"
 migrations_dir = "migrations"

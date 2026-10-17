@@ -10,10 +10,26 @@ import uvicorn
 
 from rasam import config
 from rasam.desktop.app import create_app
+from rasam.desktop.instance import DesktopInstance
 from rasam.errors import UserFacingError
 
 
 def serve(open_browser: bool = True) -> int:
+    instance = DesktopInstance(config.DATA_HOME)
+    try:
+        if not instance.acquire():
+            url = instance.wait_url()
+            if not url:
+                raise OSError("starting instance unavailable")
+            if open_browser:
+                webbrowser.open(url)
+            return 0
+        return run_server(instance, open_browser)
+    finally:
+        instance.close()
+
+
+def run_server(instance: DesktopInstance, open_browser: bool) -> int:
     try:
         config.settings = config._load(require_model=False)
     except UserFacingError:
@@ -23,10 +39,12 @@ def serve(open_browser: bool = True) -> int:
         sock.bind(("127.0.0.1", 0))
         sock.listen(128)
         port = sock.getsockname()[1]
-        if open_browser:
-            webbrowser.open(f"http://127.0.0.1:{port}/?token={app.state.token}")
         server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port,
-                                access_log=False, proxy_headers=False, log_level="warning"))
+                                access_log=False, proxy_headers=False, log_level="warning", log_config=None))
+        app.state.shutdown = lambda: setattr(server, "should_exit", True)
+        url = instance.publish(port, app.state.token)
+        if open_browser:
+            webbrowser.open(url)
         server.run(sockets=[sock])
     return 0
 
@@ -37,6 +55,15 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
     try:
         return serve(not args.no_browser)
-    except OSError:
-        print("راه‌اندازی سرور محلی انجام نشد؛ برنامه را دوباره باز کنید.")
+    except Exception:
+        show_error("راه‌اندازی سرور محلی انجام نشد؛ برنامه را دوباره باز کنید.")
         return 1
+
+
+def show_error(message):
+    import sys
+    if sys.platform == "win32" and getattr(sys, "frozen", False):
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(None, message, "رصام", 0x10)
+    else:
+        print(message)

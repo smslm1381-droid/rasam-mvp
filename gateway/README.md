@@ -49,6 +49,13 @@ python -m gateway.admin revoke HASH_FROM_LIST
 
 ## استقرار واقعی
 
+استقرار مستقل رصام در ۲۰۲۶/۱۰/۱۷ انجام شد:
+`https://rasam-gateway.nova-dd625a.workers.dev`.
+پایگاه `rasam-licenses` و مهاجرت اولیه فعال‌اند؛ مقادیر مدل فقط در secrets سرور
+هستند. شناسهٔ واقعی D1 در `wrangler.toml` است. دستور ساخت نصب‌کننده باید همین
+نشانی Worker را بگیرد، نه نشانی ارائه‌دهندهٔ مدل. دستورات بعدی برای بازتولید و
+مدیریت استقرارند؛ برای اجرای برنامهٔ مشتری نیازی به ورود Cloudflare نیست.
+
 ۱. روی ویندوز ابتدا `npm install -g @napi-rs/keyring@1.3.0` و سپس
 `uv run pywrangler login --use-keyring --scopes account:read user:read workers_scripts:write d1:write`
 را اجرا کنید تا ورود حساب در انبار امن سیستم نگه داشته شود. ورود و تأیید دسترسی در

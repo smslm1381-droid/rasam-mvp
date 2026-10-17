@@ -1,0 +1,46 @@
+name: Windows installer
+on:
+  workflow_dispatch:
+    inputs:
+      gateway_url:
+        description: Public HTTPS URL of the deployed Rasam license Worker
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      RASAM_CUSTOMER: demo
+      RASAM_MONGO_URI: mongodb://127.0.0.1:27017/solar_telemetry
+      RASAM_LLM_API_KEY: build-test-placeholder
+      RASAM_LLM_BASE_URL: https://example.invalid/v1
+      RASAM_LLM_MODEL: build-test-model
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements.txt -r packaging/windows/requirements.txt
+      - run: python -m pytest tests/desktop/test_lifecycle.py tests/packaging -q
+      - name: Prepare official portable compiler
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe' -OutFile $installer
+          if ((Get-FileHash $installer).Hash -ne '9C73C3BAE7ED48D44112A0F48E66742C00090BDB5BEF71D9D3C056C66E97B732') { throw 'Compiler checksum mismatch' }
+          if ((Get-AuthenticodeSignature $installer).Status -ne 'Valid') { throw 'Compiler signature invalid' }
+          $target = Join-Path $env:RUNNER_TEMP 'inno'
+          $process = Start-Process $installer -ArgumentList "/PORTABLE=1 /VERYSILENT /CURRENTUSER /NORESTART /DIR=`"$target`"" -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Compiler setup failed' }
+      - name: Build unsigned trial installer
+        env:
+          RASAM_BUILD_GATEWAY: ${{ inputs.gateway_url }}
+        run: python packaging/windows/build.py --gateway-url "$env:RASAM_BUILD_GATEWAY" --iscc "$env:RUNNER_TEMP\inno\ISCC.exe"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Rasam-Windows-unsigned
+          path: |
+            exports/windows-build/RasamSetup.exe
+            exports/windows-build/RasamSetup.exe.sha256

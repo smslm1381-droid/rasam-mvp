@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.background import BackgroundTask
 from pydantic import BaseModel, Field
 
 from rasam import config
@@ -35,6 +36,7 @@ def create_app(token: str | None = None, answerer=None, license_manager=None) ->
     app.state.token = token or secrets.token_urlsafe(32)
     app.state.session = Session(answerer)
     app.state.licensing = license_manager or LicenseManager()
+    app.state.shutdown = None
     app.state.licensing.configure_runtime()
     setup_routes, app.state.setup = routes()
     app.include_router(setup_routes)
@@ -45,6 +47,7 @@ def create_app(token: str | None = None, answerer=None, license_manager=None) ->
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.add_api_route("/", index, methods=["GET"])
     app.add_api_route("/status", status, methods=["GET"])
+    app.add_api_route("/shutdown", shutdown_route(app), methods=["POST"])
     app.add_api_route("/ask", ask_route(app), methods=["POST"])
     app.add_api_route("/export/{answer_id}/{kind}", export_route(app), methods=["GET"])
     app.add_exception_handler(RequestValidationError, invalid_request)
@@ -64,6 +67,14 @@ def status():
     return {"configured": settings is not None,
             "customer": settings.customer.name if settings else None,
             "capabilities": sorted(settings.customer.capabilities) if settings else []}
+
+
+def shutdown_route(app):
+    def shutdown():
+        if app.state.shutdown is None:
+            return JSONResponse({"ok": False, "message": "بستن برنامه در این اجرا ممکن نیست."}, status_code=503)
+        return JSONResponse({"ok": True}, background=BackgroundTask(app.state.shutdown))
+    return shutdown
 
 
 def ask_route(app):

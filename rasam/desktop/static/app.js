@@ -157,3 +157,20 @@ async function refreshStatus() {
   else notice('');
 }
 refreshStatus().catch((error) => notice(error.message, true));
+
+$('quit-button').addEventListener('click', async () => {
+  $('quit-button').disabled = true;
+  try {
+    await request('/shutdown', { method: 'POST' });
+    $('workspace').hidden = true;
+    $('activation').hidden = true;
+    $('license-banner').hidden = true;
+    $('connection-status').textContent = 'برنامه بسته شد';
+    $('shutdown-message').textContent = 'رصام بسته شد؛ اکنون می‌توانید این صفحه را ببندید.';
+    $('shutdown-message').hidden = false;
+  } catch (error) {
+    $('quit-button').disabled = false;
+    $('shutdown-message').textContent = error.message;
+    $('shutdown-message').hidden = false;
+  }
+});
