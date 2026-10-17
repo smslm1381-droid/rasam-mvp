@@ -16,6 +16,14 @@ __pycache__/
 exports/
 chroma/
 *.log
+gateway/.venv/
+gateway/.venv-workers/
+gateway/.wrangler/
+gateway/node_modules/
+gateway/.dev.vars
+gateway/.env
+gateway/python_modules/
+gateway/.worker/
 
 # ویرایشگر و سیستم‌عامل
 .vscode/

@@ -81,6 +81,21 @@ def _client() -> ChatOpenAI:
     )
 
 
+def _gateway_failure(error):
+    """فقط کدهای شناخته‌شده ترجمه می‌شوند؛ متن دلخواه سرور بازتاب داده نمی‌شود."""
+    messages = {
+        "license_invalid": "کد لایسنس معتبر نیست؛ کد را بررسی کنید.",
+        "license_revoked": "این لایسنس غیرفعال شده است؛ با پشتیبانی تماس بگیرید.",
+        "license_expired": "اعتبار لایسنس تمام شده است؛ برای تمدید با پشتیبانی تماس بگیرید.",
+        "quota_exceeded": "سهمیهٔ روزانهٔ درخواست مدل تمام شده است؛ فردا دوباره تلاش کنید.",
+    }
+    body = getattr(error, "body", None)
+    if not isinstance(body, dict):
+        return None
+    detail = body.get("error", body)
+    return messages.get(detail.get("code")) if isinstance(detail, dict) else None
+
+
 def _describe_failure(error: Exception) -> str:
     """خطای سرویس را به پیام فارسی قابل‌فهم تبدیل می‌کند.
 
@@ -88,6 +103,9 @@ def _describe_failure(error: Exception) -> str:
     خودِ استثنا خوانده می‌شود. این برای هر سرویس سازگار با OpenAI کار می‌کند —
     از Gemini و OpenRouter تا مدل محلی.
     """
+    gateway_message = _gateway_failure(error)
+    if gateway_message:
+        return gateway_message
     status = getattr(error, "status_code", None)
     if status in _HTTP_MESSAGES:
         return _HTTP_MESSAGES[status]

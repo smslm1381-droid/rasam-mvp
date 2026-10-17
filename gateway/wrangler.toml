@@ -1,0 +1,17 @@
+name = "rasam-gateway"
+main = ".worker/worker.py"
+compatibility_date = "2026-10-16"
+compatibility_flags = ["python_workers"]
+
+[build]
+command = "python build_worker.py"
+watch_dir = ["app.py", "licenses.py", "upstream.py", "worker.py", "build_worker.py"]
+
+[observability]
+enabled = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rasam-licenses"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
