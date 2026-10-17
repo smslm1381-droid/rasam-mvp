@@ -4,6 +4,8 @@ function showLicenseSupport(url) {
 }
 
 function displayLicense(data) {
+  licenseReady = !data.required || data.valid;
+  if (!licenseReady) $('connection-status').textContent = 'در انتظار تأیید لایسنس';
   $('activation').hidden = !data.required || data.valid;
   $('workspace').hidden = !!data.required && !data.valid;
   $('license-banner').hidden = !data.required || !data.valid;

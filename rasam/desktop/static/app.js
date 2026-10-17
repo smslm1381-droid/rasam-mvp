@@ -8,6 +8,7 @@ if (initialToken) {
 const token = sessionStorage.getItem('rasam-token') || '';
 let answerId = null;
 let capabilities = [];
+let licenseReady = false;
 
 async function request(path, options = {}) {
   const response = await fetch(path, {
@@ -150,7 +151,8 @@ async function refreshStatus() {
   const data = await (await request('/status')).json();
   capabilities = data.capabilities;
   $('qa').hidden = !data.configured;
-  $('connection-status').textContent = data.configured ? `آمادهٔ پرسش · ${data.customer}` : 'اتصال دیتابیس هنوز تنظیم نشده';
+  const connection = data.configured ? `آمادهٔ پرسش · ${data.customer}` : 'اتصال دیتابیس هنوز تنظیم نشده';
+  $('connection-status').textContent = licenseReady ? connection : 'در انتظار تأیید لایسنس';
   if (!data.configured) notice('ابتدا اتصال دیتابیس را تنظیم کنید.');
   else notice('');
 }
