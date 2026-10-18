@@ -7,9 +7,11 @@
   <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/style.css">
   <link rel="stylesheet" href="/static/brand.css">
+  <link rel="stylesheet" href="/static/chat.css">
   <script defer src="/static/plotly.min.js"></script>
   <script defer src="/static/app.js"></script>
   <script defer src="/static/chats.js"></script>
+  <script defer src="/static/chat-layout.js"></script>
   <script defer src="/static/connect.js"></script>
   <script defer src="/static/profile.js"></script>
   <script defer src="/static/teach.js"></script>
@@ -19,6 +21,7 @@
 </head>
 <body>
   <header class="topbar">
+    <button id="sidebar-toggle" type="button" class="icon-button mobile-menu" aria-label="نمایش تاریخچه" aria-expanded="false" aria-controls="chat-sidebar">☰</button>
     <a class="brand" href="#"><img class="brand-mark" src="/static/mark.svg" width="48" height="48" alt=""><span>رصام<small>دستیار دادهٔ شما</small></span></a>
     <div class="connection"><span class="dot"></span><span id="connection-status">در حال بررسی اتصال…</span></div>
   </header>
@@ -34,12 +37,26 @@
         <button id="license-activate" type="submit"><span class="rasam-icon icon-license" aria-hidden="true"></span>فعال‌سازی رصام</button>
       </form>
       <button type="button" data-license-refresh class="secondary">بررسی دوباره اعتبار پس از تمدید</button>
+      <button id="activation-quit" type="button" class="secondary">خروج از برنامه</button>
       <a id="license-support" target="_blank" rel="noopener noreferrer" hidden>تماس با پشتیبانی برای تمدید</a>
     </section>
     <div id="workspace" hidden>
-    <button id="setup-open" type="button" class="secondary"><span class="rasam-icon icon-database" aria-hidden="true"></span>تنظیم اتصال دیتابیس</button>
-    <button id="teaching-open" type="button" class="secondary"><span class="rasam-icon icon-teach" aria-hidden="true"></span>آموزش رصام</button>
-    <section id="teaching" class="question-card" hidden>
+    <button id="sidebar-backdrop" type="button" aria-label="بستن تاریخچه" hidden></button>
+    <aside id="chat-sidebar" aria-label="تاریخچه گفتگوها">
+      <div class="sidebar-top" id="chat-tools"><button id="chat-new" type="button"><span class="rasam-icon icon-plus" aria-hidden="true"></span>گفتگوی جدید</button></div>
+      <label class="history-search"><span class="rasam-icon icon-search" aria-hidden="true"></span><input id="chat-search" type="search" placeholder="جستجوی گفتگوها" aria-label="جستجوی گفتگوها"></label>
+      <div class="history-heading">گفتگوهای شما <span id="chat-count"></span></div>
+      <nav id="chat-list" aria-label="گفتگوهای ذخیره‌شده"></nav>
+      <div class="sidebar-bottom">
+        <button id="setup-open" type="button" class="sidebar-action"><span class="rasam-icon icon-database" aria-hidden="true"></span>اتصال دیتابیس</button>
+        <button id="teaching-open" type="button" class="sidebar-action"><span class="rasam-icon icon-teach" aria-hidden="true"></span>آموزش رصام</button>
+        <button id="quit-button" type="button" class="sidebar-action"><span class="rasam-icon icon-logout" aria-hidden="true"></span>خروج از رصام</button>
+        <div class="local-note"><span class="rasam-icon icon-shield" aria-hidden="true"></span>گفتگوهای شما، روی همین دستگاه</div>
+      </div>
+    </aside>
+    <div class="chat-main">
+    <section id="teaching" class="question-card settings-panel" hidden>
+      <button type="button" class="secondary panel-close" data-close-panel="teaching">بازگشت به گفتگو</button>
       <h1>معنی داده‌ها را به رصام بگویید</h1>
       <p>نام فارسی و نکته‌های هر ستون را از روی شناخت خودتان بنویسید. یادداشت ستون‌های هم‌نام بین منبع‌ها مشترک است.</p>
       <label for="field-search">جستجوی نام ستون</label><input id="field-search" type="search" placeholder="نام ستون یا منبع را بنویسید">
@@ -50,7 +67,8 @@
       </form>
       <p id="teaching-notice" role="status" aria-live="polite"></p>
     </section>
-    <section id="setup" class="question-card" hidden>
+    <section id="setup" class="question-card settings-panel" hidden>
+      <button type="button" class="secondary panel-close" data-close-panel="setup">بازگشت به گفتگو</button>
       <h1>اتصال به داده‌های شما</h1>
       <p>اطلاعات کاربر فقط‌خواندنی را از مسئول فنی بگیرید. رمز فقط در انبار امن سیستم‌عامل نگه داشته می‌شود.</p>
       <form id="connection-form">
@@ -78,23 +96,32 @@
       <div id="readiness" aria-live="polite"></div>
     </section>
     <div id="qa">
-    <section class="intro"><span class="eyebrow">از پرسش تا پاسخ</span><h1>داده‌هایتان چه می‌گویند؟</h1><p>سؤال را به زبان خودتان بنویسید؛ پاسخ را همراه با جدول و نمودار ببینید.</p></section>
-    <section class="question-card" aria-label="گفتگوهای شما">
-      <div id="chat-tools"><button id="chat-new" type="button">گفتگوی جدید</button>
-      <button id="chat-delete" type="button" class="secondary" hidden>حذف گفتگو</button></div>
-      <p>گفتگوها فقط روی این دستگاه ذخیره می‌شوند. برای ادامه، گفتگوی قبلی را انتخاب کنید. بخش اخیر گفتگو برای فهم سؤال بعدی به سرویس مدل فرستاده می‌شود.</p>
-      <nav id="chat-list" aria-label="گفتگوهای ذخیره‌شده"></nav>
-    </section>
-    <section id="conversation" aria-label="پیام‌های گفتگو" aria-live="polite"></section>
-    <section class="question-card">
-      <form id="ask-form">
-        <label for="question">سؤال شما</label>
-        <textarea id="question" rows="3" maxlength="2000" placeholder="دنبال چه چیزی در داده‌ها هستید؟" required></textarea>
-        <div class="form-footer"><span>می‌توانید سؤال قبلی را ادامه دهید؛ مثلاً «حالا نمودارش را بکش».</span><button id="ask-button" type="submit"><span data-ask-label>پرسیدن سؤال</span> <span class="rasam-icon icon-arrow-left" aria-hidden="true"></span></button></div>
-      </form>
-    </section>
-    <div id="notice" role="status" aria-live="polite" hidden></div>
-    <section id="empty" class="empty"><span class="empty-symbol" aria-hidden="true"><span class="rasam-icon icon-analysis" aria-hidden="true"></span></span><h2>پاسخ از اینجا شروع می‌شود</h2><p>اولین سؤال را بپرسید تا نتیجهٔ داده‌ها را اینجا ببینید.</p></section>
+      <header class="chat-header"><div><span class="eyebrow">گفتگو با رصام</span><h1 id="chat-title">گفتگوی جدید</h1></div><button id="chat-delete" type="button" class="icon-button" aria-label="حذف این گفتگو" title="حذف گفتگو" hidden><span class="rasam-icon icon-revoke" aria-hidden="true"></span></button></header>
+      <div id="chat-scroll">
+        <section id="empty" class="chat-welcome">
+          <div class="welcome-mark"><img src="/static/mark.svg" width="58" height="58" alt=""></div>
+          <span class="eyebrow">از سؤال شما، تا بینش تازه</span>
+          <h2>بیایید با داده‌ها گفتگو کنیم.</h2>
+          <p>سؤالتان را به زبان خودتان بپرسید.<br>من برای پیدا کردن پاسخ کنارتان هستم.</p>
+          <div class="suggestions">
+            <button type="button" data-draft="خلاصه‌ای از داده‌های موجود به من بده"><span class="rasam-icon icon-analysis" aria-hidden="true"></span><strong>یک نگاه کلی</strong><small>داده‌هایم چه می‌گویند؟</small></button>
+            <button type="button" data-draft="یک نمودار برای مقایسهٔ داده‌ها می‌خواهم"><span class="rasam-icon icon-ask" aria-hidden="true"></span><strong>کشف با نمودار</strong><small>تفاوت‌ها را بهتر ببینیم</small></button>
+          </div>
+        </section>
+        <section id="conversation" aria-label="پیام‌های گفتگو" aria-live="polite"></section>
+        <div id="chat-pending" class="pending-message" role="status" hidden><img src="/static/mark.svg" width="28" height="28" alt=""><span>رصام در حال بررسی است</span><span class="typing-dots" aria-hidden="true">•••</span></div>
+      </div>
+      <div class="composer-wrap">
+        <div id="notice" role="status" aria-live="polite" hidden></div>
+        <form id="ask-form" class="composer">
+          <label for="question" class="sr-only">سؤال شما</label>
+          <textarea id="question" rows="1" maxlength="2000" placeholder="از رصام بپرسید…" required></textarea>
+          <div class="composer-bottom"><span>می‌توانید همین گفتگو را ادامه دهید</span><button id="ask-button" type="submit" aria-label="ارسال پیام"><span data-ask-label class="sr-only">پرسیدن سؤال</span><span class="send-arrow" aria-hidden="true">↑</span></button></div>
+        </form>
+        <p class="composer-note">بخش اخیر گفتگو برای فهم سؤال بعدی به مدل فرستاده می‌شود. پاسخ‌ها را بررسی کنید.</p>
+      </div>
+    </div>
+    <dialog id="result-dialog" aria-label="جدول و نمودار پاسخ"><button id="result-close" class="secondary" type="button">بستن جزئیات</button>
     <section id="result" class="result-card" hidden>
       <div class="result-heading"><h2>پاسخ رصام</h2><div id="exports"><button type="button" data-export="csv" class="secondary">دریافت CSV</button><button type="button" data-export="excel" class="secondary">دریافت Excel</button></div></div>
       <p id="summary"></p><p id="message"></p>
@@ -103,12 +130,10 @@
       <div id="feedback"><button type="button" id="feedback-positive" class="secondary"><span class="rasam-icon icon-check" aria-hidden="true"></span>این پاسخ درست است؛ نمونه نگه دار</button><button type="button" id="feedback-negative" class="secondary"><span class="rasam-icon icon-close" aria-hidden="true"></span>این پاسخ درست نیست</button></div>
       <p id="feedback-notice" role="status" aria-live="polite"></p>
     </section>
+    </dialog>
     </div>
     </div>
   </main>
-  <footer>رصام <span>·</span> یک راه ساده‌تر برای دیدن داده‌ها
-    <button id="quit-button" type="button" class="secondary"><span class="rasam-icon icon-logout" aria-hidden="true"></span>خروج از رصام</button>
-    <p id="shutdown-message" role="status" hidden></p>
-  </footer>
+  <footer><p id="shutdown-message" role="status" hidden></p></footer>
 </body>
 </html>

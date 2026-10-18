@@ -83,10 +83,3 @@ select, input { font: inherit; padding: .65rem; border: 1px solid #ccd8d8; borde
 #license-support[hidden] { display: none; }
 #update-banner { padding: 1rem; margin-bottom: 1rem; border-radius: .7rem; background: #e5f2f0; }
 #update-banner p { margin: .5rem 0 0; font-size: .85rem; }
-
-/* مرز پیام‌ها باید در گفتگوی طولانی هم روشن بماند. */
-#chat-list { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
-#chat-list [aria-pressed="true"] { outline: 2px solid #176e70; }
-.chat-turn { background: white; border: 1px solid #d7e5e8; border-radius: 1rem; padding: 1rem 1.5rem; margin-bottom: 1rem; }
-.chat-turn p { white-space: pre-wrap; overflow-wrap: anywhere; }
-.chat-question { font-weight: bold; color: #176e70; border-bottom: 1px solid #e1eaed; padding-bottom: .7rem; }
