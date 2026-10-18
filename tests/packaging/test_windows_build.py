@@ -32,7 +32,8 @@ def test_secret_scanner_catches_a_key_across_read_boundaries(tmp_path):
     build.verify_no_secrets(tmp_path, ["another-nonexistent-secret"])
 
 
-def test_bundle_validation_rejects_customer_data(tmp_path):
+@pytest.mark.parametrize("private_name", [".env", "conversations.sqlite3", "conversations.sqlite3-journal"])
+def test_bundle_validation_rejects_customer_data(tmp_path, private_name):
     required = ["Rasam.exe", "_internal/desktop-service.json", "_internal/rasam/desktop/static/index.html",
                 "_internal/templates/customer/profile.yaml"]
     for name in required:
@@ -40,6 +41,6 @@ def test_bundle_validation_rejects_customer_data(tmp_path):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("test")
     assert build.verify_bundle(tmp_path) > 0
-    (tmp_path / ".env").write_text("private")
+    (tmp_path / private_name).write_text("private")
     with pytest.raises(ValueError):
         build.verify_bundle(tmp_path)

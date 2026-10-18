@@ -63,7 +63,7 @@ def test_build_receives_public_service_data_and_not_model_secrets(monkeypatch, t
     assert len(calls) == 1
 
 
-@pytest.mark.parametrize("name", [".env", ".dev.vars", "auth.json", "chroma.sqlite3", "customers/acme/private.txt"])
+@pytest.mark.parametrize("name", [".env", ".dev.vars", "auth.json", "chroma.sqlite3", "conversations.sqlite3", "conversations.sqlite3-journal", "customers/acme/private.txt"])
 def test_customer_or_secret_files_are_rejected_from_the_app(tmp_path, name):
     app = fixture_bundle(tmp_path)
     assert build.verify_bundle(app) > 0

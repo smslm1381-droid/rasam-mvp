@@ -18,7 +18,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from rasam import config
-from rasam.core import charting, conversation, knowledge, llm, prompts
+from rasam.core import chat_context, charting, conversation, knowledge, llm, prompts
 from rasam.databases import registry
 from rasam.core.answer import Answer
 from rasam.databases.base import Result
@@ -27,6 +27,7 @@ class State(TypedDict, total=False):
     """حالت میان گره‌ها. `max_time_ms` از گارد می‌آید و فقط داخلی است."""
 
     question: str
+    history: list[dict]
     source: str | None
     query: Any
     checked: Result
@@ -49,10 +50,11 @@ def generate(state: State) -> State:
 
     selected = _knowledge(state["question"], schema)
     agent = registry.get_agent()
-    reply = llm.ask(agent.build_query_prompt(
+    prompt = agent.build_query_prompt(
         selected["schema"], state["question"], config.settings.allowed_sources,
         want_chart=state.get("want_chart", False),
-        documentation=selected["documentation"], examples=selected["examples"]))
+        documentation=selected["documentation"], examples=selected["examples"])
+    reply = llm.ask(chat_context.extend_prompt(prompt, state.get("history")))
     if not reply.ok:
         return {"error": reply.reason}
 
@@ -132,12 +134,13 @@ def repair(state: State) -> State:
 
     selected = _knowledge(state["question"], schema)
     agent = registry.get_agent()
-    reply = llm.ask(agent.build_query_prompt(
+    prompt = agent.build_query_prompt(
         selected["schema"], state["question"], config.settings.allowed_sources,
         want_chart=state.get("want_chart", False),
         documentation=selected["documentation"], examples=selected["examples"],
         failure=(state.get("query"), state.get("error") or ""),
-    ))
+    )
+    reply = llm.ask(chat_context.extend_prompt(prompt, state.get("history")))
     if not reply.ok:
         return {"attempts": attempts}
 
@@ -255,7 +258,7 @@ registry.check_db_type(config.settings.customer)
 _GRAPH = build_graph(config.settings.customer.capabilities)
 
 
-def answer(question: str) -> Answer:
+def answer(question: str, history: list[dict] | None = None) -> Answer:
     """سوال فارسی می‌گیرد و `Answer` برمی‌گرداند. هرگز استثنا پرتاب نمی‌کند."""
     if not question or not question.strip():
         return Answer(question=question, error="سوالی وارد نشده است.")
@@ -269,7 +272,7 @@ def answer(question: str) -> Answer:
             "لطفاً کوتاه‌ترش کنید و دوباره بپرسید."))
 
     try:
-        final: dict[str, Any] = _GRAPH.invoke({"question": question})
+        final: dict[str, Any] = _GRAPH.invoke({"question": question, "history": history or []})
     except Exception as error:  # noqa: BLE001 — عمدی: آخرین سد قاعده‌ی ۷
         # گره‌ها خطاهای شناخته‌شده را خودشان به مقدار تبدیل می‌کنند. این سد
         # برای چیزی است که پیش‌بینی نکرده‌ایم؛ کاربر نباید stack trace ببیند.

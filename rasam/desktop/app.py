@@ -18,6 +18,7 @@ from rasam import config
 from rasam.core import exporting, updates
 from rasam.desktop.security import LocalSecurity
 from rasam.desktop.session import Session
+from rasam.desktop.chats import routes as chat_routes
 from rasam.desktop.connecting import routes
 from rasam.desktop.profiles import routes as profile_routes
 from rasam.desktop.teaching import routes as teaching_routes
@@ -29,6 +30,7 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 class Question(BaseModel):
     question: str = Field(max_length=10000)
+    chat_id: str | None = Field(default=None, min_length=32, max_length=32)
 
 
 def create_app(token: str | None = None, answerer=None, license_manager=None) -> FastAPI:
@@ -41,6 +43,7 @@ def create_app(token: str | None = None, answerer=None, license_manager=None) ->
     setup_routes, app.state.setup = routes()
     app.include_router(setup_routes)
     app.include_router(profile_routes(app))
+    app.include_router(chat_routes(app))
     app.include_router(teaching_routes(app))
     app.include_router(licensing_routes(app))
     app.add_middleware(LocalSecurity, token=app.state.token)
@@ -81,7 +84,7 @@ def shutdown_route(app):
 def ask_route(app):
     def ask(body: Question, response: Response):
         app.state.licensing.configure_runtime()
-        result, answer_id = app.state.session.ask(body.question)
+        result, answer_id = app.state.session.ask(body.question, body.chat_id)
         response.headers["X-Answer-ID"] = answer_id
         return asdict(result)
     return ask

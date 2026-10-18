@@ -48,10 +48,13 @@ def verify_bundle(bundle):
         info = plistlib.load(stream)
     if info.get("CFBundleShortVersionString") != __version__ or info.get("CFBundleExecutable") != "Rasam":
         raise ValueError("نسخه یا فایل اجرای بستهٔ مک معتبر نیست.")
+    forbidden = {".env", ".dev.vars", "auth.json", "chroma.sqlite3",
+                 "conversations.sqlite3", "conversations.sqlite3-journal",
+                 "conversations.sqlite3-wal", "conversations.sqlite3-shm"}
     for path in bundle.rglob("*"):
         if path.is_symlink() and not path.resolve().is_relative_to(bundle.resolve()):
             raise ValueError("پیوند بیرون از بستهٔ مک مجاز نیست.")
-        if path.is_file() and (path.name in {".env", ".dev.vars", "auth.json", "chroma.sqlite3"}
+        if path.is_file() and (path.name in forbidden
                               or "customers" in path.relative_to(bundle).parts):
             raise ValueError("دادهٔ مشتری یا فایل راز در بسته پیدا شد.")
     return sum(path.stat().st_size for path in bundle.rglob("*") if path.is_file())

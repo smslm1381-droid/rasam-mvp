@@ -182,6 +182,9 @@ class Settings:
     max_result_chars: int
     max_knowledge_chars: int
     max_attempts: int
+    max_history_turns: int
+    max_history_chars: int
+    max_history_rows: int
     verbose: bool
 
     def __repr__(self) -> str:
@@ -273,6 +276,9 @@ def _settings(customer_name=None) -> Settings:
         # دانش مشتری دمو ۱۲٫۴ هزار کاراکتر است، پس این سقف دو برابر آن است.
         max_knowledge_chars=_number("MAX_KNOWLEDGE_CHARS", 24_000, int, "عدد صحیح"),
         max_attempts=profile.limits.get("max_attempts", DEFAULT_MAX_ATTEMPTS),
+        max_history_turns=_number("MAX_HISTORY_TURNS", 8, int, "عدد صحیح"),
+        max_history_rows=_number("MAX_HISTORY_ROWS", 3, int, "عدد صحیح"),
+        max_history_chars=_number("MAX_HISTORY_CHARS", 12000, int, "عدد صحیح"),
         verbose=_flag("VERBOSE", False),
     )
 

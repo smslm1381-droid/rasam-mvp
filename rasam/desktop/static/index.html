@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/static/brand.css">
   <script defer src="/static/plotly.min.js"></script>
   <script defer src="/static/app.js"></script>
+  <script defer src="/static/chats.js"></script>
   <script defer src="/static/connect.js"></script>
   <script defer src="/static/profile.js"></script>
   <script defer src="/static/teach.js"></script>
@@ -78,11 +79,18 @@
     </section>
     <div id="qa">
     <section class="intro"><span class="eyebrow">از پرسش تا پاسخ</span><h1>داده‌هایتان چه می‌گویند؟</h1><p>سؤال را به زبان خودتان بنویسید؛ پاسخ را همراه با جدول و نمودار ببینید.</p></section>
+    <section class="question-card" aria-label="گفتگوهای شما">
+      <div id="chat-tools"><button id="chat-new" type="button">گفتگوی جدید</button>
+      <button id="chat-delete" type="button" class="secondary" hidden>حذف گفتگو</button></div>
+      <p>گفتگوها فقط روی این دستگاه ذخیره می‌شوند. برای ادامه، گفتگوی قبلی را انتخاب کنید. بخش اخیر گفتگو برای فهم سؤال بعدی به سرویس مدل فرستاده می‌شود.</p>
+      <nav id="chat-list" aria-label="گفتگوهای ذخیره‌شده"></nav>
+    </section>
+    <section id="conversation" aria-label="پیام‌های گفتگو" aria-live="polite"></section>
     <section class="question-card">
       <form id="ask-form">
         <label for="question">سؤال شما</label>
         <textarea id="question" rows="3" maxlength="2000" placeholder="دنبال چه چیزی در داده‌ها هستید؟" required></textarea>
-        <div class="form-footer"><span>برای رسم نمودار، در سؤالتان «نمودار» را بنویسید.</span><button id="ask-button" type="submit"><span data-ask-label>پرسیدن سؤال</span> <span class="rasam-icon icon-arrow-left" aria-hidden="true"></span></button></div>
+        <div class="form-footer"><span>می‌توانید سؤال قبلی را ادامه دهید؛ مثلاً «حالا نمودارش را بکش».</span><button id="ask-button" type="submit"><span data-ask-label>پرسیدن سؤال</span> <span class="rasam-icon icon-arrow-left" aria-hidden="true"></span></button></div>
       </form>
     </section>
     <div id="notice" role="status" aria-live="polite" hidden></div>

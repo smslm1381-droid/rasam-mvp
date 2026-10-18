@@ -31,7 +31,9 @@ def verify_bundle(bundle):
                 bundle / "_internal/templates/customer/profile.yaml"]
     if not all(path.is_file() for path in required):
         raise ValueError("بستهٔ برنامه ناقص است.")
-    forbidden = {".env", ".dev.vars", "auth.json", "chroma.sqlite3"}
+    forbidden = {".env", ".dev.vars", "auth.json", "chroma.sqlite3",
+                 "conversations.sqlite3", "conversations.sqlite3-journal",
+                 "conversations.sqlite3-wal", "conversations.sqlite3-shm"}
     for path in bundle.rglob("*"):
         if path.is_file() and (path.name in forbidden or "customers" in path.relative_to(bundle).parts):
             raise ValueError("دادهٔ مشتری یا فایل راز در بسته پیدا شد؛ ساخت متوقف شد.")

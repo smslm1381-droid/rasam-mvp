@@ -46,3 +46,6 @@ Thumbs.db
 .codex/cache/
 .codex/config.toml
 .codebase-memory/
+
+# گفتگوهای محلی حاوی دادهٔ مشتری‌اند و هرگز وارد مخزن نمی‌شوند.
+conversations.sqlite3*

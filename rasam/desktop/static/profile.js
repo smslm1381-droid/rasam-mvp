@@ -52,6 +52,7 @@ async function saveProfile(event) {
       line.textContent = `${check.status === 'ok' ? '✅' : check.status === 'warning' ? '⚠️' : '❌'} ${check.name} — ${check.detail}`;
       $('readiness').append(line);
     }
+    chatCustomer = null;
     await refreshStatus();
   } catch (error) { $('connection-result').textContent = error.message; }
   finally { $('profile-save').disabled = false; }

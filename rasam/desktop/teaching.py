@@ -38,6 +38,8 @@ def feedback_route(app):
     def feedback(answer_id: str, rating: str):
         with app.state.session.lock:
             answer = app.state.session.result(answer_id)
+            if rating == "positive" and app.state.session.is_followup(answer_id):
+                return {"ok": False, "message": "برای نمونهٔ آموزشی، سؤال را کامل و مستقل در گفتگوی جدید بنویسید؛ این پاسخ به پیام‌های قبلی وابسته است."}
             if rating == "positive":
                 return knowledge_editing.confirm_answer(answer)
             if rating == "negative":

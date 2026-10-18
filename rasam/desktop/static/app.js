@@ -117,16 +117,23 @@ function showAnswer(answer) {
 
 $('ask-form').addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (chatBusy) return;
+  chatControls(true);
   $('ask-button').disabled = true;
   $('ask-button').querySelector('[data-ask-label]').textContent = 'در حال بررسی داده‌ها…';
   notice('');
   try {
-    const response = await request('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: $('question').value }) });
+    const chatId = await ensureChat();
+    const response = await request('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: $('question').value, chat_id: chatId }) });
     answerId = response.headers.get('X-Answer-ID');
-    showAnswer(await response.json());
+    const answer = await response.json();
+    await loadChat(chatId, true);
+    if (answer.error) showAnswer(answer);
+    else $('question').value = '';
   } catch (error) {
     notice(error instanceof TypeError ? 'ارتباط با برنامه قطع شد؛ رصام را دوباره باز کنید.' : error.message, true);
   } finally {
+    chatControls(false);
     $('ask-button').disabled = false;
     $('ask-button').querySelector('[data-ask-label]').textContent = 'پرسیدن سؤال';
   }
@@ -155,8 +162,9 @@ async function refreshStatus() {
   $('connection-status').textContent = licenseReady ? connection : 'در انتظار تأیید لایسنس';
   if (!data.configured) notice('ابتدا اتصال دیتابیس را تنظیم کنید.');
   else notice('');
+  await syncChats(data.configured ? data.customer : null);
 }
-refreshStatus().catch((error) => notice(error.message, true));
+window.addEventListener('DOMContentLoaded', () => refreshStatus().catch((error) => notice(error.message, true)));
 
 $('quit-button').addEventListener('click', async () => {
   $('quit-button').disabled = true;
