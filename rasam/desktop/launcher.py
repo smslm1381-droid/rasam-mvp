@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import socket
+import sys
 import webbrowser
 
 import uvicorn
@@ -54,6 +55,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--no-browser", action="store_true", help="برای آزمون بدون بازکردن مرورگر")
     args = parser.parse_args(argv)
     try:
+        if sys.platform == "darwin" and not args.no_browser:
+            from rasam.desktop.macos import run
+            return run(lambda: serve(True))
         return serve(not args.no_browser)
     except Exception:
         show_error("راه‌اندازی سرور محلی انجام نشد؛ برنامه را دوباره باز کنید.")
