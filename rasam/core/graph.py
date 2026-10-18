@@ -41,7 +41,7 @@ class State(TypedDict, total=False):
 
 
 def generate(state: State) -> State:
-    """گره ۱ — از سوال، کوئری می‌سازد."""
+    """همان تماس مدل، بر اساس نیاز به داده، متن فارسی یا کوئری برمی‌گرداند."""
     try:
         schema = registry.get_agent().describe_schema()
     except Exception as error:  # noqa: BLE001 — backend خطا را به مقدار تبدیل می‌کند
@@ -145,7 +145,7 @@ def repair(state: State) -> State:
     if parsed.error:
         return {"attempts": attempts, "error": parsed.error}
     if parsed.message:
-        # مدل به این نتیجه رسیده که سوال از این داده قابل جواب نیست.
+        # پاسخ متنی یا محدودیت داده پایان مسیر است؛ کوئری قبلی اجرا نمی‌شود.
         return {"attempts": attempts, "message": parsed.message, "error": None}
     return {"attempts": attempts, "repaired": True, "error": None,
             "source": parsed.source, "query": parsed.query}

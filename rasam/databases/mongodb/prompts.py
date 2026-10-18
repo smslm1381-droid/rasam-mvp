@@ -24,12 +24,15 @@ from rasam.databases.prompt_parts import (
 # می‌سازد که گارد ردش می‌کند — بدون اینکه بفهمد چرا (تصمیم ۴۳). قاعده‌ی ۲ مخصوص مونگوست؛
 # پنج قاعده‌ی دیگر مشترک‌اند (`prompt_parts.py`).
 SECURITY_RULES = security_rules(
-    "For a data request, produce exactly ONE read-only aggregation pipeline as a JSON array. Never use "
+    "Only when actual customer records are needed and the schema supports the request, "
+    "produce exactly ONE read-only aggregation pipeline as a JSON array. Never use "
     f"{', '.join(sorted(guard.FORBIDDEN))}. Only these stages are allowed: "
     f"{', '.join(sorted(guard.ALLOWED_STAGES))}."
 )
 
-_TEMPLATE = """You turn Persian questions about a MongoDB database into aggregation pipelines.
+_TEMPLATE = """You answer Persian questions, choosing in this same response between a
+direct Persian answer and a read-only MongoDB aggregation query. Follow rule 5:
+the deciding factor is the need for actual customer records.
 
 ===Database schema
 {schema}
@@ -43,10 +46,12 @@ _TEMPLATE = """You turn Persian questions about a MongoDB database into aggregat
 {rules}
 
 ===Output format
-On success, reply with ONLY a JSON object, nothing else:
+If actual customer records are needed and the supplied schema supports the request,
+reply with ONLY this JSON object, nothing else:
 {{"collection": "<one of: {collections}>", "pipeline": [<stages>]}}
 
-Otherwise, per rule 5, reply with one short Persian sentence.
+Otherwise, per rule 5, reply with short plain Persian text: either a direct answer
+that needs no customer records, or a clear explanation of the missing customer data.
 
 ===Question
 {question}"""

@@ -21,7 +21,8 @@ from rasam.databases.prompt_parts import (
     CHART_REQUEST, FAILURE_TEMPLATE, MAX_ERROR_CHARS, security_rules, context_text)
 
 SECURITY_RULES = security_rules(
-    "For a data request, produce exactly ONE read-only SQL statement: a single SELECT on a single table, "
+    "Only when actual customer records are needed and the schema supports the request, "
+    "produce exactly ONE read-only SQL statement: a single SELECT on a single table, "
     "with no semicolon. Never use JOIN, UNION, subqueries, WITH, window functions, "
     "INTO, FOR UPDATE, @variables, optimizer hints or comments. Never call "
     f"{', '.join(guard.FORBIDDEN_FUNCTIONS)}. "
@@ -29,7 +30,9 @@ SECURITY_RULES = security_rules(
     "Quote column and table names with backticks if they could be keywords."
 )
 
-_TEMPLATE = """You turn Persian questions about a MySQL database into a single SQL SELECT.
+_TEMPLATE = """You answer Persian questions, choosing in this same response between a
+direct Persian answer and a read-only MySQL SELECT query. Follow rule 5:
+the deciding factor is the need for actual customer records.
 
 ===Database schema
 {schema}
@@ -43,10 +46,12 @@ _TEMPLATE = """You turn Persian questions about a MySQL database into a single S
 {rules}
 
 ===Output format
-On success, reply with ONLY a JSON object, nothing else:
+If actual customer records are needed and the supplied schema supports the request,
+reply with ONLY this JSON object, nothing else:
 {{"table": "<one of: {tables}>", "sql": "<one SELECT statement on that table>"}}
 
-Otherwise, per rule 5, reply with one short Persian sentence.
+Otherwise, per rule 5, reply with short plain Persian text: either a direct answer
+that needs no customer records, or a clear explanation of the missing customer data.
 
 ===Question
 {question}"""
