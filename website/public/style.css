@@ -1,6 +1,8 @@
 @font-face {
-  font-family:system-fallback;
-  src:local("Tahoma");
+  font-family:"Vazirmatn";
+  src:url("/fonts/Vazirmatn-33.003.woff2") format("woff2");
+  font-weight:100 900;
+  font-style:normal;
   font-display:swap
 }
 :root {
@@ -23,9 +25,12 @@ body {
   margin:0;
   background:var(--paper);
   color:var(--ink);
-  font-family:Tahoma,system-ui,sans-serif;
-  font-size:15px;
-  line-height:1.95
+  font-family:"Vazirmatn",Tahoma,sans-serif;
+  font-size:16px;
+  font-weight:400;
+  line-height:1.95;
+  font-synthesis:none;
+  -webkit-font-smoothing:antialiased
 }
 a {
   color:inherit;
@@ -41,19 +46,19 @@ p {
 h1,h2,h3 {
   line-height:1.65;
   margin:0;
-  letter-spacing:-1.2px
+  letter-spacing:normal
 }
 h1 {
   font-size:clamp(40px,4.6vw,68px);
-  font-weight:700;
+  font-weight:800;
   line-height:1.55
 }
 h2 {
   font-size:clamp(29px,3vw,43px)
 }
 h3 {
-  font-size:19px;
-  letter-spacing:-.4px
+  font-size:20px;
+  letter-spacing:normal
 }
 em {
   font-style:normal;
@@ -67,7 +72,7 @@ em {
   color:var(--muted)
 }
 .small {
-  font-size:12px
+  font-size:13px
 }
 .eyebrow {
   font-size:12px;
@@ -103,7 +108,7 @@ em {
 }
 .brand-sub {
   display:block;
-  font-size:10px;
+  font-size:11px;
   color:var(--muted);
   font-weight:400;
   letter-spacing:0;
@@ -113,7 +118,7 @@ nav {
   display:flex;
   align-items:center;
   gap:32px;
-  font-size:12px
+  font-size:14px
 }
 .nav-download {
   color:var(--green);
@@ -146,7 +151,7 @@ nav {
   gap:25px;
   padding:14px 23px;
   border-radius:7px;
-  font-size:13px;
+  font-size:15px;
   font-weight:700;
   min-height:50px
 }
@@ -161,7 +166,7 @@ nav {
 .text-link {
   color:var(--green);
   font-weight:700;
-  font-size:12px;
+  font-size:14px;
   text-decoration:underline;
   text-underline-offset:5px
 }
@@ -207,7 +212,7 @@ nav {
   background:#edf0e7;
   padding:14px 17px;
   border-radius:9px;
-  font-size:13px;
+  font-size:15px;
   margin-bottom:28px
 }
 .answer-heading {
@@ -218,7 +223,7 @@ nav {
   margin-bottom:15px
 }
 .demo-body>p:not(.question) {
-  font-size:12px
+  font-size:14px
 }
 .metric {
   display:flex;
@@ -230,7 +235,7 @@ nav {
 .metric>span:first-child {
   font-size:43px;
   font-weight:700;
-  letter-spacing:-2px
+  letter-spacing:normal
 }
 .metric-label {
   font-size:11px;
@@ -239,7 +244,7 @@ nav {
 table {
   width:100%;
   border-collapse:collapse;
-  font-size:11px;
+  font-size:13px;
   text-align:right
 }
 th,td {
@@ -304,7 +309,7 @@ th {
   margin-bottom:12px
 }
 .steps p {
-  font-size:13px;
+  font-size:15px;
   color:var(--muted)
 }
 .principles {
@@ -410,13 +415,13 @@ th {
   font-size:17px
 }
 .guide-list p {
-  font-size:13px;
+  font-size:15px;
   color:var(--muted);
   margin-bottom:10px
 }
 summary {
   cursor:pointer;
-  font-size:13px;
+  font-size:15px;
   font-weight:700;
   padding-block:12px
 }
@@ -443,7 +448,7 @@ pre {
   border-bottom:1px solid var(--line)
 }
 .faq-list p {
-  font-size:13px;
+  font-size:15px;
   color:var(--muted)
 }
 .footer {
