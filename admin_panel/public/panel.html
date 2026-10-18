@@ -3,19 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
   <title>مدیریت لایسنس‌ها | رصام</title>
   <link rel="preload" href="/fonts/Vazirmatn-33.003.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/brand.css">
   <script src="/admin.js" type="module"></script>
+  <link rel="apple-touch-icon" href="/app-icon.png">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="/panel">رصام<span>مدیریت محصول</span></a><div class="account"><span id="admin-name"></span><button id="logout" class="secondary" type="button">خروج از حساب</button></div></header>
+  <header class="topbar"><a class="brand" href="/panel"><img class="brand-emblem" src="/mark.svg" width="44" height="44" alt=""><div>رصام<span>مدیریت محصول</span></div></a><div class="account"><span id="admin-name"></span><button id="logout" class="secondary" type="button"><span class="rasam-icon icon-logout" aria-hidden="true"></span>خروج از حساب</button></div></header>
   <main class="workspace" id="panel">
-    <div class="heading"><div><p class="eyebrow">مدیریت دسترسی مشتریان</p><h1>لایسنس‌های رصام</h1><p class="muted">اعتبار، سهمیه و مصرف مشتریان را از همین‌جا بررسی کنید.</p></div><button id="issue-open" type="button">+ صدور لایسنس</button></div>
+    <div class="heading"><div><p class="eyebrow">مدیریت دسترسی مشتریان</p><h1>لایسنس‌های رصام</h1><p class="muted">اعتبار، سهمیه و مصرف مشتریان را از همین‌جا بررسی کنید.</p></div><button id="issue-open" type="button"><span class="rasam-icon icon-plus" aria-hidden="true"></span>صدور لایسنس</button></div>
     <form id="search-form" class="filters">
       <div><label for="search">نام مشتری</label><input id="search" type="search" placeholder="جست‌وجو در نام مشتری…" maxlength="200"></div>
       <div><label for="status">وضعیت لایسنس</label><select id="status"><option value="all">همهٔ وضعیت‌ها</option><option value="active">فعال</option><option value="expired">منقضی</option><option value="revoked">باطل‌شده</option></select></div>
-      <button type="submit">جست‌وجو</button>
+      <button type="submit"><span class="rasam-icon icon-search" aria-hidden="true"></span>جست‌وجو</button>
     </form>
     <p id="message" role="status" aria-live="polite"></p>
     <section class="table-card" aria-labelledby="table-title">
@@ -49,7 +52,7 @@
   <dialog id="key-dialog" aria-labelledby="key-title">
     <h2 id="key-title">لایسنس صادر شد</h2><p id="key-customer" class="muted"></p><p>این کد فقط همین بار در دسترس است. پیش از بستن، آن را در محل امن نگه دارید.</p>
     <label for="issued-key">کد خصوصی لایسنس</label><input id="issued-key" type="password" dir="ltr" readonly autocomplete="off">
-    <p id="key-message" class="form-message" role="status"></p><div class="dialog-actions"><button id="key-copy" type="button">کپی کد</button><button id="key-toggle" class="secondary" type="button">نمایش کد</button><button class="secondary" type="button" data-close="key-dialog">بستن</button></div>
+    <p id="key-message" class="form-message" role="status"></p><div class="dialog-actions"><button id="key-copy" type="button"><span class="rasam-icon icon-copy" aria-hidden="true"></span>کپی کد</button><button id="key-toggle" class="secondary" type="button">نمایش کد</button><button class="secondary" type="button" data-close="key-dialog">بستن</button></div>
   </dialog>
 </body>
 </html>

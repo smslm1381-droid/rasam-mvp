@@ -19,5 +19,6 @@ analysis = Analysis([str(root / "rasam_desktop.py")], pathex=[str(root)],
                     excludes=["pytest", "gateway", "matplotlib", "IPython", "tkinter"])
 archive = PYZ(analysis.pure)
 exe = EXE(archive, analysis.scripts, [], exclude_binaries=True, name="Rasam",
-          console=False, debug=False, strip=False, upx=False)
+          console=False, debug=False, strip=False, upx=False,
+          icon=str(root / "assets/brand/rasam.ico"))
 bundle = COLLECT(exe, analysis.binaries, analysis.datas, name="Rasam", strip=False, upx=False)

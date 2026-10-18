@@ -102,8 +102,11 @@ async def licenses(request: Request):
 @app.get("/{asset:path}")
 async def public_asset(asset: str, request: Request):
     # همهٔ مسیرها اول به برنامه می‌رسند تا aliasهای فایل HTML از مجوزسنجی عبور نکنند.
-    allowed = {"index.html", "admin.js", "actions.js", "style.css", "fonts/Vazirmatn-33.003.woff2",
-               "fonts/OFL.txt", "fonts/README.txt"}
+    icons = ("database", "analysis", "ask", "teach", "license", "shield", "download", "arrow-left",
+             "plus", "logout", "search", "renew", "revoke", "quota", "copy", "check", "close", "save", "connect")
+    allowed = {"index.html", "admin.js", "actions.js", "style.css", "brand.css", "mark.svg", "app-icon.png",
+               "fonts/Vazirmatn-33.003.woff2", "fonts/OFL.txt", "fonts/README.txt"}
+    allowed.update("icons/" + name + ".svg" for name in icons)
     if asset not in allowed:
         return error("این صفحه پیدا نشد.", 404)
     env = request.scope["env"]

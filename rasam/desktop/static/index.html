@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>رصام | دستیار دادهٔ شما</title>
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/brand.css">
   <script defer src="/static/plotly.min.js"></script>
   <script defer src="/static/app.js"></script>
   <script defer src="/static/connect.js"></script>
@@ -13,10 +14,11 @@
   <script defer src="/static/teach.js"></script>
   <script defer src="/static/license.js"></script>
   <script defer src="/static/updates.js"></script>
+  <link rel="apple-touch-icon" href="/static/app-icon.png">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#"><span class="brand-mark">ر</span><span>رصام<small>دستیار دادهٔ شما</small></span></a>
+    <a class="brand" href="#"><img class="brand-mark" src="/static/mark.svg" width="48" height="48" alt=""><span>رصام<small>دستیار دادهٔ شما</small></span></a>
     <div class="connection"><span class="dot"></span><span id="connection-status">در حال بررسی اتصال…</span></div>
   </header>
   <main>
@@ -28,14 +30,14 @@
       <p id="license-message" role="status" aria-live="polite">در حال بررسی اعتبار…</p>
       <form id="license-form">
         <label for="license-key">کد لایسنس</label><input id="license-key" type="password" dir="ltr" minlength="20" maxlength="200" autocomplete="off" required>
-        <button id="license-activate" type="submit">فعال‌سازی رصام</button>
+        <button id="license-activate" type="submit"><span class="rasam-icon icon-license" aria-hidden="true"></span>فعال‌سازی رصام</button>
       </form>
       <button type="button" data-license-refresh class="secondary">بررسی دوباره اعتبار پس از تمدید</button>
       <a id="license-support" target="_blank" rel="noopener noreferrer" hidden>تماس با پشتیبانی برای تمدید</a>
     </section>
     <div id="workspace" hidden>
-    <button id="setup-open" type="button" class="secondary">تنظیم اتصال دیتابیس</button>
-    <button id="teaching-open" type="button" class="secondary">آموزش رصام</button>
+    <button id="setup-open" type="button" class="secondary"><span class="rasam-icon icon-database" aria-hidden="true"></span>تنظیم اتصال دیتابیس</button>
+    <button id="teaching-open" type="button" class="secondary"><span class="rasam-icon icon-teach" aria-hidden="true"></span>آموزش رصام</button>
     <section id="teaching" class="question-card" hidden>
       <h1>معنی داده‌ها را به رصام بگویید</h1>
       <p>نام فارسی و نکته‌های هر ستون را از روی شناخت خودتان بنویسید. یادداشت ستون‌های هم‌نام بین منبع‌ها مشترک است.</p>
@@ -43,7 +45,7 @@
       <form id="teaching-form">
         <div class="table-wrap"><table><thead><tr><th>ستون و منبع</th><th>نام فارسی</th><th>توضیح یا تلهٔ داده</th></tr></thead><tbody id="teaching-fields"></tbody></table></div>
         <label for="documentation">توضیحات کلی داده‌ها</label><textarea id="documentation" rows="7" maxlength="100000"></textarea>
-        <button id="teaching-save" type="submit">ذخیرهٔ آموزش</button>
+        <button id="teaching-save" type="submit"><span class="rasam-icon icon-save" aria-hidden="true"></span>ذخیرهٔ آموزش</button>
       </form>
       <p id="teaching-notice" role="status" aria-live="polite"></p>
     </section>
@@ -54,7 +56,7 @@
         <p>نوع دیتابیس</p><div id="database-cards" class="database-cards"></div><select id="database-type" aria-label="نوع دیتابیس" hidden></select>
         <div id="connection-fields" class="connection-fields"></div>
         <details><summary>پیشرفته: رشتهٔ اتصال</summary><label for="connection-uri">رشتهٔ اتصال (اختیاری؛ نام دیتابیس را هم در فرم بالا بنویسید)</label><input id="connection-uri" type="password" maxlength="4096" autocomplete="off" dir="ltr"></details>
-        <button id="connection-test" type="submit">آزمایش اتصال</button>
+        <button id="connection-test" type="submit"><span class="rasam-icon icon-connect" aria-hidden="true"></span>آزمایش اتصال</button>
       </form>
       <p id="connection-result" role="status" aria-live="polite"></p>
       <section id="source-step" hidden>
@@ -64,13 +66,13 @@
           <label for="customer-name">نام این اتصال (حروف کوچک لاتین، عدد و خط تیره)</label>
           <input id="customer-name" maxlength="64" pattern="[a-z][a-z0-9-]*" required dir="ltr">
           <div id="source-list"></div>
-          <button type="submit" id="profile-save">ذخیره و شروع پرسش</button>
+          <button type="submit" id="profile-save"><span class="rasam-icon icon-save" aria-hidden="true"></span>ذخیره و شروع پرسش</button>
         </form>
       </section>
       <section id="readonly-help" hidden>
         <h2>این را برای مسئول فنی یا پشتیبانی رصام بفرستید</h2>
         <p>مسئول فنی باید با دسترسی مدیریت، کاربر فقط‌خواندنی بسازد؛ سپس با اطلاعات آن کاربر اتصال را دوباره آزمایش کنید.</p>
-        <pre id="readonly-script" dir="ltr"></pre><button type="button" id="copy-script" class="secondary">کپی دستور</button>
+        <pre id="readonly-script" dir="ltr"></pre><button type="button" id="copy-script" class="secondary"><span class="rasam-icon icon-copy" aria-hidden="true"></span>کپی دستور</button>
       </section>
       <div id="readiness" aria-live="polite"></div>
     </section>
@@ -80,24 +82,24 @@
       <form id="ask-form">
         <label for="question">سؤال شما</label>
         <textarea id="question" rows="3" maxlength="2000" placeholder="دنبال چه چیزی در داده‌ها هستید؟" required></textarea>
-        <div class="form-footer"><span>برای رسم نمودار، در سؤالتان «نمودار» را بنویسید.</span><button id="ask-button" type="submit">پرسیدن سؤال <span aria-hidden="true">←</span></button></div>
+        <div class="form-footer"><span>برای رسم نمودار، در سؤالتان «نمودار» را بنویسید.</span><button id="ask-button" type="submit"><span data-ask-label>پرسیدن سؤال</span> <span class="rasam-icon icon-arrow-left" aria-hidden="true"></span></button></div>
       </form>
     </section>
     <div id="notice" role="status" aria-live="polite" hidden></div>
-    <section id="empty" class="empty"><span class="empty-symbol" aria-hidden="true">▥</span><h2>پاسخ از اینجا شروع می‌شود</h2><p>اولین سؤال را بپرسید تا نتیجهٔ داده‌ها را اینجا ببینید.</p></section>
+    <section id="empty" class="empty"><span class="empty-symbol" aria-hidden="true"><span class="rasam-icon icon-analysis" aria-hidden="true"></span></span><h2>پاسخ از اینجا شروع می‌شود</h2><p>اولین سؤال را بپرسید تا نتیجهٔ داده‌ها را اینجا ببینید.</p></section>
     <section id="result" class="result-card" hidden>
       <div class="result-heading"><h2>پاسخ رصام</h2><div id="exports"><button type="button" data-export="csv" class="secondary">دریافت CSV</button><button type="button" data-export="excel" class="secondary">دریافت Excel</button></div></div>
       <p id="summary"></p><p id="message"></p>
       <div id="chart" hidden></div><div id="table" class="table-wrap"></div>
       <small id="row-count"></small>
-      <div id="feedback"><button type="button" id="feedback-positive" class="secondary">👍 این پاسخ درست است؛ نمونه نگه دار</button><button type="button" id="feedback-negative" class="secondary">👎 این پاسخ درست نیست</button></div>
+      <div id="feedback"><button type="button" id="feedback-positive" class="secondary"><span class="rasam-icon icon-check" aria-hidden="true"></span>این پاسخ درست است؛ نمونه نگه دار</button><button type="button" id="feedback-negative" class="secondary"><span class="rasam-icon icon-close" aria-hidden="true"></span>این پاسخ درست نیست</button></div>
       <p id="feedback-notice" role="status" aria-live="polite"></p>
     </section>
     </div>
     </div>
   </main>
   <footer>رصام <span>·</span> یک راه ساده‌تر برای دیدن داده‌ها
-    <button id="quit-button" type="button" class="secondary">خروج از رصام</button>
+    <button id="quit-button" type="button" class="secondary"><span class="rasam-icon icon-logout" aria-hidden="true"></span>خروج از رصام</button>
     <p id="shutdown-message" role="status" hidden></p>
   </footer>
 </body>

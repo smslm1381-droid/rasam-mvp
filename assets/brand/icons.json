@@ -1,0 +1,21 @@
+{
+  "database": {"label": "دیتابیس", "path": "M4 5L7 3H17L20 5V19L17 21H7L4 19ZM4 8H20M4 14H20M8 11H10M8 17H10"},
+  "analysis": {"label": "تحلیل داده", "path": "M3 20H21M5 17V12H8V17M11 17V8H14V17M17 17V4H20V17M4 7L9 3H14"},
+  "ask": {"label": "پرسش", "path": "M3 6L6 3H18L21 6V15L18 18H9L4 21V18H3ZM9 8L10 7H14L15 8V10L12 12M12 15H12.01"},
+  "teach": {"label": "آموزش", "path": "M12 5L8 3H3V19H8L12 21L16 19H21V3H16ZM12 5V21M6 8H8M6 12H8M16 8H18M16 12H18"},
+  "license": {"label": "لایسنس", "path": "M3 6L6 3H18L21 6V18L18 21H6L3 18ZM7 8H17M7 12H12M14 16L16 18L19 14"},
+  "shield": {"label": "دسترسی امن", "path": "M12 2L21 6V13L18 18L12 22L6 18L3 13V6ZM8 12L11 15L17 9"},
+  "download": {"label": "دریافت", "path": "M12 3V15M7 10L12 15L17 10M3 15V19L5 21H19L21 19V15"},
+  "arrow-left": {"label": "ادامه", "path": "M20 12H4M10 6L4 12L10 18"},
+  "plus": {"label": "افزودن", "path": "M12 4V20M4 12H20"},
+  "logout": {"label": "خروج", "path": "M9 4H5L3 6V18L5 20H9M10 12H21M16 7L21 12L16 17"},
+  "search": {"label": "جست‌وجو", "path": "M4 4L7 2H12L16 6V11L12 15H7L3 11V6ZM15 15L21 21"},
+  "renew": {"label": "تمدید", "path": "M19 8L16 4H8L4 8V16L8 20H16L20 16M20 3V9H14M12 8V12L15 14"},
+  "revoke": {"label": "ابطال", "path": "M7 2H17L22 7V17L17 22H7L2 17V7ZM8 8L16 16M16 8L8 16"},
+  "quota": {"label": "سهمیه", "path": "M4 7H20M4 17H20M8 3V11M16 13V21M6 3H10M14 21H18"},
+  "copy": {"label": "کپی", "path": "M8 8H18L21 11V21H8ZM4 16H3V3H14V4"},
+  "check": {"label": "تأیید", "path": "M3 12L9 18L21 6"},
+  "close": {"label": "بستن", "path": "M5 5L19 19M19 5L5 19"},
+  "save": {"label": "ذخیره", "path": "M3 3H17L21 7V21H3ZM7 3V9H16V3M7 21V14H17V21"},
+  "connect": {"label": "اتصال", "path": "M9 15L15 9M8 12L5 15V19H9L12 16M12 8L15 5H19V9L16 12M3 3L6 6M18 18L21 21"}
+}

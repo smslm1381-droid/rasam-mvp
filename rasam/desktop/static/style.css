@@ -14,7 +14,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid #8cc6c9; outline-offs
 .topbar { max-width: 1150px; margin: auto; padding: 25px 30px; display: flex; justify-content: space-between; align-items: center; }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; font-size: 25px; font-weight: bold; }
 .brand small { display: block; font-size: 11px; font-weight: normal; color: var(--muted); }
-.brand-mark { display: grid; place-content: center; width: 48px; height: 48px; border-radius: 15px; background: var(--accent); color: white; font-size: 35px; }
+.brand-mark { display: block; width: 48px; height: 48px; }
 .connection { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: #8da5a7; }
 main { max-width: 1000px; padding: 20px 24px 60px; margin: auto; }

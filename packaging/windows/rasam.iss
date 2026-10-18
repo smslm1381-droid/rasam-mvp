@@ -23,6 +23,7 @@ OutputBaseFilename=RasamSetup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\..\assets\brand\rasam.ico
 UninstallDisplayIcon={app}\Rasam.exe
 CloseApplications=yes
 RestartApplications=no

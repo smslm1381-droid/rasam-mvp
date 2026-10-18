@@ -118,7 +118,7 @@ function showAnswer(answer) {
 $('ask-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   $('ask-button').disabled = true;
-  $('ask-button').textContent = 'در حال بررسی داده‌ها…';
+  $('ask-button').querySelector('[data-ask-label]').textContent = 'در حال بررسی داده‌ها…';
   notice('');
   try {
     const response = await request('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: $('question').value }) });
@@ -128,7 +128,7 @@ $('ask-form').addEventListener('submit', async (event) => {
     notice(error instanceof TypeError ? 'ارتباط با برنامه قطع شد؛ رصام را دوباره باز کنید.' : error.message, true);
   } finally {
     $('ask-button').disabled = false;
-    $('ask-button').textContent = 'پرسیدن سؤال ←';
+    $('ask-button').querySelector('[data-ask-label]').textContent = 'پرسیدن سؤال';
   }
 });
 

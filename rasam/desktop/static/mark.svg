@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>رصام — تحلیل داده</title>
+  <path d="M16 3H48L61 16V48L48 61H16L3 48V16Z" fill="#173d36"/>
+  <path d="M17 10H36M10 47L17 54H47L54 47" fill="none" stroke="#73c9a0" stroke-width="2"/>
+  <path d="M16 37H23V47H16ZM28 29H35V47H28ZM40 21H47V47H40Z" fill="#f5f4eb"/>
+  <path d="M17 29L29 21H38L46 13" fill="none" stroke="#73c9a0" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M39 13H46V20" fill="none" stroke="#73c9a0" stroke-width="3"/>
+</svg>

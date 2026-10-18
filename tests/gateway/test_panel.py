@@ -156,7 +156,8 @@ def test_cookie_does_not_allow_modifying_server_side_identity(panel):
 
 def test_static_assets_use_python_response_bytes_and_login_never_submits_password_in_url(panel):
     client, env = panel
-    for path in ["/admin.js", "/style.css"]:
+    for path in ["/admin.js", "/style.css", "/brand.css", "/mark.svg", "/app-icon.png", "/icons/quota.svg"]:
         assert client.get(path).status_code == 200
     assert 'method="post" action="/api/login"' in client.get("/").text
     assert client.get("/.dev.vars").status_code == 404
+    assert client.get("/icons/panel.html").status_code == 404

@@ -13,7 +13,10 @@ export function licenseActions(license) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "secondary" + (action === "revoke" ? " danger" : "");
-    button.textContent = names[action];
+    const symbol = document.createElement("span");
+    symbol.className = "rasam-icon icon-" + (action === "extend" ? "renew" : action);
+    symbol.setAttribute("aria-hidden", "true");
+    button.append(symbol, document.createTextNode(names[action]));
     button.setAttribute("aria-label", names[action] + " لایسنس " + license.customer);
     button.disabled = action === "revoke" && license.status === "revoked";
     button.addEventListener("click", () => openChange(license, action));
