@@ -22,7 +22,8 @@ class D1Statement:
     def bind(self, *params):
         return D1Statement(self.url, self.token, self.sql, params)
     async def request(self, method):
-        async with httpx.AsyncClient(timeout=20) as client:
+        # شبیه‌ساز روی loopback است؛ پراکسی سیستم مک نباید ترافیک محلی آزمون را بگیرد.
+        async with httpx.AsyncClient(timeout=20, trust_env=False) as client:
             response = await client.post(self.url, headers={"Authorization": self.token},
                 json={"sql": self.sql, "params": self.params, "method": method})
             response.raise_for_status()
@@ -41,7 +42,7 @@ class D1:
     def prepare(self, sql):
         return D1Statement(self.url, self.token, sql)
     async def batch(self, statements):
-        async with httpx.AsyncClient(timeout=20) as client:
+        async with httpx.AsyncClient(timeout=20, trust_env=False) as client:
             response = await client.post(self.url, headers={"Authorization": self.token},
                 json={"method": "batch", "statements": [{"sql": item.sql, "params": item.params} for item in statements]})
             response.raise_for_status()
