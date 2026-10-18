@@ -24,7 +24,7 @@ from rasam.databases.prompt_parts import (
 # می‌سازد که گارد ردش می‌کند — بدون اینکه بفهمد چرا (تصمیم ۴۳). قاعده‌ی ۲ مخصوص مونگوست؛
 # پنج قاعده‌ی دیگر مشترک‌اند (`prompt_parts.py`).
 SECURITY_RULES = security_rules(
-    "Produce exactly ONE read-only aggregation pipeline as a JSON array. Never use "
+    "For a data request, produce exactly ONE read-only aggregation pipeline as a JSON array. Never use "
     f"{', '.join(sorted(guard.FORBIDDEN))}. Only these stages are allowed: "
     f"{', '.join(sorted(guard.ALLOWED_STAGES))}."
 )

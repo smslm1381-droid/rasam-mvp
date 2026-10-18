@@ -21,7 +21,7 @@ from rasam.databases.prompt_parts import (
     CHART_REQUEST, FAILURE_TEMPLATE, MAX_ERROR_CHARS, security_rules, context_text)
 
 SECURITY_RULES = security_rules(
-    "Produce exactly ONE read-only SQL statement: a single SELECT on a single table, "
+    "For a data request, produce exactly ONE read-only SQL statement: a single SELECT on a single table, "
     "with no semicolon. Never use JOIN, UNION, subqueries, WITH, window functions, "
     "INTO, FOR UPDATE, @variables, optimizer hints or comments. Never call "
     f"{', '.join(guard.FORBIDDEN_FUNCTIONS)}. "

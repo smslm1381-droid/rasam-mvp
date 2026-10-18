@@ -341,3 +341,28 @@ def test_the_guard_still_runs_for_a_customer_with_no_optional_capabilities(wired
     scripted(monkeypatch, json.dumps(STILL_BAD))
     assert run_with(monkeypatch).error is not None
     assert wired.ran == []
+
+
+def test_greeting_never_calls_the_model_or_reads_the_database(monkeypatch):
+    def unexpected(*args, **kwargs):
+        pytest.fail("a greeting must not contact the model or database")
+    monkeypatch.setattr(graph.llm, "ask", unexpected)
+    monkeypatch.setattr(graph.registry, "get_agent", unexpected)
+    result = graph.answer("سلام!")
+    assert result.message.startswith("سلام")
+    assert result.error is None and result.rows == []
+    assert result.source is None and result.query is None
+    assert result.chart is None and result.summary is None
+
+
+def test_a_greeting_after_a_data_answer_has_no_previous_rows(wired):
+    assert graph.answer("میانگین دما؟").rows
+    previous_calls = len(wired.ran)
+    result = graph.answer("سلام")
+    assert result.message and not result.rows and result.query is None
+    assert len(wired.ran) == previous_calls
+
+
+def test_a_greeting_with_a_real_data_question_still_executes(wired):
+    result = graph.answer("سلام، میانگین دما چقدر است؟")
+    assert result.rows and wired.ran

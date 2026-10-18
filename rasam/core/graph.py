@@ -18,7 +18,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from rasam import config
-from rasam.core import charting, knowledge, llm, prompts
+from rasam.core import charting, conversation, knowledge, llm, prompts
 from rasam.databases import registry
 from rasam.core.answer import Answer
 from rasam.databases.base import Result
@@ -65,7 +65,10 @@ def generate(state: State) -> State:
 
 
 def prepare(state: State) -> State:
-    """پیش از تماس با مدل، خواست صریح نمودار را ثبت می‌کند."""
+    """پیام گفت‌وگویی بدون مدل/دیتابیس پاسخ می‌گیرد؛ بقیه به مسیر کوئری می‌روند."""
+    message = conversation.reply(state["question"])
+    if message:
+        return {"message": message}
     return {"want_chart": (
         "chart" in config.settings.customer.capabilities
         and charting.wants_chart(state["question"]))}
@@ -233,7 +236,7 @@ def build_graph(capabilities: set[str] | frozenset[str]):
         return _route(state, after_rows, on_failure)
 
     graph.add_edge(START, "prepare")
-    graph.add_edge("prepare", "generate")
+    graph.add_conditional_edges("prepare", _next_after, {"continue": "generate", END: END})
     graph.add_conditional_edges("generate", _next_after, {"continue": "validate", END: END})
     graph.add_conditional_edges("validate", lambda state: _route(state, "execute", on_failure))
     graph.add_conditional_edges("execute", after_execute)
