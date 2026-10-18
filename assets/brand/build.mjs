@@ -37,6 +37,21 @@ function windowsIcon() {
   return Buffer.concat([header, ...images]);
 }
 
+function macIcon() {
+  const formats = { icp4: 16, icp5: 32, icp6: 64, ic07: 128, ic08: 256, ic09: 512, ic10: 1024 };
+  const chunks = Object.entries(formats).map(([type, size]) => {
+    const image = raster(size);
+    const header = Buffer.alloc(8);
+    header.write(type, 0, "ascii");
+    header.writeUInt32BE(image.length + 8, 4);
+    return Buffer.concat([header, image]);
+  });
+  const header = Buffer.alloc(8);
+  header.write("icns", 0, "ascii");
+  header.writeUInt32BE(8 + chunks.reduce((sum, chunk) => sum + chunk.length, 0), 4);
+  return Buffer.concat([header, ...chunks]);
+}
+
 async function distribute(destination) {
   await mkdir(join(destination, "icons"), { recursive: true });
   await copyFile(join(home, "mark.svg"), join(destination, "mark.svg"));
@@ -51,6 +66,7 @@ async function distribute(destination) {
 }
 
 await writeFile(join(home, "rasam.ico"), windowsIcon());
+await writeFile(join(home, "rasam.icns"), macIcon());
 await writeFile(join(home, "app-icon.png"), raster(512));
 for (const directory of ["website/public", "admin_panel/public", "rasam/desktop/static"]) {
   await distribute(join(root, directory));

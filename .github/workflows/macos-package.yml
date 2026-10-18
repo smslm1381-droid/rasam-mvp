@@ -1,0 +1,57 @@
+name: macOS trial package
+on:
+  workflow_dispatch:
+    inputs:
+      gateway_url:
+        description: Public HTTPS URL of the deployed Rasam license Worker
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            architecture: arm64
+          - runner: macos-15-intel
+            architecture: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      RASAM_CUSTOMER: demo
+      RASAM_MONGO_URI: mongodb://127.0.0.1:27017/solar_telemetry
+      RASAM_LLM_API_KEY: build-test-placeholder
+      RASAM_LLM_BASE_URL: https://example.invalid/v1
+      RASAM_LLM_MODEL: build-test-model
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: |
+          python -m pip install --only-binary=:all: -r requirements.txt -r packaging/macos/requirements.txt
+      - name: Check native Python architecture
+        env:
+          EXPECTED_ARCH: ${{ matrix.architecture }}
+        run: python -c 'import platform,os; assert platform.machine() == os.environ["EXPECTED_ARCH"]'
+      - run: python -m pytest tests/desktop tests/packaging tests/test_vault.py -q
+      - name: Build ad-hoc signed trial bundle and disk image
+        env:
+          RASAM_BUILD_GATEWAY: ${{ inputs.gateway_url }}
+          BUILD_ARCH: ${{ matrix.architecture }}
+        run: python packaging/macos/build.py --gateway-url "$RASAM_BUILD_GATEWAY" --output "exports/macos-$BUILD_ARCH"
+      - name: Test the packaged executable
+        env:
+          BUILD_ARCH: ${{ matrix.architecture }}
+        run: RASAM_TEST_DESKTOP_EXECUTABLE="$PWD/exports/macos-$BUILD_ARCH/dist/Rasam.app/Contents/MacOS/Rasam" python -m pytest tests/desktop/test_lifecycle.py -q
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Rasam-macOS-${{ matrix.architecture }}-trial
+          if-no-files-found: error
+          path: |
+            exports/macos-${{ matrix.architecture }}/*.dmg
+            exports/macos-${{ matrix.architecture }}/*.sha256
+            exports/macos-${{ matrix.architecture }}/build-report.json

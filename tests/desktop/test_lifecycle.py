@@ -48,7 +48,8 @@ def wait_for_session(process, folder):
 
 def test_second_launch_reuses_instance_and_authenticated_exit_stops_process(tmp_path):
     env = {**os.environ, "RASAM_HOME": str(tmp_path), "RASAM_DESKTOP": "1"}
-    command = [sys.executable, str(ROOT / "rasam_desktop.py"), "--no-browser"]
+    binary = os.environ.get("RASAM_TEST_DESKTOP_EXECUTABLE")
+    command = [binary, "--no-browser"] if binary else [sys.executable, str(ROOT / "rasam_desktop.py"), "--no-browser"]
     process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
         base, headers = wait_for_session(process, tmp_path)

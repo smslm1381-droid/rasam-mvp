@@ -100,3 +100,11 @@ def test_desktop_default_is_under_appdata(monkeypatch, tmp_path):
     monkeypatch.delenv("RASAM_HOME", raising=False)
     monkeypatch.setenv("APPDATA", str(tmp_path))
     assert config._home_dir() == tmp_path / "Rasam"
+
+
+def test_macos_data_is_outside_the_application_bundle(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "DESKTOP_MODE", True)
+    monkeypatch.setattr(config.sys, "platform", "darwin")
+    monkeypatch.setattr(config.Path, "home", lambda: tmp_path)
+    monkeypatch.delenv("RASAM_HOME", raising=False)
+    assert config._home_dir() == tmp_path / "Library/Application Support/Rasam"
