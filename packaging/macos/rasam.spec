@@ -26,4 +26,5 @@ app = BUNDLE(bundle, name="Rasam.app", icon=str(root / "assets/brand/rasam.icns"
              info_plist={"CFBundleName": "Rasam", "CFBundleDisplayName": "رصام",
                          "CFBundleShortVersionString": os.environ["RASAM_BUILD_VERSION"],
                          "CFBundleVersion": os.environ["RASAM_BUILD_VERSION"],
+                         "NSAppleEventsUsageDescription": "برای نمایش تب باز رصام به‌جای ساختن تب تکراری، اجازهٔ دسترسی به مرورگر لازم است.",
                          "NSHighResolutionCapable": True})

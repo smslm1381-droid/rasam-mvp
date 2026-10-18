@@ -5,13 +5,13 @@ from __future__ import annotations
 import argparse
 import socket
 import sys
-import webbrowser
 
 import uvicorn
 
 from rasam import config
 from rasam.desktop.app import create_app
 from rasam.desktop.instance import DesktopInstance
+from rasam.desktop.browser import open_page
 from rasam.errors import UserFacingError
 
 
@@ -23,7 +23,7 @@ def serve(open_browser: bool = True) -> int:
             if not url:
                 raise OSError("starting instance unavailable")
             if open_browser:
-                webbrowser.open(url)
+                open_page(url)
             return 0
         return run_server(instance, open_browser)
     finally:
@@ -45,7 +45,7 @@ def run_server(instance: DesktopInstance, open_browser: bool) -> int:
         app.state.shutdown = lambda: setattr(server, "should_exit", True)
         url = instance.publish(port, app.state.token)
         if open_browser:
-            webbrowser.open(url)
+            open_page(url)
         server.run(sockets=[sock])
     return 0
 

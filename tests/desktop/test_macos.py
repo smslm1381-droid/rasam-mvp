@@ -22,7 +22,7 @@ def delegate(tmp_path, monkeypatch):
 
 def test_dock_reopen_uses_the_existing_validated_session(delegate, tmp_path, monkeypatch):
     opened = []
-    monkeypatch.setattr(macos.webbrowser, "open", lambda url: opened.append(url))
+    monkeypatch.setattr(macos, "open_page", lambda url: opened.append(url))
     instance = DesktopInstance(tmp_path)
     assert instance.acquire()
     try:

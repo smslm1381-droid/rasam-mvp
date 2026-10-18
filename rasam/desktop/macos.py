@@ -1,7 +1,6 @@
 """مک کلیک دوباره روی Dock را به فرایند موجود می‌فرستد؛ سرور دوم اجرا نمی‌شود."""
 
 import threading
-import webbrowser
 
 import AppKit
 import httpx
@@ -10,6 +9,7 @@ from PyObjCTools import AppHelper
 
 from rasam import config
 from rasam.desktop.instance import DesktopInstance
+from rasam.desktop.browser import open_page
 
 
 class ApplicationDelegate(AppKit.NSObject):
@@ -29,7 +29,7 @@ class ApplicationDelegate(AppKit.NSObject):
     def applicationShouldHandleReopen_hasVisibleWindows_(self, application, visible):
         url = DesktopInstance(config.DATA_HOME).read_url()
         if url:
-            webbrowser.open(url)
+            open_page(url)
         return False
 
     def applicationShouldTerminate_(self, application):
