@@ -26,6 +26,13 @@ gateway/.dev.vars
 gateway/.env
 gateway/python_modules/
 gateway/.worker/
+admin_panel/.venv/
+admin_panel/.venv-workers/
+admin_panel/node_modules/
+admin_panel/.worker/
+admin_panel/python_modules/
+admin_panel/.dev.vars
+admin_panel/public/fonts/
 .wrangler/
 
 # ویرایشگر و سیستم‌عامل

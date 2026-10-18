@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ورود مدیر | رصام</title>
+  <link rel="preload" href="/fonts/Vazirmatn-33.003.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/admin.js" defer></script>
+</head>
+<body class="login-body">
+  <main class="login-card">
+    <div class="brand">رصام<span>پنل مدیریت محصول</span></div>
+    <h1>ورود به مدیریت</h1>
+    <p class="muted">این بخش مخصوص مدیر رصام است. کد لایسنس مشتری برای ورود به پنل کاربرد ندارد.</p>
+    <form id="login-form" method="post" action="/api/login">
+      <label for="username">نام کاربری</label>
+      <input id="username" name="username" type="email" dir="ltr" autocomplete="username" maxlength="254" required>
+      <label for="password">رمز عبور</label>
+      <input id="password" name="password" type="password" dir="ltr" autocomplete="current-password" maxlength="256" required>
+      <button type="submit">ورود به پنل</button>
+    </form>
+    <noscript><p>برای ورود امن، JavaScript باید فعال باشد.</p></noscript>
+    <p id="message" role="status" aria-live="polite"></p>
+    <p class="small muted">پس از پایان کار از حساب خارج شوید؛ نشست مدیریت حداکثر ۸ ساعت اعتبار دارد.</p>
+  </main>
+</body>
+</html>

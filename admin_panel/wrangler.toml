@@ -1,0 +1,27 @@
+name = "rasam-admin"
+main = ".worker/worker.py"
+compatibility_date = "2026-10-18"
+compatibility_flags = ["python_workers"]
+workers_dev = true
+preview_urls = false
+
+[vars]
+ADMIN_ORIGIN = "https://rasam-admin.nova-dd625a.workers.dev"
+
+[build]
+command = "python build.py"
+watch_dir = ["app.py", "auth.py", "store.py", "worker.py", "build.py", "../gateway/licenses.py"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rasam-licenses"
+database_id = "6045705e-9aa3-4c50-868c-2cf87b4ffd7f"
+migrations_dir = "../gateway/migrations"
+
+[observability]
+enabled = false

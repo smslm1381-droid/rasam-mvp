@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مدیریت لایسنس‌ها | رصام</title>
+  <link rel="preload" href="/fonts/Vazirmatn-33.003.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/admin.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/panel">رصام<span>مدیریت محصول</span></a><div class="account"><span id="admin-name"></span><button id="logout" class="secondary" type="button">خروج از حساب</button></div></header>
+  <main class="workspace" id="panel">
+    <div class="heading"><div><p class="eyebrow">مدیریت دسترسی مشتریان</p><h1>لایسنس‌های رصام</h1><p class="muted">اعتبار، سهمیه و مصرف مشتریان را از همین‌جا بررسی کنید.</p></div></div>
+    <form id="search-form" class="filters">
+      <div><label for="search">نام مشتری</label><input id="search" type="search" placeholder="جست‌وجو در نام مشتری…" maxlength="200"></div>
+      <div><label for="status">وضعیت لایسنس</label><select id="status"><option value="all">همهٔ وضعیت‌ها</option><option value="active">فعال</option><option value="expired">منقضی</option><option value="revoked">باطل‌شده</option></select></div>
+      <button type="submit">جست‌وجو</button>
+    </form>
+    <p id="message" role="status" aria-live="polite"></p>
+    <section class="table-card" aria-labelledby="table-title">
+      <div class="table-heading"><h2 id="table-title">فهرست لایسنس‌ها</h2><span id="total" class="muted"></span></div>
+      <div class="table-scroll"><table><thead><tr><th scope="col">مشتری</th><th scope="col">پلن</th><th scope="col">وضعیت</th><th scope="col">پایان اعتبار</th><th scope="col">سهمیهٔ روزانه</th><th scope="col">مصرف امروز</th><th scope="col">شناسه</th></tr></thead><tbody id="licenses"></tbody></table></div>
+      <p id="empty" class="empty" hidden>لایسنسی با این جست‌وجو پیدا نشد.</p>
+      <div class="pagination"><button id="previous" class="secondary" type="button">صفحهٔ قبل</button><span id="page-label"></span><button id="next" class="secondary" type="button">صفحهٔ بعد</button></div>
+    </section>
+    <p class="small muted">مصرف روزانه بر اساس روز UTC و تعداد درخواست مدل است؛ هر سؤال می‌تواند چند درخواست مصرف کند. رمز اتصال مشتری و کلید سرویس مدل در این پنل نمایش داده نمی‌شوند.</p>
+  </main>
+</body>
+</html>

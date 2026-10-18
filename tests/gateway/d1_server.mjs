@@ -15,7 +15,8 @@ const server = http.createServer(async (req, res) => {
     for await (const chunk of req) chunks.push(chunk);
     const input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
     const stmt = db.prepare(input.sql).bind(...input.params);
-    const value = input.method === 'first' ? await stmt.first() : await stmt.all();
+    const value = input.method === 'first' ? await stmt.first()
+      : input.method === 'run' ? await stmt.run() : await stmt.all();
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(value));
   } catch {
