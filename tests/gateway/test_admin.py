@@ -31,3 +31,11 @@ def test_extend_and_revoke_accept_only_public_hash_identifiers():
         admin.change("'; DROP TABLE licenses")
     with pytest.raises(ValueError):
         admin.change(identifier, days=-1)
+
+
+def test_quota_changes_preserve_usage_and_validate_integer_limits():
+    sql = admin.quota("a" * 64, 40)
+    assert "daily_limit = 40" in sql and "used =" not in sql
+    for value in [True, 0, -1, 100001, "20"]:
+        with pytest.raises(ValueError):
+            admin.quota("a" * 64, value)

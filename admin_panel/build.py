@@ -4,16 +4,17 @@ from pathlib import Path
 import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ("__init__.py", "app.py", "auth.py", "store.py")
+FILES = ("__init__.py", "app.py", "auth.py", "store.py", "mutations.py", "operations.py", "http.py")
 
 
 def build():
     target = ROOT / "admin_panel/.worker"
-    expected = {"worker.py", "gateway/__init__.py", "gateway/licenses.py"}
+    shared = ["gateway/__init__.py", "gateway/licenses.py", "gateway/license_commands.py"]
+    expected = {"worker.py", *shared}
     expected.update("admin_panel/" + name for name in FILES)
     if target.exists() and any(path.is_file() and path.relative_to(target).as_posix() not in expected for path in target.rglob("*")):
         raise ValueError("فایل ناشناخته در بستهٔ پنل وجود دارد؛ ساخت متوقف شد.")
-    for name in ["worker.py", *("admin_panel/" + name for name in FILES), "gateway/__init__.py", "gateway/licenses.py"]:
+    for name in ["worker.py", *("admin_panel/" + name for name in FILES), *shared]:
         source = ROOT / ("admin_panel/worker.py" if name == "worker.py" else name)
         destination = target / name
         destination.parent.mkdir(parents=True, exist_ok=True)

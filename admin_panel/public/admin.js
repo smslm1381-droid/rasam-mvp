@@ -1,3 +1,5 @@
+import { licenseActions, loadEvents, setupActions } from "./actions.js";
+
 let csrf = "";
 let page = 1;
 const number = new Intl.NumberFormat("fa-IR");
@@ -17,8 +19,14 @@ async function api(path, body) {
     options.headers = { "Content-Type": "application/json", "X-CSRF-Token": csrf };
     options.body = JSON.stringify(body);
   }
-  const response = await fetch(path, options);
-  const value = await response.json();
+  let response;
+  let value;
+  try {
+    response = await fetch(path, options);
+    value = await response.json();
+  } catch {
+    throw new Error("ارتباط با سرور برقرار نشد؛ اتصال اینترنت را بررسی کنید.");
+  }
   if (!response.ok) {
     if (response.status === 401 && path !== "/api/login") location.replace("/");
     throw new Error(value.message || "درخواست انجام نشد؛ دوباره تلاش کنید.");
@@ -59,8 +67,7 @@ function renderLicense(license) {
   cell(row, date.format(new Date(license.expires_at * 1000)));
   cell(row, number.format(license.daily_limit));
   cell(row, number.format(license.used_today));
-  const identifier = cell(row, license.identifier.slice(0, 10) + "…", "identifier");
-  identifier.title = license.identifier;
+  row.append(licenseActions(license));
   return row;
 }
 
@@ -88,15 +95,37 @@ async function startPanel() {
     csrf = current.csrf;
     document.getElementById("admin-name").textContent = current.username;
     document.getElementById("logout").addEventListener("click", async () => {
-      try { await api("/api/logout", {}); location.replace("/"); }
-      catch (error) { message(error.message, true); }
+      try {
+        await api("/api/logout", {});
+        location.replace("/");
+      } catch (error) {
+        message(error.message, true);
+      }
     });
     document.getElementById("search-form").addEventListener("submit", event => {
-      event.preventDefault(); page = 1; loadLicenses();
+      event.preventDefault();
+      page = 1;
+      loadLicenses();
     });
-    document.getElementById("previous").addEventListener("click", () => { page--; loadLicenses(); });
-    document.getElementById("next").addEventListener("click", () => { page++; loadLicenses(); });
-    await loadLicenses();
+    document.getElementById("previous").addEventListener("click", () => {
+      page--;
+      loadLicenses();
+    });
+    document.getElementById("next").addEventListener("click", () => {
+      page++;
+      loadLicenses();
+    });
+    setupActions(api, refresh);
+    await refresh();
+  } catch (error) {
+    message(error.message, true);
+  }
+}
+
+async function refresh() {
+  await loadLicenses();
+  try {
+    await loadEvents(api);
   } catch (error) {
     message(error.message, true);
   }

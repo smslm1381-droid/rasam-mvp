@@ -1,30 +1,14 @@
 """درگاه پنل خصوصی؛ داده و عملیات مدیریتی همیشه سمت سرور مجوزسنجی می‌شوند."""
 
-import json
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
 from admin_panel import auth, store
+from admin_panel.http import error, read_body
+from admin_panel.operations import router
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-
-
-def error(message, status=400):
-    return JSONResponse({"ok": False, "message": message}, status_code=status)
-
-
-async def read_body(request):
-    if request.headers.get("Content-Type", "").split(";")[0] != "application/json":
-        raise ValueError("درخواست باید JSON باشد.")
-    raw = b""
-    async for chunk in request.stream():
-        raw += chunk
-        if len(raw) > 4096:
-            raise ValueError("متن درخواست بیش از حد بلند است.")
-    body = json.loads(raw)
-    if not isinstance(body, dict):
-        raise ValueError("درخواست معتبر نیست.")
-    return body
+app.include_router(router)
 
 
 @app.middleware("http")
@@ -118,7 +102,7 @@ async def licenses(request: Request):
 @app.get("/{asset:path}")
 async def public_asset(asset: str, request: Request):
     # همهٔ مسیرها اول به برنامه می‌رسند تا aliasهای فایل HTML از مجوزسنجی عبور نکنند.
-    allowed = {"index.html", "admin.js", "style.css", "fonts/Vazirmatn-33.003.woff2",
+    allowed = {"index.html", "admin.js", "actions.js", "style.css", "fonts/Vazirmatn-33.003.woff2",
                "fonts/OFL.txt", "fonts/README.txt"}
     if asset not in allowed:
         return error("این صفحه پیدا نشد.", 404)

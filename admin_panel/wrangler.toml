@@ -10,7 +10,7 @@ ADMIN_ORIGIN = "https://rasam-admin.nova-dd625a.workers.dev"
 
 [build]
 command = "python build.py"
-watch_dir = ["app.py", "auth.py", "store.py", "worker.py", "build.py", "../gateway/licenses.py"]
+watch_dir = ["app.py", "auth.py", "store.py", "mutations.py", "operations.py", "http.py", "worker.py", "build.py", "../gateway/licenses.py", "../gateway/license_commands.py"]
 
 [assets]
 directory = "./public"

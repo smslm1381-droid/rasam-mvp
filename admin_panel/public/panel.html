@@ -6,12 +6,12 @@
   <title>مدیریت لایسنس‌ها | رصام</title>
   <link rel="preload" href="/fonts/Vazirmatn-33.003.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
-  <script src="/admin.js" defer></script>
+  <script src="/admin.js" type="module"></script>
 </head>
 <body>
   <header class="topbar"><a class="brand" href="/panel">رصام<span>مدیریت محصول</span></a><div class="account"><span id="admin-name"></span><button id="logout" class="secondary" type="button">خروج از حساب</button></div></header>
   <main class="workspace" id="panel">
-    <div class="heading"><div><p class="eyebrow">مدیریت دسترسی مشتریان</p><h1>لایسنس‌های رصام</h1><p class="muted">اعتبار، سهمیه و مصرف مشتریان را از همین‌جا بررسی کنید.</p></div></div>
+    <div class="heading"><div><p class="eyebrow">مدیریت دسترسی مشتریان</p><h1>لایسنس‌های رصام</h1><p class="muted">اعتبار، سهمیه و مصرف مشتریان را از همین‌جا بررسی کنید.</p></div><button id="issue-open" type="button">+ صدور لایسنس</button></div>
     <form id="search-form" class="filters">
       <div><label for="search">نام مشتری</label><input id="search" type="search" placeholder="جست‌وجو در نام مشتری…" maxlength="200"></div>
       <div><label for="status">وضعیت لایسنس</label><select id="status"><option value="all">همهٔ وضعیت‌ها</option><option value="active">فعال</option><option value="expired">منقضی</option><option value="revoked">باطل‌شده</option></select></div>
@@ -20,11 +20,36 @@
     <p id="message" role="status" aria-live="polite"></p>
     <section class="table-card" aria-labelledby="table-title">
       <div class="table-heading"><h2 id="table-title">فهرست لایسنس‌ها</h2><span id="total" class="muted"></span></div>
-      <div class="table-scroll"><table><thead><tr><th scope="col">مشتری</th><th scope="col">پلن</th><th scope="col">وضعیت</th><th scope="col">پایان اعتبار</th><th scope="col">سهمیهٔ روزانه</th><th scope="col">مصرف امروز</th><th scope="col">شناسه</th></tr></thead><tbody id="licenses"></tbody></table></div>
+      <div class="table-scroll"><table><thead><tr><th scope="col">مشتری</th><th scope="col">پلن</th><th scope="col">وضعیت</th><th scope="col">پایان اعتبار</th><th scope="col">سهمیهٔ روزانه</th><th scope="col">مصرف امروز</th><th scope="col">عملیات</th></tr></thead><tbody id="licenses"></tbody></table></div>
       <p id="empty" class="empty" hidden>لایسنسی با این جست‌وجو پیدا نشد.</p>
       <div class="pagination"><button id="previous" class="secondary" type="button">صفحهٔ قبل</button><span id="page-label"></span><button id="next" class="secondary" type="button">صفحهٔ بعد</button></div>
     </section>
     <p class="small muted">مصرف روزانه بر اساس روز UTC و تعداد درخواست مدل است؛ هر سؤال می‌تواند چند درخواست مصرف کند. رمز اتصال مشتری و کلید سرویس مدل در این پنل نمایش داده نمی‌شوند.</p>
+    <section class="table-card" aria-labelledby="events-title"><div class="table-heading"><h2 id="events-title">فعالیت‌های اخیر مدیر</h2><span class="muted">۲۰ عملیات آخر پنل</span></div><div class="table-scroll"><table><thead><tr><th scope="col">زمان</th><th scope="col">عملیات</th><th scope="col">مشتری</th><th scope="col">مدیر</th></tr></thead><tbody id="events"></tbody></table></div><p id="events-empty" class="empty" hidden>هنوز عملیاتی از پنل ثبت نشده است.</p></section>
   </main>
+  <dialog id="issue-dialog" aria-labelledby="issue-title">
+    <h2 id="issue-title">صدور لایسنس تازه</h2><p class="muted small">کد لایسنس فقط پس از همین صدور نمایش داده می‌شود؛ آن را خصوصی به مشتری تحویل دهید.</p>
+    <form id="issue-form" method="post">
+      <label for="customer">نام مشتری</label><input id="customer" maxlength="200" required autocomplete="off">
+      <label for="plan">مدت اعتبار</label><select id="plan"><option value="monthly">ماهانه · ۳۰ روز</option><option value="yearly">سالانه · ۳۶۵ روز</option></select>
+      <label for="daily-limit">سهمیهٔ درخواست مدل در روز</label><input id="daily-limit" type="number" min="1" max="100000" value="20" required>
+      <p id="issue-message" class="form-message" role="status"></p>
+      <div class="dialog-actions"><button type="submit">صدور لایسنس</button><button type="button" class="secondary" data-close="issue-dialog">انصراف</button></div>
+    </form>
+  </dialog>
+  <dialog id="change-dialog" aria-labelledby="change-title">
+    <h2 id="change-title"></h2><p id="change-customer" class="muted"></p><p id="change-description" class="small"></p>
+    <form id="change-form" method="post">
+      <div id="change-value-group"><label id="change-value-label" for="change-value"></label><input id="change-value" type="number" min="1" required></div>
+      <label id="revoke-confirm" hidden><input id="revoke-check" type="checkbox"> غیرفعال‌شدن لایسنس این مشتری را تأیید می‌کنم.</label>
+      <p id="change-message" class="form-message" role="status"></p>
+      <div class="dialog-actions"><button id="change-submit" type="submit">ثبت تغییر</button><button type="button" class="secondary" data-close="change-dialog">انصراف</button></div>
+    </form>
+  </dialog>
+  <dialog id="key-dialog" aria-labelledby="key-title">
+    <h2 id="key-title">لایسنس صادر شد</h2><p id="key-customer" class="muted"></p><p>این کد فقط همین بار در دسترس است. پیش از بستن، آن را در محل امن نگه دارید.</p>
+    <label for="issued-key">کد خصوصی لایسنس</label><input id="issued-key" type="password" dir="ltr" readonly autocomplete="off">
+    <p id="key-message" class="form-message" role="status"></p><div class="dialog-actions"><button id="key-copy" type="button">کپی کد</button><button id="key-toggle" class="secondary" type="button">نمایش کد</button><button class="secondary" type="button" data-close="key-dialog">بستن</button></div>
+  </dialog>
 </body>
 </html>

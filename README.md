@@ -233,6 +233,12 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/ask -OutFile result.cs
 پرسش‌های متداول آنلاین است. دانلود فایل نصبی با انتخاب صاحب پروژه فعلاً معوق است؛
 دکمه تا بارگذاری واقعی غیرفعال می‌ماند. [راهنمای انتشار سایت](website/README.md).
 
+[پنل مدیریت رصام](https://rasam-admin.nova-dd625a.workers.dev) برای صاحب محصول
+آماده است: مشاهده و جست‌وجوی مشتری، صدور، تمدید، ابطال، تغییر سهمیه و فعالیت‌های اخیر.
+نام کاربری و رمز فقط در فایل خصوصی محلی `exports/private/admin-login.txt` تحویل شده‌اند؛
+این فایل را عمومی نکنید. [راهنمای مدیر](admin_panel/README.md) و
+[گزارش بررسی پنل](docs/admin-panel-review.md).
+
 سرویس لایسنس مستقل روی Cloudflare مستقر است:
 `https://rasam-gateway.nova-dd625a.workers.dev`. کلید مدل فقط در secrets سرور می‌ماند؛
 رمز دیتابیس در Credential Manager و پروفایل/دانش در `%APPDATA%\Rasam` است.

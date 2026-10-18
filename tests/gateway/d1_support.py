@@ -40,6 +40,12 @@ class D1:
         self.url, self.token = url, token
     def prepare(self, sql):
         return D1Statement(self.url, self.token, sql)
+    async def batch(self, statements):
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(self.url, headers={"Authorization": self.token},
+                json={"method": "batch", "statements": [{"sql": item.sql, "params": item.params} for item in statements]})
+            response.raise_for_status()
+            return response.json()
 
 
 @pytest.fixture(scope="module")
@@ -68,5 +74,3 @@ def d1():
     finally:
         process.terminate()
         process.wait(timeout=20)
-
-
