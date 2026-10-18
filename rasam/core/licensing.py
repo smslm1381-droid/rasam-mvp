@@ -69,6 +69,7 @@ class LicenseManager:
     def __init__(self, secret_name="LICENSE_KEY"):
         self.enabled = config.DESKTOP_MODE
         self.secret_name = secret_name
+        self._key = ""
         self.info = failed("missing", "برای شروع، کد لایسنس خود را وارد کنید.")
         self.lock = threading.RLock()
 
@@ -81,10 +82,12 @@ class LicenseManager:
         with self.lock:
             if not self.enabled:
                 return self.public_status()
-            secret = vault.read_secret(self.secret_name)
+            # اجازهٔ یک‌بارهٔ Keychain را برای همان لایسنس در هر درخواست تکرار نمی‌کنیم.
+            secret = vault.Result(True, value=self._key) if self._key else vault.read_secret(self.secret_name)
             if not secret.ok:
                 self.info = failed("vault", secret.error)
             elif secret.value:
+                self._key = secret.value
                 self.info = fetch_status(desktop_service.gateway_url(), secret.value)
             else:
                 self.info = failed("missing", "برای شروع، کد لایسنس خود را وارد کنید.")
@@ -102,6 +105,7 @@ class LicenseManager:
             saved = vault.write_secret(self.secret_name, key)
             if not saved.ok:
                 return {"ok": False, "message": saved.error}
+            self._key = key
             self.info = info
             self.configure_runtime()
             return {"ok": True, **self.public_status()}
@@ -109,8 +113,7 @@ class LicenseManager:
     def configure_runtime(self):
         if not self.enabled or config.settings is None:
             return
-        secret = vault.read_secret(self.secret_name)
-        key = secret.value if secret.ok and secret.value else ""
+        key = self._key
         url = desktop_service.gateway_url()
         base_url = url + "/v1" if url else ""
         model = self.info.get("model", "")

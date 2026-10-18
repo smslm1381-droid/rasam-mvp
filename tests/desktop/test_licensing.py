@@ -111,6 +111,38 @@ def test_network_error_never_echoes_credentials_and_keeps_license(licensed, monk
     assert stored["TEST_LICENSE"] == KEY
 
 
+def test_refresh_and_runtime_read_saved_key_once_but_recheck_server(licensed, monkeypatch):
+    client, manager, stored, state = licensed
+    reads = []
+    def read(name):
+        reads.append(name)
+        return vault.Result(True, value=KEY)
+    monkeypatch.setattr(vault, "read_secret", read)
+    assert client.get("/license/status").json()["valid"]
+    manager.configure_runtime()
+    state.update(status=401, body={"error": {"code": "license_revoked"}})
+    assert client.get("/license/status").json()["code"] == "license_revoked"
+    assert reads == ["TEST_LICENSE"] and state["calls"] == 2
+
+
+def test_activation_uses_the_saved_key_without_reading_keychain_again(licensed, monkeypatch):
+    client, manager, stored, state = licensed
+    def read(name):
+        pytest.fail("activation must not request another Keychain permission")
+    monkeypatch.setattr(vault, "read_secret", read)
+    assert manager.activate(KEY)["ok"]
+    assert manager.refresh()["valid"]
+    assert config.settings.llm_api_key == KEY
+
+
+def test_failed_keychain_access_can_be_retried(licensed, monkeypatch):
+    client, manager, stored, state = licensed
+    monkeypatch.setattr(vault, "read_secret", lambda name: vault.Result(False, error="انبار امن در دسترس نیست"))
+    assert manager.refresh()["code"] == "vault"
+    monkeypatch.setattr(vault, "read_secret", lambda name: vault.Result(True, value=KEY))
+    assert manager.refresh()["valid"]
+
+
 def test_license_routes_are_token_protected_and_invalid_input_is_not_echoed(licensed):
     client, manager, stored, state = licensed
     assert client.get("/license/status", headers={"X-Rasam-Token": ""}).status_code == 401
