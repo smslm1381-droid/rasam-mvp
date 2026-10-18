@@ -25,8 +25,8 @@ from rasam.core.answer import Answer  # noqa: E402
 # سوالات طلایی مال هر مشتری است — جواب‌هایشان از داده‌ی همان مشتری آمده.
 QUESTIONS_FILE = config.settings.customer.directory / "golden_questions.yaml"
 
-# سهمیه‌ی رایگان سرویس مدل، درخواست‌های پشت‌سرهم را رد می‌کند. این فاصله
-# ارزان‌ترین راه دورزدنش است؛ با حساب پولی می‌شود صفرش کرد.
+# فاصله، فشار لحظه‌ای درخواست‌ها را کم می‌کند؛ محدودیت روزانه و محدودیت خود
+# ارائه‌دهنده مستقل‌اند و با این مکث برداشته نمی‌شوند.
 DEFAULT_PAUSE = 20.0
 
 DEFAULT_TOLERANCE = 0.01
@@ -99,22 +99,26 @@ def grade(expect: dict, answer: Answer) -> tuple[str, str]:
     return ("ok" if matched else "wrong"), note
 
 
-def run(questions: list[dict], pause: float) -> list[tuple[dict, str, str]]:
+def run(questions: list[dict], pause: float, answerer=None) -> list[tuple[dict, str, str]]:
     """هر سوال را می‌پرسد و نمره می‌دهد. خروجی: (سوال، وضعیت، توضیح) برای هرکدام."""
     marks = {"ok": "✅", "wrong": "❌", "skipped": "⚠️ "}
     results = []
+    answerer = answerer or graph.answer
 
     for index, item in enumerate(questions, start=1):
-        status, note = grade(item["expect"], graph.answer(item["question"]))
+        status, note = grade(item["expect"], answerer(item["question"]))
         results.append((item, status, note))
         print(f"  {marks[status]} {index:>2}. {item['question'][:46]:<48} {note}")
+        if status == "skipped":
+            print("  سنجه ناقص ماند؛ پس از رفع خطای سرویس دوباره اجرا کنید.")
+            break
         if index < len(questions):
             time.sleep(pause)
     return results
 
 
 def report(results: list[tuple[dict, str, str]]) -> int:
-    """درصد موفقیت و فهرست شکست‌خورده‌ها. خروجی: تعداد جواب‌های غلط."""
+    """اجرای ناقص هم ناموفق است؛ قطع سرویس نباید گزارش سبز بسازد."""
     correct = sum(1 for _, status, _ in results if status == "ok")
     wrong = [(item, note) for item, status, note in results if status == "wrong"]
     skipped = sum(1 for _, status, _ in results if status == "skipped")
@@ -135,17 +139,40 @@ def report(results: list[tuple[dict, str, str]]) -> int:
             print(f"    • {item['question']}\n      → {note}")
             if item.get("trap"):
                 print(f"      تله: {item['trap']}")
-    return len(wrong)
+    return len(wrong) + skipped
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="سنجش نرخ جواب درست روی سوالات طلایی")
+    parser.add_argument("--pause", type=float, default=DEFAULT_PAUSE,
+                        help="فاصلهٔ بین سؤال‌ها به ثانیه؛ سقف روزانه جداست")
+    parser.add_argument("--only", default="",
+                        help="فقط سوالاتی که این متن در آن‌ها هست")
+    transport = parser.add_mutually_exclusive_group()
+    transport.add_argument("--api-url", help="نشانی API؛ کلید از تنظیمات محیط خوانده می‌شود")
+    transport.add_argument("--desktop-home", type=Path, help="پوشهٔ دادهٔ نسخهٔ رومیزیِ باز")
+    return parser.parse_args()
+
+
+def select_answerer(args):
+    from scripts.evaluate_http import http_answerer, desktop_answerer
+    if args.desktop_home:
+        return desktop_answerer(args.desktop_home)
+    if args.api_url:
+        if not config.settings.api_key:
+            raise ValueError("برای سنجهٔ API مقدار RASAM_API_KEY لازم است.")
+        return http_answerer(args.api_url, {"X-API-Key": config.settings.api_key})
+    return graph.answer
 
 
 def main() -> int:
     console.use_utf8()
-    parser = argparse.ArgumentParser(description="سنجش نرخ جواب درست روی سوالات طلایی")
-    parser.add_argument("--pause", type=float, default=DEFAULT_PAUSE,
-                        help="فاصله‌ی بین سوال‌ها به ثانیه، برای دورزدن سهمیه‌ی سرویس")
-    parser.add_argument("--only", default="",
-                        help="فقط سوالاتی که این متن در آن‌ها هست")
-    args = parser.parse_args()
+    args = parse_args()
+    try:
+        answerer = select_answerer(args)
+    except ValueError as error:
+        print(error)
+        return 1
 
     questions = yaml.safe_load(console.read_text(QUESTIONS_FILE))
     if args.only:
@@ -155,7 +182,7 @@ def main() -> int:
         return 1
 
     print(f"سنجش {len(questions)} سوال، با {args.pause:g} ثانیه فاصله:\n")
-    return 0 if report(run(questions, args.pause)) == 0 else 1
+    return 0 if report(run(questions, args.pause, answerer)) == 0 else 1
 
 
 if __name__ == "__main__":
