@@ -33,6 +33,8 @@ async function openTeaching() {
     $('teaching-fields').replaceChildren();
     for (const field of result.fields) teachingRow(field);
     $('documentation').value = result.documentation;
+    $('required-documentation-text').textContent = result.required_documentation || '';
+    $('required-documentation').hidden = !result.required_documentation;
     $('teaching-notice').textContent = '';
   } catch (error) { $('teaching-notice').textContent = error.message; }
 }
@@ -45,6 +47,7 @@ async function saveTeaching(event) {
     const result = await (await request('/knowledge', { method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ customer: teachingCustomer, fields, documentation: $('documentation').value }) })).json();
+    if (result.ok) await openTeaching();
     $('teaching-notice').textContent = result.message;
   } catch (error) { $('teaching-notice').textContent = error.message; }
   finally { $('teaching-save').disabled = false; }

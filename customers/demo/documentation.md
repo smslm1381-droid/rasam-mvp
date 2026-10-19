@@ -76,6 +76,7 @@ seconds of each other. Always use `timestamp`.
 **`plant_id` and `zone_id` are both `1` everywhere** in this data. Grouping by
 them returns a single group and tells the user nothing.
 
+<!-- rasam:required -->
 ## Time meaning and readable answers
 
 `timestamp` is the canonical measurement time: Unix epoch **seconds in UTC**,
@@ -117,3 +118,4 @@ MongoDB: convert seconds to milliseconds before `$toDate`, then use
 
 Include the other fields needed by the question in the same projection; this
 example shows only time formatting. Use the same conversion on each range endpoint.
+<!-- /rasam:required -->

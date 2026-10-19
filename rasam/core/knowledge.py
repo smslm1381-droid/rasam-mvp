@@ -19,6 +19,7 @@ import yaml
 from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
 
 from rasam import config, console
+from rasam.core import documentation_context
 
 DOCUMENTATION_FILE = "documentation.md"
 EXAMPLES_FILE = "examples.yaml"
@@ -137,9 +138,13 @@ class KnowledgeStore:
         نمی‌شود. بازیابی وقتی وارد می‌شود که چاره‌ای نباشد — و آن‌وقت هم
         کم‌کردن دانش یک انتخاب آگاهانه است، نه اتفاقی که کسی متوجهش نشود.
         """
+        documentation_context.required(full["documentation"], budget)
         if sum(len(text) for text in full.values()) <= budget:
             return full
-        return self.retrieve(question)
+        selected = self.retrieve(question)
+        selected["documentation"] = documentation_context.preserve(
+            full["documentation"], selected["documentation"], budget)
+        return selected
 
     def retrieve(self, question: str, limit: int = 3) -> dict[str, str]:
         """مرتبط‌ترین قطعه از هر نوع دانش را به متن آماده‌ی پرامپت تبدیل می‌کند."""

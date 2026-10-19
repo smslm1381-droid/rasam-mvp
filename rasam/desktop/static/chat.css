@@ -119,3 +119,6 @@ footer:not(:has(#shutdown-message:not([hidden]))) { display: none; }
 
 #account-form input { margin-bottom: 15px; }
 #account-message { color: #a34237; }
+
+#required-documentation { padding: 18px; margin: 20px 0; border: 1px solid var(--chat-line); border-radius: 12px; background: white; }
+#required-documentation-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13px; line-height: 1.9; max-height: 340px; overflow-y: auto; }

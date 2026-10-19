@@ -21,6 +21,7 @@ from rasam import config
 from rasam.core import chat_context, charting, conversation, knowledge, llm, prompts
 from rasam.databases import registry
 from rasam.core.answer import Answer
+from rasam.errors import UserFacingError
 from rasam.databases.base import Result
 
 class State(TypedDict, total=False):
@@ -273,6 +274,8 @@ def answer(question: str, history: list[dict] | None = None) -> Answer:
 
     try:
         final: dict[str, Any] = _GRAPH.invoke({"question": question, "history": history or []})
+    except UserFacingError as error:
+        return Answer(question=question, error=str(error))
     except Exception as error:  # noqa: BLE001 — عمدی: آخرین سد قاعده‌ی ۷
         # گره‌ها خطاهای شناخته‌شده را خودشان به مقدار تبدیل می‌کنند. این سد
         # برای چیزی است که پیش‌بینی نکرده‌ایم؛ کاربر نباید stack trace ببیند.

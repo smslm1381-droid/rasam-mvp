@@ -6,7 +6,7 @@ from uuid import uuid4
 import yaml
 
 from rasam import config, console
-from rasam.core import knowledge
+from rasam.core import knowledge, documentation_context
 from rasam.databases import registry
 from rasam.errors import UserFacingError
 
@@ -35,7 +35,9 @@ def editor_state():
             fields.append({"name": name, "sources": sources,
                            "label": label if separator else "", "note": note if separator else text})
         return {"ok": True, "customer": config.settings.customer.name,
-                "fields": fields, "documentation": knowledge.documentation_text()}
+                "fields": fields, "documentation": knowledge.documentation_text(),
+                "required_documentation": documentation_context.required(
+                    knowledge.documentation_text(), config.settings.max_knowledge_chars)}
     except UserFacingError as error:
         return {"ok": False, "message": str(error)}
     except Exception:
@@ -71,6 +73,7 @@ def save(fields, documentation, customer_name):
         available = field_catalog()
         if len(documentation) > 100000:
             raise UserFacingError("متن مستندات بیش از اندازه بلند است؛ آن را کوتاه‌تر کنید.")
+        documentation_context.required(documentation, config.settings.max_knowledge_chars)
         notes = dict(knowledge.field_notes())
         names = [item["name"] for item in fields]
         if len(names) != len(set(names)) or not set(names) <= available.keys():

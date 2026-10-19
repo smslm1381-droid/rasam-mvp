@@ -118,3 +118,17 @@ def test_editable_context_is_bounded_and_cannot_close_its_wrapper(kind):
     assert schema.count("<SCHEMA_CONTEXT>") == schema.count("</SCHEMA_CONTEXT>") == 1
     assert domain.count("<DOMAIN_CONTEXT>") == domain.count("</DOMAIN_CONTEXT>") == 1
     assert "e" * (config.settings.max_knowledge_chars + 1) not in built
+
+
+def test_required_documentation_is_visible_in_editor_and_invalid_edits_are_not_saved(editor):
+    from rasam.core.documentation_context import OPEN, CLOSE
+    doc = f'{OPEN}\ncustom_clock is epoch seconds, timezone UTC\n{CLOSE}'
+    client = client_for(good_answer())
+    result = client.put('/knowledge', json={'customer': 'trial', 'fields': [], 'documentation': doc}).json()
+    assert result['ok'], result
+    state = client.get('/knowledge').json()
+    assert state['documentation'] == doc
+    assert state['required_documentation'] == 'custom_clock is epoch seconds, timezone UTC'
+    invalid = client.put('/knowledge', json={'customer': 'trial', 'fields': [], 'documentation': OPEN}).json()
+    assert not invalid['ok']
+    assert (editor / 'documentation.md').read_text() == doc

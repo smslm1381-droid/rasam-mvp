@@ -82,6 +82,7 @@ One `SELECT` on one table per question: no `JOIN`, `UNION`, subquery or `WITH`.
 So a question that seems to need two steps (for example "the maximum on the last
 day") must be answered by the closest single-table query, as the examples show.
 
+<!-- rasam:required -->
 ## Time meaning and readable answers
 
 `timestamp` is the canonical measurement time: Unix epoch **seconds in UTC**,
@@ -126,3 +127,4 @@ FROM inverter_data ORDER BY `timestamp` DESC LIMIT 1
 Include the other requested columns as needed. This example guarantees a UTC
 label, not a Tehran or Jalali conversion. Do not use a disallowed timezone
 function or change the database session to bypass the guard.
+<!-- /rasam:required -->
