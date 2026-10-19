@@ -81,3 +81,48 @@ them returns a single group and tells the user nothing.
 One `SELECT` on one table per question: no `JOIN`, `UNION`, subquery or `WITH`.
 So a question that seems to need two steps (for example "the maximum on the last
 day") must be answered by the closest single-table query, as the examples show.
+
+## Time meaning and readable answers
+
+`timestamp` is the canonical measurement time: Unix epoch **seconds in UTC**,
+not milliseconds. `ts` is a secondary clock, not a preformatted date. Do not
+switch to `ingested_at` to answer when a measurement happened: ingestion time
+is not interchangeable with measurement time.
+
+When returning the latest reading, a date/hour, or the start/end of a time
+range, include a readable date-time column in the query result itself. The
+summary model does not receive this documentation. Do not rely on it to guess
+a calendar date from a raw epoch number. Keep filtering and sorting on numeric
+`timestamp`; formatting is a read-only projection and must not change stored data.
+For a range, format both endpoints, not just the first, and preserve the actual
+range requested by the user.
+
+Use the timezone explicitly requested by the user and label it in the result.
+If none is specified, use and label UTC; do not silently assume the database
+server's timezone. For Iran time, use `Asia/Tehran` with a real timezone-aware
+conversion; never add a fixed offset for all historical dates. Persian prose
+does not imply a Jalali calendar: use a Gregorian `YYYY-MM-DD HH:mm:ss` value
+unless a verified Jalali conversion is available or requested. Never relabel a
+Gregorian date as Solar Hijri. If the requested conversion cannot be performed
+with the allowed query functions, state the limitation instead of inventing it.
+
+Verified conversion example (illustration only, NOT a current customer result):
+`1780918908` is `2026-06-08 11:41:48 UTC`, or
+`2026-06-08 15:11:48 Asia/Tehran`. Never reuse this example's date as an answer
+without the actual query result. Prefer a Persian sentence with the readable
+time and its timezone rather than «آخرین زمان ثبت‌شده ۱۷۸۰۹۱۸۹۰۸».
+
+MySQL/MariaDB: `FROM_UNIXTIME` uses the session timezone, which must not be
+assumed to be UTC or Iran. For a deterministic UTC projection, add epoch seconds
+to a timezone-free UTC epoch origin using allowed read-only functions:
+
+```sql
+SELECT DATE_FORMAT(
+  DATE_ADD(CAST('1970-01-01 00:00:00' AS DATETIME), INTERVAL `timestamp` SECOND),
+  '%Y-%m-%d %H:%i:%s UTC') AS measurement_time_utc
+FROM inverter_data ORDER BY `timestamp` DESC LIMIT 1
+```
+
+Include the other requested columns as needed. This example guarantees a UTC
+label, not a Tehran or Jalali conversion. Do not use a disallowed timezone
+function or change the database session to bypass the guard.
