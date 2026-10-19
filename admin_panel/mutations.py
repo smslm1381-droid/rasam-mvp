@@ -16,14 +16,18 @@ AUDIT_SQL = """INSERT INTO admin_operations(request_id, actor, fingerprint, acti
 def prepared(action, body, identifier):
     fields = {"new": {"customer", "plan", "daily_limit"}, "extend": {"days"},
               "revoke": set(), "quota": {"daily_limit"}}
-    if action not in fields or set(body) != fields[action] | {"request_id"}:
+    expected = fields.get(action, set()) | {"request_id"}
+    if action == "new" and ("model" in body or "product_id" in body):
+        expected |= {"model", "product_id"}
+    if action not in fields or set(body) != expected:
         raise ValueError("فیلدهای درخواست کامل یا معتبر نیستند.")
     request_id = body.get("request_id")
     if not isinstance(request_id, str) or str(UUID(request_id)) != request_id:
         raise ValueError("شناسهٔ درخواست معتبر نیست؛ صفحه را دوباره باز کنید.")
     key = None
     if action == "new":
-        key, identifier, _, sql = license_commands.issue(body["customer"], body["plan"], body["daily_limit"])
+        key, identifier, _, sql = license_commands.issue(body["customer"], body["plan"], body["daily_limit"],
+                                                      model=body.get("model"), product_id=body.get("product_id"))
         sql = sql.rstrip(";") + " RETURNING token_hash;"
     elif action == "quota":
         sql = license_commands.quota(identifier, body["daily_limit"])

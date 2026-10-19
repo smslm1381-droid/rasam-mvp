@@ -80,3 +80,7 @@ uv run pywrangler dev --ip 127.0.0.1 --port 8791 --var ADMIN_ORIGIN:http://127.0
 
 منابع: [WebCrypto در Workers](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)،
 [نگه‌داری رمز در OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+## مدیریت پلن‌ها
+
+سه پلن اولیه پیش‌نویس‌اند. در بخش پلن‌ها، مدل معتبر سرویس فعلی، ظرفیت فراخوانی روزانه UTC و قیمت به تومان را تعیین کنید و نمایش در سایت را روشن کنید. قیمت خالی آن دوره را حذف می‌کند. تغییر پلن فقط بر صدور جدید اثر دارد؛ پرداخت واقعی فعلاً غیرفعال است.

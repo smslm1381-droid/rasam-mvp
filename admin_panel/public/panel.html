@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="icon" href="/app-icon.png" type="image/png">
   <title>مدیریت لایسنس‌ها | رصام</title>
   <link rel="preload" href="/fonts/Vazirmatn-33.003.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="/app-icon.png">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="/panel"><img class="brand-emblem" src="/mark.svg" width="44" height="44" alt=""><div>رصام<span>مدیریت محصول</span></div></a><div class="account"><span id="admin-name"></span><button id="logout" class="secondary" type="button"><span class="rasam-icon icon-logout" aria-hidden="true"></span>خروج از حساب</button></div></header>
+  <header class="topbar"><a class="brand" href="/panel"><img class="brand-emblem" src="/app-icon.png" width="44" height="44" alt=""><div>رصام<span>مدیریت محصول</span></div></a><div class="account"><span id="admin-name"></span><button id="logout" class="secondary" type="button"><span class="rasam-icon icon-logout" aria-hidden="true"></span>خروج از حساب</button></div></header>
   <main class="workspace" id="panel">
     <div class="heading"><div><p class="eyebrow">مدیریت دسترسی مشتریان</p><h1>لایسنس‌های رصام</h1><p class="muted">اعتبار، سهمیه و مصرف مشتریان را از همین‌جا بررسی کنید.</p></div><button id="issue-open" type="button"><span class="rasam-icon icon-plus" aria-hidden="true"></span>صدور لایسنس</button></div>
     <form id="search-form" class="filters">
@@ -23,17 +23,19 @@
     <p id="message" role="status" aria-live="polite"></p>
     <section class="table-card" aria-labelledby="table-title">
       <div class="table-heading"><h2 id="table-title">فهرست لایسنس‌ها</h2><span id="total" class="muted"></span></div>
-      <div class="table-scroll"><table><thead><tr><th scope="col">مشتری</th><th scope="col">پلن</th><th scope="col">وضعیت</th><th scope="col">پایان اعتبار</th><th scope="col">سهمیهٔ روزانه</th><th scope="col">مصرف امروز</th><th scope="col">عملیات</th></tr></thead><tbody id="licenses"></tbody></table></div>
+      <div class="table-scroll"><table><thead><tr><th scope="col">مشتری</th><th scope="col">پلن</th><th scope="col">مدل</th><th scope="col">وضعیت</th><th scope="col">پایان اعتبار</th><th scope="col">سهمیهٔ روزانه</th><th scope="col">مصرف امروز</th><th scope="col">عملیات</th></tr></thead><tbody id="licenses"></tbody></table></div>
       <p id="empty" class="empty" hidden>لایسنسی با این جست‌وجو پیدا نشد.</p>
       <div class="pagination"><button id="previous" class="secondary" type="button">صفحهٔ قبل</button><span id="page-label"></span><button id="next" class="secondary" type="button">صفحهٔ بعد</button></div>
     </section>
     <p class="small muted">مصرف روزانه بر اساس روز UTC و تعداد درخواست مدل است؛ هر سؤال می‌تواند چند درخواست مصرف کند. رمز اتصال مشتری و کلید سرویس مدل در این پنل نمایش داده نمی‌شوند.</p>
+    <section class="table-card" id="products-section"><div class="table-heading"><h2>پلن‌ها و قیمت‌های سایت</h2></div><p class="small muted">قیمت‌ها به تومان‌اند. مدل باید در سرویس فعلی شما موجود باشد. هر سؤال ممکن است چند فراخوانی مصرف کند. مدل و ظرفیت هنگام صدور روی لایسنس ثبت می‌شوند؛ ویرایش پلن روی مشتری قبلی اثر ندارد. پرداخت آنلاین هنوز فعال نیست.</p><div id="product-editors" class="product-editors"></div></section>
     <section class="table-card" aria-labelledby="events-title"><div class="table-heading"><h2 id="events-title">فعالیت‌های اخیر مدیر</h2><span class="muted">۲۰ عملیات آخر پنل</span></div><div class="table-scroll"><table><thead><tr><th scope="col">زمان</th><th scope="col">عملیات</th><th scope="col">مشتری</th><th scope="col">مدیر</th></tr></thead><tbody id="events"></tbody></table></div><p id="events-empty" class="empty" hidden>هنوز عملیاتی از پنل ثبت نشده است.</p></section>
   </main>
   <dialog id="issue-dialog" aria-labelledby="issue-title">
     <h2 id="issue-title">صدور لایسنس تازه</h2><p class="muted small">کد لایسنس فقط پس از همین صدور نمایش داده می‌شود؛ آن را خصوصی به مشتری تحویل دهید.</p>
     <form id="issue-form" method="post">
       <label for="customer">نام مشتری</label><input id="customer" maxlength="200" required autocomplete="off">
+      <label for="product-choice">پلن فروش</label><select id="product-choice"><option value="">بدون پلن فروش · تنظیم دستی</option></select><p id="product-model" class="small muted"></p>
       <label for="plan">مدت اعتبار</label><select id="plan"><option value="monthly">ماهانه · ۳۰ روز</option><option value="yearly">سالانه · ۳۶۵ روز</option></select>
       <label for="daily-limit">سهمیهٔ درخواست مدل در روز</label><input id="daily-limit" type="number" min="1" max="100000" value="20" required>
       <p id="issue-message" class="form-message" role="status"></p>

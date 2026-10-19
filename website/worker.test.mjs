@@ -67,3 +67,25 @@ test("قطع فضای ذخیره‌سازی، خطای خام را عمومی ن
   assert.equal(response.status, 503);
   assert.doesNotMatch(await response.text(), /private storage error/);
 });
+
+test("پلن‌ها از نشانی تنظیم‌شده خوانده می‌شوند و هیچ درگاهی فعال نیست", async (t) => {
+  const catalog = { fetch: async (url, options) => {
+    assert.equal(options.redirect, "manual");
+    assert.equal(String(url), 'https://admin.example/api/public/plans');
+    return Response.json({ plans: [{ id: 'test', title: 'پلن', monthly_price: 10 }], payment_enabled: true });
+  } };
+  const response = await worker.fetch(request('/plans.json'), { CATALOG: catalog, CATALOG_URL: 'https://admin.example/api/public/plans' });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  const data = await response.json();
+  assert.equal(data.plans[0].id, 'test');
+  assert.equal(data.payment_enabled, false);
+});
+
+test("خرابی فهرست پلن خطای روشن می‌دهد و POST عمومی نمی‌پذیرد", async (t) => {
+  const catalog = { fetch: async () => { throw new Error('private upstream error'); } };
+  const response = await worker.fetch(request('/plans.json'), { CATALOG: catalog, CATALOG_URL: 'https://admin.example/plans' });
+  assert.equal(response.status, 503);
+  assert.doesNotMatch(await response.text(), /private/);
+  assert.equal((await worker.fetch(request('/plans.json', 'POST'), {})).status, 405);
+});

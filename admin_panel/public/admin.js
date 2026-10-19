@@ -1,5 +1,7 @@
 import { licenseActions, loadEvents, setupActions } from "./actions.js";
 
+import { setupProducts, productTitle } from "./products.js";
+
 let csrf = "";
 let page = 1;
 const number = new Intl.NumberFormat("fa-IR");
@@ -62,7 +64,9 @@ function cell(row, value, className = "") {
 function renderLicense(license) {
   const row = document.createElement("tr");
   cell(row, license.customer);
-  cell(row, license.plan === "monthly" ? "ماهانه" : "سالانه");
+  const period = license.plan === "monthly" ? "ماهانه" : "سالانه";
+  cell(row, license.product_id ? productTitle(license.product_id) + " · " + period : period);
+  cell(row, license.model || "پیش‌فرض سرور");
   cell(row, statusNames[license.status], "status " + license.status);
   cell(row, date.format(new Date(license.expires_at * 1000)));
   cell(row, number.format(license.daily_limit));
@@ -115,6 +119,7 @@ async function startPanel() {
       page++;
       loadLicenses();
     });
+    await setupProducts(api);
     setupActions(api, refresh);
     await refresh();
   } catch (error) {

@@ -54,5 +54,5 @@ def test_d1_stores_no_raw_license_question_or_model_result(d1):
         assert key not in json.dumps(row)
         columns = await d1.prepare("PRAGMA table_info(licenses)").all()
         names = {item["name"] for item in columns["results"]}
-        assert names == {"token_hash", "customer", "plan", "expires_at", "daily_limit", "active", "usage_day", "used"}
+        assert names == {"token_hash", "customer", "plan", "expires_at", "daily_limit", "active", "usage_day", "used", "model", "product_id"}
     asyncio.run(run())

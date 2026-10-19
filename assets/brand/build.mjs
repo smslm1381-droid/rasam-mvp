@@ -9,7 +9,10 @@ const root = resolve(home, "../..");
 const require = createRequire(join(root, ".codex/tools/brand/package.json"));
 const { Resvg } = require("@resvg/resvg-js");
 const icons = JSON.parse(await readFile(join(home, "icons.json"), "utf8"));
-const mark = await readFile(join(home, "mark.svg"), "utf8");
+// خود تصویر انتخابی کاربر حفظ می‌شود؛ viewBox فقط حاشیهٔ بیرونی را برای اندازهٔ آیکون کمتر می‌کند.
+const logo = await readFile(join(home, "logo-source.png"));
+const mark = `<svg xmlns="http://www.w3.org/2000/svg" width="850" height="850" viewBox="200 200 850 850"><title>رصام</title><image width="1254" height="1254" href="data:image/png;base64,${logo.toString("base64")}"/></svg>\n`;
+await writeFile(join(home, "mark.svg"), mark);
 
 function raster(size) {
   return new Resvg(mark, { fitTo: { mode: "width", value: size } }).render().asPng();

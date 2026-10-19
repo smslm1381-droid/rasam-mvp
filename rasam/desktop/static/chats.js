@@ -70,7 +70,7 @@ function assistantBubble(turn, index) {
   const message = document.createElement('div');
   message.className = 'assistant-message';
   const avatar = document.createElement('img');
-  avatar.src = '/static/mark.svg';
+  avatar.src = '/static/app-icon.png';
   avatar.alt = '';
   avatar.className = 'assistant-avatar';
   const body = document.createElement('div');

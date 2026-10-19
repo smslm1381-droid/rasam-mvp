@@ -11,7 +11,8 @@ def public_row(row, now):
     state = "revoked" if not row["active"] else "expired" if row["expires_at"] <= now else "active"
     return {"identifier": row["token_hash"], "customer": row["customer"], "plan": row["plan"],
             "expires_at": row["expires_at"], "daily_limit": row["daily_limit"], "status": state,
-            "used_today": row["used"] if row["usage_day"] == day else 0}
+            "used_today": row["used"] if row["usage_day"] == day else 0,
+            "model": row.get("model"), "product_id": row.get("product_id")}
 
 
 async def listing(db, search="", status="all", page=1, now=None):

@@ -98,7 +98,7 @@ async def license_status(request: Request):
         status = await licenses.Licenses(env.DB).status(key)
         if status is None:
             return license_error("license_invalid")
-        status["model"] = env.UPSTREAM_MODEL
+        status["model"] = status.get("model") or env.UPSTREAM_MODEL
         status["support_url"] = getattr(env, "SUPPORT_URL", "")
         return JSONResponse(status, headers={"Cache-Control": "no-store"})
     except Exception:
@@ -124,6 +124,7 @@ async def completion(request: Request):
         row, reason = await licenses.Licenses(env.DB).reserve(key)
         if reason:
             return license_error(reason)
+        prepared["model"] = row.get("model") or env.UPSTREAM_MODEL
         result = await upstream.chat(env, prepared)
         if result is None:
             return error("upstream_unavailable", "سرویس مدل اکنون پاسخ نمی‌دهد؛ کمی بعد دوباره تلاش کنید.", 503)

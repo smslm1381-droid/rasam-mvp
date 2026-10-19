@@ -105,3 +105,13 @@ def test_raw_database_exception_is_never_echoed(gateway, monkeypatch):
     monkeypatch.setattr(licenses.Licenses, "reserve", failed)
     response = client.post("/v1/chat/completions", json=BODY)
     assert response.status_code == 503 and "private-db-credential" not in response.text
+
+
+def test_license_selected_model_overrides_a_clients_requested_model(gateway, monkeypatch):
+    client, state = gateway
+    async def reserve(self, key, now=None):
+        return {'model': 'pinned-plan-model'}, None
+    monkeypatch.setattr(licenses.Licenses, 'reserve', reserve)
+    response = client.post('/v1/chat/completions', json=BODY)
+    assert response.status_code == 200
+    assert state['calls'][0]['model'] == 'pinned-plan-model'

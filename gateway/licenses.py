@@ -16,7 +16,7 @@ RESERVE_SQL = """UPDATE licenses
     SET used = CASE WHEN usage_day = ? THEN used + 1 ELSE 1 END, usage_day = ?
     WHERE token_hash = ? AND active = 1 AND expires_at > ?
       AND (usage_day <> ? OR used < daily_limit)
-    RETURNING customer, plan, expires_at, daily_limit, used, usage_day"""
+    RETURNING customer, plan, expires_at, daily_limit, used, usage_day, model"""
 
 
 def token_hash(key):
@@ -57,7 +57,7 @@ class Licenses:
         return {"valid": reason is None, "code": reason, "customer": row["customer"],
                 "plan": row["plan"], "expires_at": expires,
                 "days_remaining": max(0, (expires - now + 86399) // 86400),
-                "daily_limit": int(row["daily_limit"]), "used_today": used}
+                "daily_limit": int(row["daily_limit"]), "used_today": used, "model": row.get("model")}
 
     async def reserve(self, key, now=None):
         now = int(time.time()) if now is None else now

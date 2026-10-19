@@ -14,19 +14,28 @@ def literal(value):
 HASH = re.compile(r"^[a-f0-9]{64}$")
 
 
-def issue(customer, plan, daily_limit=20, now=None):
+def issue(customer, plan, daily_limit=20, now=None, model=None, product_id=None):
     if (not isinstance(customer, str) or not customer.strip() or len(customer) > 200
             or type(daily_limit) is not int or not 1 <= daily_limit <= 100000):
         raise ValueError("نام مشتری یا سهمیه معتبر نیست.")
     if plan not in ("monthly", "yearly"):
         raise ValueError("پلن باید monthly یا yearly باشد.")
+    if model is not None:
+        from gateway.products import MODEL
+        if not isinstance(model, str) or not MODEL.fullmatch(model):
+            raise ValueError("شناسهٔ مدل معتبر نیست.")
+    if product_id is not None and (not isinstance(product_id, str) or not re.fullmatch(r"[a-z0-9-]{1,64}", product_id)):
+        raise ValueError("شناسهٔ پلن معتبر نیست.")
     now = int(time.time()) if now is None else now
     key = "rasam_" + secrets.token_urlsafe(32)
     digest = licenses.token_hash(key)
     expires = now + (30 if plan == "monthly" else 365) * 86400
-    values = [literal(value) for value in (digest, customer.strip(), plan)]
-    sql = ("INSERT INTO licenses(token_hash, customer, plan, expires_at, daily_limit) VALUES ("
-           + ", ".join(values) + f", {expires}, {daily_limit});")
+    columns = ["token_hash", "customer", "plan", "expires_at", "daily_limit"]
+    values = [literal(digest), literal(customer.strip()), literal(plan), str(expires), str(daily_limit)]
+    if model is not None:
+        columns += ["model", "product_id"]
+        values += [literal(model), literal(product_id) if product_id else "NULL"]
+    sql = "INSERT INTO licenses(" + ", ".join(columns) + ") VALUES (" + ", ".join(values) + ");"
     return key, digest, expires, sql
 
 

@@ -66,9 +66,11 @@ async function issue(event) {
   button.disabled = true;
   status.textContent = "در حال صدور…";
   try {
-    const result = await send("/api/licenses/new", { request_id: requestId,
-      customer: document.getElementById("customer").value.trim(), plan: document.getElementById("plan").value,
-      daily_limit: Number(document.getElementById("daily-limit").value) });
+    const product = document.getElementById("product-choice").value;
+    const body = { request_id: requestId, customer: document.getElementById("customer").value.trim(),
+      plan: document.getElementById("plan").value };
+    if (!product) body.daily_limit = Number(document.getElementById("daily-limit").value);
+    const result = await send(product ? `/api/products/${product}/issue` : "/api/licenses/new", body);
     if (!result.key) {
       status.textContent = "این درخواست قبلاً ثبت شده و لایسنس دوباره صادر نشد. کد خام قبلی قابل بازیابی نیست؛ فهرست را بررسی کنید.";
       await refresh();
@@ -147,6 +149,7 @@ export function setupActions(api, refreshLists) {
   document.getElementById("issue-open").addEventListener("click", () => {
     requestId = crypto.randomUUID();
     document.getElementById("issue-form").reset();
+    document.getElementById("product-choice").dispatchEvent(new Event("change"));
     document.getElementById("issue-message").textContent = "";
     document.getElementById("issue-dialog").showModal();
   });

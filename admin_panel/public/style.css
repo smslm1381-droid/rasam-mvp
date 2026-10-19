@@ -333,3 +333,10 @@ dialog input, dialog select {
     padding: 16px;
   }
 }
+
+.product-editors { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:20px; }
+.product-editor { padding:20px; border:1px solid var(--line,#dce7e9); border-radius:12px; }
+.product-editor label { display:block; margin:12px 0; font-size:12px; }
+.product-editor textarea { width:100%; min-height:70px; font:inherit; }
+.product-published input { width:auto; margin-inline-start:10px; }
+.product-editor [role=status] { font-size:12px; }

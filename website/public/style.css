@@ -610,3 +610,20 @@ pre {
     scroll-behavior:auto
   }
 }
+
+.purchase-section { padding-block:80px; scroll-margin-top:25px; }
+.billing-options { display:flex; gap:8px; margin:24px 0; }
+.billing-options button { padding:10px 24px; border:1px solid #ccdcd5; border-radius:25px; background:transparent; color:#31594c; font:inherit; cursor:pointer; }
+.billing-options [aria-pressed=true] { background:#175e51; color:white; }
+.purchase-plans { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; }
+.purchase-plan { display:flex; flex-direction:column; gap:12px; padding:28px; border:1px solid #dce5dd; border-radius:20px; background:white; }
+.purchase-plan h3 { margin:0; font-size:24px; }
+.purchase-plan p { margin:0; }
+.plan-price { font-size:26px; font-weight:bold; color:#175e51; }
+.plan-model { direction:ltr; text-align:right; overflow-wrap:anywhere; font-size:12px; }
+.purchase-plan button { margin-top:auto; padding:12px 20px; border:0; border-radius:10px; background:#175e51; color:white; font:inherit; cursor:pointer; }
+.purchase-plan button:disabled { opacity:.5; cursor:default; }
+#checkout-dialog { width:min(500px,calc(100vw - 30px)); max-height:85dvh; overflow:auto; padding:30px; border:1px solid #d1ddd4; border-radius:20px; font:inherit; color:#23483b; background:#fafbf8; }
+#checkout-dialog::backdrop { background:#153b2d66; }
+#checkout-dialog button { padding:10px 16px; margin:8px 0; border:1px solid #cbd9cd; border-radius:10px; font:inherit; }
+#checkout-dialog button:disabled { cursor:not-allowed; opacity:.6; }
