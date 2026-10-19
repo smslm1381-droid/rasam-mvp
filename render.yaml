@@ -1,0 +1,35 @@
+# فقط پلن آزمایشی رایگان؛ ارتقا یا پرداخت خودکار در این فایل تعریف نشده است.
+services:
+  - type: web
+    name: rasam-organizations
+    runtime: python
+    plan: free
+    autoDeployTrigger: 'off'
+    buildCommand: pip install -r requirements-organization.txt && python organization_portal/build_assets.py
+    startCommand: python organization.py serve
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.16
+      - key: RASAM_ORG_HOME
+        value: /tmp/rasam-organizations
+      - key: RASAM_ORG_LOCAL
+        value: '0'
+      - key: RASAM_ORG_QUOTA_POLICY
+        value: complete_answer
+      - key: RASAM_ORG_ORIGIN
+        sync: false
+      - key: RASAM_ORG_STORAGE_URL
+        sync: false
+      - key: RASAM_ORG_MASTER_KEY
+        generateValue: true
+      - key: RASAM_ORG_BACKEND_KEY
+        sync: false
+      - key: RASAM_ORG_STORAGE_KEY
+        sync: false
+      - key: HF_HUB_OFFLINE
+        value: '1'
+      - key: ANONYMIZED_TELEMETRY
+        value: 'False'
+      - key: OTEL_SDK_DISABLED
+        value: 'true'

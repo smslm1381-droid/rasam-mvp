@@ -12,6 +12,8 @@ from urllib.parse import unquote, urlsplit
 import pymysql
 import pymysql.cursors
 
+from rasam.databases.mysql import tls
+
 DEFAULT_PORT = 3306
 
 
@@ -31,13 +33,16 @@ def parse_uri(uri: str, database: str | None = None) -> dict[str, Any]:
         "user": unquote(parts.username or ""),
         "password": unquote(parts.password or ""),
         "database": (database or None) if database is not None else (parts.path.lstrip("/") or None),
+        **tls.options(parts.query),
     }
 
 
 def connect(uri: str, database: str | None = None, timeout_s: int = 5, **extra) -> pymysql.Connection:
     """اتصال با `DictCursor`، و **بدون** چند‌دستوری (پیش‌فرض درایور است و اینجا صریح)."""
-    return pymysql.connect(
-        **parse_uri(uri, database),
+    options = parse_uri(uri, database)
+    connector = tls.VerifiedConnection if "ssl" in options else pymysql.connect
+    return connector(
+        **options,
         charset="utf8mb4",
         connect_timeout=timeout_s,
         cursorclass=pymysql.cursors.DictCursor,

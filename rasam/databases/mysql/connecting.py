@@ -19,7 +19,7 @@ def test_connection(uri, database):
     except pymysql.MySQLError as error:
         code = error.args[0] if error.args else None
         category = {1045: "credentials", 1044: "database", 1049: "database",
-                    2003: "port", 2013: "timeout"}.get(code, "connection")
+                    2003: "port", 2013: "timeout", 2026: "tls"}.get(code, "connection")
         return connectivity.report(category)
     except ValueError:
         return connectivity.report("invalid")
