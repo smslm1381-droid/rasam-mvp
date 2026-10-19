@@ -58,8 +58,8 @@ python packaging/macos/check_keychain.py
 python packaging/macos/build.py --gateway-url https://rasam-gateway.nova-dd625a.workers.dev
 ```
 
-خروجی پیش‌فرض `exports/macos-0.1.3-arm64/` یا `exports/macos-0.1.3-x86_64/` است:
-`dist/Rasam.app`، فایل `Rasam-0.1.3-macOS-ARCH.dmg`، SHA-256 و `build-report.json`.
+خروجی پیش‌فرض `exports/macos-0.1.4-arm64/` یا `exports/macos-0.1.4-x86_64/` است:
+`dist/Rasam.app`، فایل `Rasam-0.1.4-macOS-ARCH.dmg`، SHA-256 و `build-report.json`.
 نسخه از `rasam/__init__.py` گرفته می‌شود؛ نام بالا مربوط به نسخهٔ فعلی است.
 ابزار عمداً پوشهٔ خروجی موجود را بازنویسی نمی‌کند. برای تکرار، مسیر تازه بدهید:
 
@@ -71,7 +71,7 @@ python packaging/macos/build.py --gateway-url https://rasam-gateway.nova-dd625a.
 بستهٔ محلی را به مشتری تحویل ندهید. برای تست فایل ساخته‌شده، مسیر معماری خود را بدهید:
 
 ```bash
-RASAM_TEST_DESKTOP_EXECUTABLE="$PWD/exports/macos-0.1.3-arm64/dist/Rasam.app/Contents/MacOS/Rasam" python -m pytest tests/desktop/test_lifecycle.py -q
+RASAM_TEST_DESKTOP_EXECUTABLE="$PWD/exports/macos-0.1.4-arm64/dist/Rasam.app/Contents/MacOS/Rasam" python -m pytest tests/desktop/test_lifecycle.py -q
 ```
 
 این آزمون پوشهٔ دادهٔ موقت دارد، بازشدن نمونهٔ دوم و خروج احرازشده را می‌سنجد؛

@@ -12,6 +12,7 @@ from rasam import config
 from rasam.desktop.app import create_app
 from rasam.desktop.instance import DesktopInstance
 from rasam.desktop.browser import open_page
+from rasam.desktop.startup_error import record_error
 from rasam.errors import UserFacingError
 
 
@@ -59,8 +60,12 @@ def main(argv: list[str]) -> int:
             from rasam.desktop.macos import run
             return run(lambda: serve(True))
         return serve(not args.no_browser)
-    except Exception:
-        show_error("راه‌اندازی سرور محلی انجام نشد؛ برنامه را دوباره باز کنید.")
+    except Exception as error:
+        report = record_error(config.DATA_HOME, error)
+        message = "راه‌اندازی برنامه کامل نشد؛ برنامه را دوباره باز کنید."
+        if report:
+            message += f"\nگزارش بررسی خطا: {report}"
+        show_error(message)
         return 1
 
 
