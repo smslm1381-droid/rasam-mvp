@@ -17,6 +17,8 @@ from pydantic import BaseModel, Field
 from rasam import config
 from rasam.core import exporting, updates
 from rasam.desktop.security import LocalSecurity
+from rasam.desktop.accounts import LocalAccount
+from rasam.desktop.account_routes import routes as account_routes
 from rasam.desktop.session import Session
 from rasam.desktop.chats import routes as chat_routes
 from rasam.desktop.connecting import routes
@@ -33,12 +35,13 @@ class Question(BaseModel):
     chat_id: str | None = Field(default=None, min_length=32, max_length=32)
 
 
-def create_app(token: str | None = None, answerer=None, license_manager=None) -> FastAPI:
+def create_app(token: str | None = None, answerer=None, license_manager=None, account=None) -> FastAPI:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.token = token or secrets.token_urlsafe(32)
     app.state.session = Session(answerer)
     app.state.licensing = license_manager or LicenseManager()
     app.state.shutdown = None
+    app.state.account = account or LocalAccount(config.DATA_HOME / "account.sqlite3", config.DESKTOP_MODE)
     app.state.licensing.configure_runtime()
     setup_routes, app.state.setup = routes()
     app.include_router(setup_routes)
@@ -46,7 +49,8 @@ def create_app(token: str | None = None, answerer=None, license_manager=None) ->
     app.include_router(chat_routes(app))
     app.include_router(teaching_routes(app))
     app.include_router(licensing_routes(app))
-    app.add_middleware(LocalSecurity, token=app.state.token)
+    app.include_router(account_routes(app))
+    app.add_middleware(LocalSecurity, token=app.state.token, account=app.state.account)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.add_api_route("/", index, methods=["GET"])
     app.add_api_route("/status", status, methods=["GET"])

@@ -15,6 +15,7 @@
   <script defer src="/static/connect.js"></script>
   <script defer src="/static/profile.js"></script>
   <script defer src="/static/teach.js"></script>
+  <script defer src="/static/account.js"></script>
   <script defer src="/static/license.js"></script>
   <script defer src="/static/updates.js"></script>
   <link rel="apple-touch-icon" href="/static/app-icon.png">
@@ -28,9 +29,21 @@
   <main>
     <div id="update-banner" role="status" hidden><span id="update-description"></span> <a id="update-download" target="_blank" rel="noopener noreferrer">دریافت نسخهٔ تازه</a><p>نصب نسخهٔ تازه، اتصال و آموزش‌های شما را نگه می‌دارد.</p></div>
     <div id="license-banner" role="status" hidden><span id="license-description"></span><button type="button" data-license-refresh class="secondary">بررسی اعتبار</button></div>
-    <section id="activation" class="question-card">
+    <section id="account" class="question-card" hidden>
+      <h1 id="account-title">ورود به رصام</h1>
+      <p>حساب شما فقط روی همین دستگاه معتبر است؛ رمز عبور با لایسنس فرق دارد.</p>
+      <form id="account-form">
+        <label for="account-username">نام کاربری</label><input id="account-username" autocomplete="username" minlength="3" maxlength="80" required dir="auto">
+        <label for="account-password">رمز عبور</label><input id="account-password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>
+        <div id="account-confirm-wrap" hidden><label for="account-confirm">تکرار رمز عبور</label><input id="account-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="128"></div>
+        <button id="account-submit" type="submit">ورود</button>
+      </form>
+      <p id="account-message" role="status" aria-live="polite"></p>
+      <p>نام کاربری و رمز را نگه دارید؛ بازیابی خودکار رمز هنوز فراهم نیست.</p>
+    </section>
+    <section id="activation" class="question-card" hidden>
       <h1>به رصام خوش آمدید</h1>
-      <p>برای شروع کد لایسنسی را که همراه برنامه دریافت کرده‌اید وارد کنید.</p>
+      <p id="activation-hint">فقط برای فعال‌سازی اولیه، کد لایسنس را وارد کنید؛ سپس حساب این دستگاه را می‌سازید.</p>
       <p id="license-message" role="status" aria-live="polite">در حال بررسی اعتبار…</p>
       <form id="license-form">
         <label for="license-key">کد لایسنس</label><input id="license-key" type="password" dir="ltr" minlength="20" maxlength="200" autocomplete="off" required>
@@ -50,6 +63,7 @@
       <div class="sidebar-bottom">
         <button id="setup-open" type="button" class="sidebar-action"><span class="rasam-icon icon-database" aria-hidden="true"></span>اتصال دیتابیس</button>
         <button id="teaching-open" type="button" class="sidebar-action"><span class="rasam-icon icon-teach" aria-hidden="true"></span>آموزش رصام</button>
+        <button id="account-logout" type="button" class="sidebar-action">خروج از حساب</button>
         <button id="quit-button" type="button" class="sidebar-action"><span class="rasam-icon icon-logout" aria-hidden="true"></span>خروج از رصام</button>
         <div class="local-note"><span class="rasam-icon icon-shield" aria-hidden="true"></span>گفتگوهای شما، روی همین دستگاه</div>
       </div>
@@ -116,7 +130,7 @@
         <form id="ask-form" class="composer">
           <label for="question" class="sr-only">سؤال شما</label>
           <textarea id="question" rows="1" maxlength="2000" placeholder="از رصام بپرسید…" required></textarea>
-          <div class="composer-bottom"><span>می‌توانید همین گفتگو را ادامه دهید</span><button id="ask-button" type="submit" aria-label="ارسال پیام"><span data-ask-label class="sr-only">پرسیدن سؤال</span><span class="send-arrow" aria-hidden="true">↑</span></button></div>
+          <div class="composer-bottom"><span>می‌توانید همین گفتگو را ادامه دهید</span><button id="ask-button" type="submit" aria-label="ارسال پیام"><span data-ask-label class="sr-only">پرسیدن سؤال</span><svg class="send-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button></div>
         </form>
         <p class="composer-note">بخش اخیر گفتگو برای فهم سؤال بعدی به مدل فرستاده می‌شود. پاسخ‌ها را بررسی کنید.</p>
       </div>

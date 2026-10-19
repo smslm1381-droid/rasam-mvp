@@ -167,7 +167,7 @@ async function refreshStatus() {
   else notice('');
   await syncChats(data.configured ? data.customer : null);
 }
-window.addEventListener('DOMContentLoaded', () => refreshStatus().catch((error) => notice(error.message, true)));
+
 
 $('quit-button').addEventListener('click', async () => {
   $('quit-button').disabled = true;

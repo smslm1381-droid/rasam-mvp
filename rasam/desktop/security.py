@@ -26,9 +26,10 @@ def reject(detail: str, status: int = 403):
 
 
 class LocalSecurity(BaseHTTPMiddleware):
-    def __init__(self, app, token: str):
+    def __init__(self, app, token: str, account=None):
         super().__init__(app)
         self.token = token
+        self.account = account
         self.cookie_name = "rasam-" + hashlib.sha256(token.encode()).hexdigest()[:16]
 
     async def dispatch(self, request, call_next):
@@ -47,8 +48,25 @@ class LocalSecurity(BaseHTTPMiddleware):
                 supplied = request.query_params.get("token") or supplied or request.cookies.get(self.cookie_name, "")
             if not secrets.compare_digest(supplied.encode(), self.token.encode()):
                 return reject("دسترسی معتبر نیست؛ برنامه را دوباره باز کنید.", 401)
+        failure = self.account_access(request)
+        if failure is not None:
+            return failure
         response = await call_next(request)
         response.headers.update(SECURITY_HEADERS)
         if request.url.path == "/":
             response.set_cookie(self.cookie_name, self.token, httponly=True, samesite="strict")
         return response
+
+    def account_access(self, request):
+        if self.account is None or not self.account.enabled:
+            return None
+        path = request.url.path
+        if path == "/" or path.startswith("/static/") or path in {"/auth/status", "/auth/login", "/auth/logout", "/shutdown"}:
+            return None
+        if self.account.authenticated(request.cookies.get("rasam_local_account", "")):
+            return None
+        if path in {"/license/status", "/license/activate", "/auth/register"}:
+            state = self.account.state()
+            if not state.get("error") and not state["registered"]:
+                return None
+        return reject("ابتدا با نام کاربری و رمز عبور وارد شوید.", 401)

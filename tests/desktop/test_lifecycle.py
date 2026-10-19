@@ -37,7 +37,7 @@ def wait_for_session(process, folder):
             state = json.loads((folder / ".desktop-session.json").read_text())
             base = f"http://127.0.0.1:{state['port']}"
             headers = {"X-Rasam-Token": state["token"]}
-            response = httpx.get(base + "/status", headers=headers, trust_env=False, timeout=1)
+            response = httpx.get(base + "/auth/status", headers=headers, trust_env=False, timeout=1)
             if response.status_code == 200:
                 return base, headers
         except (OSError, ValueError, httpx.HTTPError):

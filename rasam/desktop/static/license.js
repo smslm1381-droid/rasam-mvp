@@ -5,6 +5,15 @@ function showLicenseSupport(url) {
 
 function displayLicense(data) {
   licenseReady = !data.required || data.valid;
+  if (accountState.required && !accountState.authenticated && licenseReady) {
+    showAccount();
+    return;
+  }
+  $('license-form').hidden = accountState.registered;
+  $('activation-hint').textContent = accountState.registered ? 'اعتبار اشتراک را بررسی کنید؛ پس از تمدید، بررسی دوبارهٔ اعتبار را بزنید.' : 'فقط برای فعال‌سازی اولیه کد لایسنس را وارد کنید؛ سپس حساب این دستگاه را بسازید.';
+  $('activation').querySelector('h1').textContent = accountState.registered ? 'وضعیت اشتراک رصام' : 'به رصام خوش آمدید';
+  $('account').hidden = true;
+  $('account-logout').hidden = !accountState.required;
   if (!licenseReady) $('connection-status').textContent = 'در انتظار تأیید لایسنس';
   $('activation').hidden = !data.required || data.valid;
   $('workspace').hidden = !!data.required && !data.valid;
@@ -24,7 +33,10 @@ async function refreshLicense() {
   try {
     const data = await (await request('/license/status')).json();
     displayLicense(data);
-    if (data.valid) await refreshStatus();
+    if ((!data.required || data.valid) && (!accountState.required || accountState.authenticated)) {
+      await loadConnectionForms();
+      await refreshStatus();
+    }
   } catch (error) { $('license-message').textContent = error.message; }
   finally { for (const button of document.querySelectorAll('[data-license-refresh]')) button.disabled = false; }
 }
@@ -43,11 +55,14 @@ async function activateLicense(event) {
     }
     $('license-key').value = '';
     displayLicense(data);
-    await refreshStatus();
+    if (!accountState.required || accountState.authenticated) {
+      await loadConnectionForms();
+      await refreshStatus();
+    }
   } catch (error) { $('license-message').textContent = error.message; }
   finally { $('license-activate').disabled = false; }
 }
 
 $('license-form').addEventListener('submit', activateLicense);
 for (const button of document.querySelectorAll('[data-license-refresh]')) button.addEventListener('click', refreshLicense);
-refreshLicense();
+refreshAccount();

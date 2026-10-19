@@ -23,6 +23,7 @@ def status(valid=True, days=30):
 
 @pytest.fixture
 def licensed(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "DATA_HOME", tmp_path)
     stored = {}
     state = {"body": status(), "status": 200, "calls": 0}
     monkeypatch.setattr(config, "DESKTOP_MODE", True)

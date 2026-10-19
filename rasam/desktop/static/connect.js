@@ -23,6 +23,7 @@ function drawConnectionFields() {
 }
 
 async function loadConnectionForms() {
+  if (connectionForms.length) return;
   connectionForms = await (await request('/setup/databases')).json();
   for (const form of connectionForms) {
     const option = document.createElement('option');
@@ -71,4 +72,3 @@ async function testConnection(event) {
 $('setup-open').addEventListener('click', () => { $('setup').hidden = !$('setup').hidden; });
 $('database-type').addEventListener('change', drawConnectionFields);
 $('connection-form').addEventListener('submit', testConnection);
-loadConnectionForms().catch((error) => notice(error.message, true));

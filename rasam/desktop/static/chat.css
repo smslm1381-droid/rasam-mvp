@@ -71,8 +71,8 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100
 #question::placeholder { color: #9aa39b; }
 .composer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .composer-bottom > span { font-size: 9px; color: #a0a99f; }
-#ask-button { width: 34px; height: 34px; padding: 0; border-radius: 11px; background: #245e48; }
-.send-arrow { font: 25px/1 sans-serif; }
+#ask-button { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 34px; width: 34px; height: 34px; padding: 0; line-height: 0; border-radius: 11px; background: #245e48; }
+#ask-button .send-arrow { display: block; flex: 0 0 18px; width: 18px; height: 18px; margin: 0; padding: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .composer-note { margin: 8px 0 0; text-align: center; color: #a0aaa1; font-size: 9px; }
 #notice { max-width: 790px; margin: 0 auto 10px; font-size: 11px; padding: 9px 13px; }
 .pending-message { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #7e8b81; padding: 8px 0; }
@@ -85,7 +85,7 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100
 .settings-panel { position: absolute; inset: 0; z-index: 20; overflow-y: auto; margin: 0 !important; border: 0; border-radius: 0; padding: 30px; background: var(--chat-bg); }
 .settings-panel h1 { font-size: 23px; }
 .panel-close { margin-bottom: 16px; }
-#activation { width: min(480px, calc(100% - 32px)); margin: auto; overflow-y: auto; }
+#activation, #account { width: min(480px, calc(100% - 32px)); margin: auto; overflow-y: auto; }
 #license-banner, #update-banner { margin: 0; padding: 8px 24px; border-radius: 0; font-size: 11px; }
 footer { flex-shrink: 0; padding: 0; }
 footer:not(:has(#shutdown-message:not([hidden]))) { display: none; }
@@ -116,3 +116,6 @@ footer:not(:has(#shutdown-message:not([hidden]))) { display: none; }
   .typing-dots { animation: none; }
   #chat-sidebar { transition: none; }
 }
+
+#account-form input { margin-bottom: 15px; }
+#account-message { color: #a34237; }
