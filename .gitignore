@@ -49,3 +49,13 @@ Thumbs.db
 
 # گفتگوهای محلی حاوی دادهٔ مشتری‌اند و هرگز وارد مخزن نمی‌شوند.
 conversations.sqlite3*
+
+# داده و دارایی‌های بازتولیدشدنی محیط سازمانی
+organizations.sqlite3*
+organization_portal/cloudflare/.dev.vars
+organization_portal/cloudflare/node_modules/
+organization_portal/public/static/Vazirmatn.woff2
+organization_portal/public/static/mark.svg
+organization_portal/public/static/plotly.min.js
+organization_portal/public/static/PLOTLY-LICENSE.txt
+organization_portal/public/static/FONT-LICENSE.txt

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>رصام | فضای سازمانی</title>
+  <link rel="icon" type="image/svg+xml" href="/static/mark.svg">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/plotly.min.js" defer>
+</script>
+  <script type="module" src="/static/main.js">
+</script>
+</head>
+<body>
+  <div id="notice" role="status" aria-live="polite" hidden>
+</div>
+  <main id="login-view" class="entry">
+    <section class="entry-card">
+      <img class="brand" src="/static/mark.svg" alt="رصام">
+      <p class="eyebrow">دستیار دادهٔ سازمان شما</p>
+<h1>به فضای رصام وارد شوید</h1>
+      <p class="muted">حساب شما و گفتگوهایتان در همهٔ دستگاه‌ها در دسترس‌اند.</p>
+      <form id="login-form" class="stack">
+        <label>ایمیل<input id="login-email" type="email" autocomplete="username" required maxlength="254" dir="ltr">
+</label>
+        <label>رمز عبور<input id="login-password" type="password" autocomplete="current-password" required maxlength="128" dir="ltr">
+</label>
+        <button type="submit">ورود به حساب</button>
+      </form>
+      <p id="login-message" class="error" role="alert">
+</p>
+      <p class="small muted">حساب تازه با دعوت مدیر سازمان ساخته می‌شود. حساب محلیِ نصب قبلی خودکار منتقل نشده است.</p>
+    </section>
+    <aside class="entry-aside">
+<span class="edition">نسخهٔ آزمایشی سازمانی</span>
+<h2>از دادهٔ مشترک،<br>به پاسخ روشن.</h2>
+<p>اتصال یک‌باره برای سازمان؛ دسترسی مشخص برای هر عضو.</p>
+</aside>
+  </main>
+  <section id="invitation-view" class="entry-card invitation" hidden>
+    <img class="brand" src="/static/mark.svg" alt="رصام">
+<h1>دعوت به سازمان</h1>
+    <p id="invitation-info">
+</p>
+    <form id="invitation-form" class="stack">
+      <label id="invite-name-wrap">نام شما<input id="invite-name" maxlength="100" autocomplete="name">
+</label>
+      <label id="invite-password-wrap">رمز حساب مرکزی<input id="invite-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" dir="ltr">
+</label>
+      <label id="invite-confirm-wrap">تکرار رمز<input id="invite-confirm" type="password" minlength="12" maxlength="128" autocomplete="new-password" dir="ltr">
+</label>
+      <button type="submit">پذیرش دعوت</button>
+    </form>
+    <button id="invitation-login" class="secondary" hidden>ابتدا وارد حساب موجود شوید</button>
+    <p id="invitation-message" class="error" role="alert">
+</p>
+  </section>
+  <div id="workspace" class="workspace" hidden>
+    <aside class="sidebar">
+      <a class="wordmark" href="/">
+<img src="/static/mark.svg" alt="">رصام<span>فضای سازمانی</span>
+</a>
+      <label class="small">سازمان فعال<select id="org-select" aria-label="سازمان فعال">
+</select>
+</label>
+      <nav aria-label="بخش‌های سازمان">
+        <button data-view="chat" class="nav active">گفتگو با داده‌ها</button>
+        <button data-view="members" class="nav manager-only" hidden>اعضای سازمان</button>
+        <button data-view="connection" class="nav manager-only" hidden>اتصال و آموزش داده</button>
+        <button data-view="managed" class="nav visibility-only" hidden>مشاهدهٔ گفتگوهای اعضا</button>
+        <button data-view="platform" class="nav platform-only" hidden>مدیریت کل رصام</button>
+        <button data-view="account" class="nav">تنظیمات حساب</button>
+      </nav>
+      <div class="history-heading">
+<span>گفتگوهای من</span>
+<button id="new-chat" class="compact secondary">＋ جدید</button>
+</div>
+      <div id="chat-list" class="chat-list">
+</div>
+      <div class="sidebar-bottom">
+<span id="user-name">
+</span>
+<button id="logout" class="text-button">خروج از حساب</button>
+</div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+<div>
+<p id="org-title" class="eyebrow">رصام</p>
+<h1 id="view-title">گفتگو با داده‌ها</h1>
+</div>
+<span class="edition">آزمایشی</span>
+</header>
+      <p id="privacy-note" class="privacy-note">
+</p>
+      <section id="view-chat" class="view chat-view">
+        <div class="chat-toolbar">
+<span id="usage-label" class="muted">
+</span>
+<button id="refresh-chat" class="secondary compact">تازه‌سازی گفتگو</button>
+<button id="delete-chat" class="text-button danger">حذف گفتگو</button>
+</div>
+        <div id="messages" class="messages" aria-live="polite">
+<div class="empty">
+<img src="/static/mark.svg" alt="">
+<h2>از داده‌های سازمان بپرسید</h2>
+<p>گفتگوهای این حساب روی دستگاه دیگر هم در دسترس‌اند.</p>
+</div>
+</div>
+        <form id="question-form" class="composer">
+<label class="sr-only" for="question">سؤال شما</label>
+<textarea id="question" rows="2" maxlength="2000" placeholder="دربارهٔ داده‌های مجاز خود سؤال بپرسید…" required>
+</textarea>
+<button id="send" type="submit">ارسال سؤال</button>
+</form>
+        <p id="question-status" class="small muted">
+</p>
+<button id="retry-question" class="secondary" hidden>بررسی دوبارهٔ همان درخواست</button>
+      </section>
+      <section id="view-members" class="view" hidden>
+        <div class="section-heading">
+<h2>اعضا و دسترسی‌ها</h2>
+<button id="refresh-members" class="secondary">تازه‌سازی</button>
+</div>
+        <div id="members-table" class="table-wrap">
+</div>
+        <form id="member-invite-form" class="card form-grid">
+<h3 class="full">دعوت عضو</h3>
+<label>ایمیل<input id="member-email" type="email" required dir="ltr">
+</label>
+<label>نقش<select id="member-role">
+<option value="member">عضو</option>
+<option value="admin">مدیر سازمان</option>
+</select>
+</label>
+<label>سقف پاسخ موفق روزانه<input id="member-limit" type="number" min="1" max="100000" value="20" required>
+</label>
+<label>منابع مجاز، هر نام در یک خط<textarea id="member-sources" rows="3" dir="ltr">
+</textarea>
+</label>
+<button type="submit">ساخت دعوت خصوصی</button>
+</form>
+      </section>
+      <section id="view-connection" class="view" hidden>
+        <p id="connection-current" class="muted">
+</p>
+        <form id="connection-form" class="card form-grid">
+          <h2 class="full">اتصال مشترک سازمان</h2>
+<p class="small muted full">مدیر کل باید مقصد را مجاز کند. اتصال TLS و حساب فقط‌خواندنی الزامی است؛ رمز به اعضا نمایش داده نمی‌شود.</p>
+          <label>نوع دیتابیس<select id="db-type">
+<option value="mongodb">MongoDB</option>
+<option value="mysql">MySQL / MariaDB</option>
+</select>
+</label>
+          <label>آدرس سرور<input id="db-host" dir="ltr" maxlength="254">
+</label>
+<label>درگاه<input id="db-port" type="number" min="1" max="65535" value="27017">
+</label>
+          <label>نام دیتابیس<input id="db-name" dir="ltr" required maxlength="200">
+</label>
+<label>نام کاربری فقط‌خواندنی<input id="db-user" dir="ltr" autocomplete="off">
+</label>
+<label>رمز دیتابیس<input id="db-password" type="password" dir="ltr" autocomplete="off" maxlength="2048">
+</label>
+          <details class="full">
+<summary>نشانی اتصال پیشرفته و گواهی اختصاصی</summary>
+<label>نشانی اتصال، به‌جای فیلدهای میزبان و رمز<input id="db-uri" type="password" dir="ltr" maxlength="4096" autocomplete="off">
+</label>
+<label>گواهی CA با قالب PEM، اختیاری<textarea id="db-ca" rows="4" dir="ltr" maxlength="64000">
+</textarea>
+</label>
+</details>
+          <button id="probe-connection" type="button" class="secondary">آزمایش اتصال امن</button>
+<p id="connection-status" class="small" role="status">
+</p>
+          <fieldset id="sources-list" class="full" hidden>
+<legend>منابع مجاز سازمان</legend>
+</fieldset>
+          <label class="full">توضیح معنی داده‌ها و نکته‌های سازمان<textarea id="db-documentation" rows="6" maxlength="100000">
+</textarea>
+</label>
+<button id="save-connection" type="submit" disabled>ذخیرهٔ اتصال سازمان</button>
+        </form>
+      </section>
+      <section id="view-managed" class="view" hidden>
+<p class="muted">این بخش با مجوز ادمین رصام فعال است. مشاهدهٔ هر گفتگو در رویدادهای سازمان ثبت می‌شود.</p>
+<div id="managed-list" class="card">
+</div>
+<div id="managed-messages" class="messages">
+</div>
+</section>
+      <section id="view-platform" class="view" hidden>
+        <div id="organizations-table" class="table-wrap">
+</div>
+        <form id="organization-form" class="card form-grid">
+<h2 class="full">ایجاد سازمان</h2>
+<label>نام سازمان<input id="organization-name" required maxlength="100">
+</label>
+<label>ایمیل مدیر سازمان<input id="organization-manager" type="email" required dir="ltr">
+</label>
+<label>سقف پاسخ موفق روزانه<input id="organization-limit" type="number" min="1" max="100000" value="1000" required>
+</label>
+<label>مقصدهای دیتابیس مجاز، هر میزبان در یک خط<textarea id="organization-hosts" rows="3" dir="ltr">
+</textarea>
+</label>
+<button type="submit">ایجاد سازمان و دعوت مدیر</button>
+</form>
+      </section>
+      <section id="view-account" class="view" hidden>
+<form id="password-form" class="card stack narrow">
+<h2>تغییر رمز حساب مرکزی</h2>
+<label>رمز فعلی<input id="old-password" type="password" autocomplete="current-password" required>
+</label>
+<label>رمز جدید، حداقل ۱۲ کاراکتر<input id="new-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+</label>
+<label>تکرار رمز جدید<input id="confirm-password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+</label>
+<button type="submit">تغییر رمز و خروج از دستگاه‌ها</button>
+</form>
+</section>
+    </main>
+  </div>
+  <dialog id="invite-result">
+<h2>دعوت خصوصی آماده شد</h2>
+<p>این پیوند را فقط به صاحب ایمیل دعوت‌شده برسانید. ارسال ایمیل خودکار فعال نیست.</p>
+<label>پیوند دعوت<input id="invite-url" readonly dir="ltr">
+</label>
+<button id="copy-invite">کپی پیوند</button>
+<button id="close-invite" class="secondary">بستن</button>
+</dialog>
+  <dialog id="edit-member">
+<h2>ویرایش عضو</h2>
+<form id="edit-member-form" class="stack">
+<p id="edit-member-name">
+</p>
+<label>وضعیت<select id="edit-member-active">
+<option value="1">فعال</option>
+<option value="0">غیرفعال</option>
+</select>
+</label>
+<label>سقف پاسخ موفق روزانه<input id="edit-member-limit" type="number" min="1" required>
+</label>
+<label>منابع مجاز، هر نام در یک خط<textarea id="edit-member-sources" rows="4" dir="ltr">
+</textarea>
+</label>
+<button type="submit">ذخیره</button>
+<button type="button" id="close-member" class="secondary">انصراف</button>
+</form>
+</dialog>
+  <dialog id="edit-organization">
+<h2>سیاست سازمان</h2>
+<form id="edit-organization-form" class="stack">
+<p id="edit-organization-name">
+</p>
+<label>وضعیت<select id="edit-organization-active">
+<option value="1">فعال</option>
+<option value="0">غیرفعال</option>
+</select>
+</label>
+<label>سقف پاسخ موفق روزانه<input id="edit-organization-limit" type="number" min="1" required>
+</label>
+<label>مقصدهای مجاز<textarea id="edit-organization-hosts" rows="3" dir="ltr">
+</textarea>
+</label>
+<label class="check">
+<input id="edit-organization-visibility" type="checkbox">مدیر سازمان بتواند متن گفتگوهای اعضا را ببیند</label>
+<button type="submit">ذخیرهٔ سیاست سازمان</button>
+<button id="close-organization" type="button" class="secondary">انصراف</button>
+</form>
+</dialog>
+</body>
+</html>
