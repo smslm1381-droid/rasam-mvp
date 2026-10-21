@@ -4,6 +4,10 @@
 .venv313/
 venv/
 .env
+.env.gapgpt
+.mongo.env
+.mongo-app.env
+.license.env
 
 # داده‌ی خام: حجیم (~۱۵ مگابایت) و بازتولیدشدنی — در ../data/raw/ می‌ماند
 data/

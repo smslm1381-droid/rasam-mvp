@@ -1,4 +1,4 @@
-"""آزمون مستقیم OpenRouter؛ کلید فقط از فایل محلی خوانده می‌شود."""
+"""آزمون جداگانهٔ GapGPT؛ تنظیمات و کلید اصلی رصام دست‌نخورده می‌مانند."""
 
 from pathlib import Path
 
@@ -28,15 +28,15 @@ def show_response(response, key, model):
 
 
 def main():
-    settings = dotenv_values(Path(__file__).resolve().parent / ".env")
+    settings = dotenv_values(Path(__file__).resolve().parent / ".env.gapgpt")
     key = settings.get("RASAM_LLM_API_KEY")
     model = settings.get("RASAM_LLM_MODEL")
     base_url = settings.get("RASAM_LLM_BASE_URL")
     if not key or not model or not base_url:
-        print("کلید، مدل یا نشانی سرویس در فایل .env تنظیم نشده است.")
+        print("کلید، مدل یا نشانی سرویس در فایل .env.gapgpt تنظیم نشده است.")
         return 1
-    if base_url.rstrip("/") != "https://openrouter.ai/api/v1":
-        print("برای آزمون مستقیم، نشانی سرویس در .env باید OpenRouter باشد.")
+    if base_url.rstrip("/") not in {"https://api.gapgpt.app/v1", "https://api.gapapi.com/v1"}:
+        print("نشانی سرویس باید یکی از دو نشانی رسمی GapGPT باشد.")
         return 1
     try:
         # همان رفتار پیش‌فرض تست‌های موفق قبلی؛ تنظیم شبکهٔ سیستم عوض نمی‌شود.
