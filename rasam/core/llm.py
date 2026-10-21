@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
+from time import monotonic
 
 from langchain_openai import ChatOpenAI
 
@@ -79,6 +80,8 @@ def _client() -> ChatOpenAI:
         # واقعی. کتابخانه ثانیه می‌خواهد، کانفیگ میلی‌ثانیه نگه می‌دارد تا با
         # بقیه‌ی سقف‌های پروژه هم‌واحد باشد.
         timeout=settings.llm_timeout_ms / 1000,
+        # تکرار پنهان SDK هم انتظار و هم مصرف را زیاد می‌کند؛ ترمیم کوئری در گراف است.
+        max_retries=0,
     )
 
 
@@ -139,13 +142,18 @@ def ask(prompt: str) -> Result:
     if not prompt or not prompt.strip():
         return _fail("پرامپت خالی است.")
 
+    started = monotonic()
     if config.settings.verbose:
         _show("پرامپت", prompt)
+        _show("وضعیت تماس", "در انتظار پاسخ مدل؛ بدون تلاش مجدد خودکار SDK.")
 
     try:
         message = _client().invoke(prompt)
     except Exception as error:  # noqa: BLE001 — عمدی: هیچ خطایی نباید بیرون برود
         return _fail(_describe_failure(error))
+    finally:
+        if config.settings.verbose:
+            _show("پایان تماس", f"مدت انتظار: {monotonic() - started:.1f} ثانیه")
 
     if config.settings.verbose:
         _show("پاسخ خام", repr(message.content))

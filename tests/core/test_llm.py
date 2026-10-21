@@ -149,9 +149,10 @@ def test_quiet_by_default(monkeypatch, capsys):
 
 # --- ساخت کلاینت از روی کانفیگ ---------------------------------------------
 
-def test_thinking_is_off_by_default():
-    """پیش‌فرض پروژه: فکرکردن خاموش. روی Gemini دو برابر و نیم سریع‌تر بود."""
-    assert config.settings.llm_reasoning_effort == "none"
+def test_thinking_is_off_by_default(monkeypatch):
+    """پیش‌فرض را مستقل از انتخاب مدل و فایل شخصی توسعه‌دهنده می‌سنجیم."""
+    monkeypatch.delenv("RASAM_LLM_REASONING_EFFORT", raising=False)
+    assert config._reasoning_effort() == "none"
 
 
 @pytest.mark.parametrize("effort", ["none", "low", "medium", "high"])
@@ -219,6 +220,36 @@ def test_timeout_is_configurable_in_milliseconds(monkeypatch):
                         replace(config.settings, llm_timeout_ms=5_000))
     llm._client.cache_clear()
     assert llm._client().request_timeout == 5.0
+
+
+@pytest.mark.parametrize("failure", [429, 503, "timeout"])
+def test_sdk_does_not_retry_a_failed_http_request(monkeypatch, failure):
+    """خود SDK واقعی اجرا می‌شود تا فقط صفر بودن یک فیلد را نسنجیم."""
+    import httpx
+
+    requests = []
+
+    def respond(request):
+        requests.append(request)
+        if failure == "timeout":
+            raise httpx.ReadTimeout("test timeout", request=request)
+        return httpx.Response(failure, json={"error": {"message": "unavailable"}})
+
+    original = llm.ChatOpenAI
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(llm, "ChatOpenAI", lambda **kwargs: original(http_client=client, **kwargs))
+        result = llm.ask("سؤال آزمایشی")
+    assert not result.ok
+    assert len(requests) == 1
+
+
+def test_verbose_reports_call_start_and_finish_on_failure(monkeypatch, capsys):
+    monkeypatch.setattr(config, "settings", replace(config.settings, verbose=True))
+    use(monkeypatch, FakeModel(error=ConnectionError("test")))
+    assert not llm.ask("سؤال آزمایشی").ok
+    printed = capsys.readouterr().out
+    assert "در انتظار پاسخ مدل" in printed
+    assert "پایان تماس" in printed
 
 
 @pytest.mark.parametrize("error", [ValueError("x"), KeyError("choices"), TypeError("y")])
